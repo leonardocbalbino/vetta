@@ -36,7 +36,7 @@ const LEVEL_PT: Record<string, ExerciseLevel> = {
 /** CSV simples com aspas, separador ; ou , (detectado pelo cabeçalho). */
 export function parseCsv(text: string): Record<string, string>[] {
   const lines = text
-    .replace(/^﻿/, '')
+    .replace(/^\uFEFF/, '')
     .split(/\r?\n/)
     .filter((l) => l.trim());
   if (!lines.length) return [];
@@ -274,12 +274,10 @@ export class LibraryService {
   }
 
   async remove(t: TenantAccess, id: string) {
-    const r = await this.prisma
-      .tenant(t.tenantId)
-      .exercise.updateMany({
-        where: { id, tenantId: t.tenantId, deletedAt: null },
-        data: { deletedAt: new Date() },
-      });
+    const r = await this.prisma.tenant(t.tenantId).exercise.updateMany({
+      where: { id, tenantId: t.tenantId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
     if (!r.count) throw notFound('Exercício não encontrado.');
     return { ok: true as const };
   }

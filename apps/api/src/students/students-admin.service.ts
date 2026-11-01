@@ -370,12 +370,10 @@ export class StudentsAdminService {
 
   async removeMember(t: TenantAccess, groupId: string, studentLinkId: string) {
     await this.group(t, groupId);
-    await this.prisma
-      .tenant(t.tenantId)
-      .studentGroupMember.updateMany({
-        where: { groupId, studentLinkId },
-        data: { deletedAt: new Date() },
-      });
+    await this.prisma.tenant(t.tenantId).studentGroupMember.updateMany({
+      where: { groupId, studentLinkId },
+      data: { deletedAt: new Date() },
+    });
     return { ok: true as const };
   }
 

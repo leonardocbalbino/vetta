@@ -39,8 +39,7 @@ class RedisIoAdapter extends IoAdapter {
 
   override async close(server: unknown) {
     await super.close(server as never);
-    this.pub?.disconnect();
-    this.sub?.disconnect();
+    await Promise.allSettled([this.pub?.quit(), this.sub?.quit()]);
   }
 }
 

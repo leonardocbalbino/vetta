@@ -81,6 +81,7 @@ export class InfraModule implements OnApplicationShutdown {
 
   async onApplicationShutdown() {
     await Promise.allSettled([this.events.close(), this.media.close(), this.documents.close()]);
-    this.redis.disconnect();
+    // quit() espera as respostas pendentes; disconnect() rejeitaria comandos em voo.
+    await this.redis.quit().catch(() => this.redis.disconnect());
   }
 }

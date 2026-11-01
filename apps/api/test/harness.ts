@@ -90,7 +90,7 @@ export async function createTestContext(
     close: async () => {
       await app.close();
       await db.$disconnect();
-      redis.disconnect();
+      await redis.quit().catch(() => redis.disconnect());
       await tdb.stop();
     },
   };
