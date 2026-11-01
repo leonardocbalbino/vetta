@@ -339,6 +339,61 @@ importers:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.5)(jiti@2.6.1)(supports-color@7.2.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
 
+  apps/worker:
+    dependencies:
+      '@sentry/node':
+        specifier: ^10.20.0
+        version: 10.78.0(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.1))(supports-color@7.2.0)
+      '@socket.io/redis-emitter':
+        specifier: ^5.1.0
+        version: 5.1.0(supports-color@7.2.0)
+      '@vetta/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@vetta/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@vetta/server':
+        specifier: workspace:*
+        version: link:../../packages/server
+      bullmq:
+        specifier: ^5.61.0
+        version: 5.81.5(supports-color@7.2.0)
+      ffmpeg-static:
+        specifier: ^5.2.0
+        version: 5.3.0(supports-color@7.2.0)
+      ioredis:
+        specifier: ^5.8.0
+        version: 5.11.1(supports-color@7.2.0)
+      pino:
+        specifier: ^9.13.0
+        version: 9.14.0
+      zod:
+        specifier: ^4.1.12
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^22.18.0
+        version: 22.20.5
+      '@vetta/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      eslint:
+        specifier: ^9.39.0
+        version: 9.39.5(jiti@2.6.1)(supports-color@7.2.0)
+      pino-pretty:
+        specifier: ^13.1.1
+        version: 13.2.0
+      tsx:
+        specifier: ^4.20.6
+        version: 4.23.15
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.5)(jiti@2.6.1)(supports-color@7.2.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+
   packages/config:
     dependencies:
       '@eslint/js':
@@ -2110,6 +2165,9 @@ packages:
     engines: {node: '>=10.0.0'}
     peerDependencies:
       socket.io-adapter: ^2.5.4
+
+  '@socket.io/redis-emitter@5.1.0':
+    resolution: {integrity: sha512-QQUFPBq6JX7JIuM/X1811ymKlAfwufnQ8w6G2/59Jaqp09hdF1GJ/+e8eo/XdcmT0TqkvcSa2TT98ggTXa5QYw==}
 
   '@stablelib/base64@1.0.1':
     resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
@@ -7209,6 +7267,14 @@ snapshots:
       notepack.io: 3.0.1
       socket.io-adapter: 2.5.8(supports-color@7.2.0)
       uid2: 1.0.0
+    transitivePeerDependencies:
+      - supports-color
+
+  '@socket.io/redis-emitter@5.1.0(supports-color@7.2.0)':
+    dependencies:
+      debug: 4.3.7(supports-color@7.2.0)
+      notepack.io: 3.0.1
+      socket.io-parser: 4.2.7(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
