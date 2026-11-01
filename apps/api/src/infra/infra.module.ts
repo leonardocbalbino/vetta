@@ -1,6 +1,9 @@
 import { Global, Inject, Module, type OnApplicationShutdown, type Provider } from '@nestjs/common';
 import {
+  createPaymentProvider,
   EntitlementsCache,
+  type BillingDeps,
+  type PaymentProvider,
   QUEUES,
   QueueEventPublisher,
   S3StorageProvider,
@@ -18,6 +21,9 @@ export const EVENTS = Symbol('EVENTS');
 export const MEDIA_QUEUE = Symbol('MEDIA_QUEUE');
 export const EVENTS_QUEUE = Symbol('EVENTS_QUEUE');
 export const DOCUMENTS_QUEUE = Symbol('DOCUMENTS_QUEUE');
+/** Gateway de pagamento (null sem ASAAS_API_KEY: rotas respondem 503). */
+export const PAYMENTS = Symbol('PAYMENTS');
+export const BILLING = Symbol('BILLING');
 
 const providers: Provider[] = [
   PrismaService,
@@ -67,7 +73,35 @@ const providers: Provider[] = [
     useFactory: (prisma: PrismaService, redis: Redis) =>
       new EntitlementsCache(prisma.system, redis),
   },
+  {
+    provide: PAYMENTS,
+    inject: [ENV],
+    useFactory: (env: ApiEnv): PaymentProvider | null => createPaymentProvider(env),
+  },
 ];
+
+/**
+ * Dependências do faturamento (webhooks, ativação de plano). Registrado no AppModule
+ * para respeitar o publicador de eventos substituído nos testes.
+ */
+export const BILLING_PROVIDER: Provider = {
+  provide: BILLING,
+  inject: [ENV, PrismaService, PAYMENTS, EVENTS, EntitlementsCache],
+  useFactory: (
+    env: ApiEnv,
+    prisma: PrismaService,
+    provider: PaymentProvider | null,
+    publisher: EventPublisher,
+    cache: EntitlementsCache,
+  ): BillingDeps => ({
+    db: prisma.system,
+    provider,
+    publisher,
+    invalidateTenant: (id) => cache.invalidateTenant(id),
+    encryptionKey: env.APP_ENCRYPTION_KEY,
+    platformWalletId: env.ASAAS_PLATFORM_WALLET_ID,
+  }),
+};
 
 @Global()
 @Module({ providers, exports: providers })

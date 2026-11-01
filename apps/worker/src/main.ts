@@ -32,6 +32,23 @@ import {
   UnconfiguredSmsProvider,
   UnconfiguredWhatsAppProvider,
   DEFAULT_JOB_OPTIONS,
+  appointmentReminders,
+  blockOverdueStudents,
+  createInvoiceIssuer,
+  createPaymentProvider,
+  issueFiscalInvoices,
+  platformGraceExpired,
+  platformInvoiceReminders,
+  platformPeriodEnd,
+  reapplyAnamnesis,
+  reconcileDay,
+  retryFailedWebhooks,
+  sendKycDocuments,
+  sendScheduledBroadcasts,
+  studentInvoiceReminders,
+  studentPlanEndings,
+  switchPeriodizationPhases,
+  type BillingDeps,
   type DeliveryJobData,
   type MediaJob,
   type VideoProvider,
@@ -122,6 +139,14 @@ const jobDeps = {
   publisher,
   invalidateTenant: (tenantId: string) => cache.invalidateTenant(tenantId),
 };
+// Gateway e NFS-e: sempre o sandbox fora de produção (ver ADR-010 e docs/env.md).
+const billingDeps: BillingDeps = {
+  ...jobDeps,
+  provider: createPaymentProvider(env),
+  encryptionKey: env.APP_ENCRYPTION_KEY,
+  platformWalletId: env.ASAAS_PLATFORM_WALLET_ID,
+};
+const issuer = createInvoiceIssuer(env);
 
 /** Jobs agendados (BullMQ job schedulers). Novas fases registram lembretes aqui. */
 const scheduled: Record<string, () => Promise<unknown>> = {
@@ -138,6 +163,20 @@ const scheduled: Record<string, () => Promise<unknown>> = {
   [SCHEDULED_JOBS.cleanupPendingUploads.name]: () => cleanupPendingUploads(db, storage),
   [SCHEDULED_JOBS.purgeDeletedMedia.name]: () => purgeDeletedMedia(db, storage),
   [SCHEDULED_JOBS.pushReceipts.name]: () => checkPushReceipts(deliveryDeps),
+  [SCHEDULED_JOBS.platformReminders.name]: () => platformInvoiceReminders(billingDeps),
+  [SCHEDULED_JOBS.platformGrace.name]: () => platformGraceExpired(billingDeps),
+  [SCHEDULED_JOBS.platformPeriodEnd.name]: () => platformPeriodEnd(billingDeps),
+  [SCHEDULED_JOBS.studentReminders.name]: () => studentInvoiceReminders(billingDeps),
+  [SCHEDULED_JOBS.blockOverdue.name]: () => blockOverdueStudents(billingDeps),
+  [SCHEDULED_JOBS.planEndings.name]: () => studentPlanEndings(billingDeps),
+  [SCHEDULED_JOBS.fiscalInvoices.name]: () => issueFiscalInvoices({ ...billingDeps, issuer }),
+  [SCHEDULED_JOBS.kycDocuments.name]: () => sendKycDocuments({ ...billingDeps, storage }),
+  [SCHEDULED_JOBS.retryWebhooks.name]: () => retryFailedWebhooks(billingDeps),
+  [SCHEDULED_JOBS.reconcile.name]: () => reconcileDay(billingDeps),
+  [SCHEDULED_JOBS.appointmentReminders.name]: () => appointmentReminders(jobDeps),
+  [SCHEDULED_JOBS.broadcasts.name]: () => sendScheduledBroadcasts(jobDeps),
+  [SCHEDULED_JOBS.periodization.name]: () => switchPeriodizationPhases(jobDeps),
+  [SCHEDULED_JOBS.anamnesisReapply.name]: () => reapplyAnamnesis(jobDeps),
 };
 
 function onFailed(name: string) {

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Inject,
@@ -8,10 +9,19 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { AnswerAnamnesisSchema, SendAnamnesisSchema, anamnesisHasRisk } from '@vetta/contracts';
+import {
+  AnamnesisAssignmentInputSchema,
+  AnamnesisTemplateInputSchema,
+  AnswerAnamnesisSchema,
+  SendAnamnesisSchema,
+  anamnesisHasRisk,
+  validateAnswers,
+  type AnamnesisQuestion,
+} from '@vetta/contracts';
 import type { Prisma } from '@vetta/db';
 import type { EventPublisher } from '@vetta/server';
 import { createZodDto } from 'nestjs-zod';
@@ -27,33 +37,23 @@ import {
   type TenantAccess,
   type UserPrincipal,
 } from '../common/request';
-import { assertStudentInScope, requireStudent, studentScope } from '../common/scope';
+import {
+  assertStudentInScope,
+  requireStaff as requireStaffAccess,
+  requireStudent,
+  studentScope,
+} from '../common/scope';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { EVENTS } from '../infra/infra.module';
 import { PrismaService } from '../infra/prisma.service';
 
-const TemplateInputSchema = z.object({
-  name: z.string().trim().min(2).max(120),
-  description: z.string().max(1000).nullable().optional(),
-  questions: z
-    .array(
-      z.object({
-        id: z.string().min(1).max(60),
-        type: z.enum(['yes_no', 'text', 'number', 'single_choice', 'multi_choice', 'scale']),
-        label: z.string().min(2).max(300),
-        options: z.array(z.string().max(120)).max(30).optional(),
-        min: z.number().optional(),
-        max: z.number().optional(),
-        required: z.boolean().optional(),
-      }),
-    )
-    .min(1)
-    .max(100),
-});
+const TemplateInputSchema = AnamnesisTemplateInputSchema;
 
 class SendDto extends createZodDto(SendAnamnesisSchema) {}
 class AnswerDto extends createZodDto(AnswerAnamnesisSchema) {}
 class TemplateDto extends createZodDto(TemplateInputSchema) {}
+class AssignmentsQueryDto extends createZodDto(z.object({ studentLinkId: z.uuid().optional() })) {}
+class AssignmentDto extends createZodDto(AnamnesisAssignmentInputSchema) {}
 class ResponsesQueryDto extends createZodDto(
   z.object({
     studentLinkId: z.uuid().optional(),
@@ -87,6 +87,97 @@ export class AnamnesisService {
         schema: { questions: dto.questions },
       } as never,
     });
+  }
+
+  /** Edita o modelo personalizado: nova versão (respostas antigas guardam a versão usada). */
+  async updateTemplate(t: TenantAccess, id: string, dto: z.infer<typeof TemplateInputSchema>) {
+    const db = this.prisma.tenant(t.tenantId);
+    const tpl = await db.anamnesisTemplate.findFirst({
+      where: { id, tenantId: t.tenantId, deletedAt: null },
+    });
+    if (!tpl) throw notFound('Modelo não encontrado.');
+    return db.anamnesisTemplate.update({
+      where: { id },
+      data: {
+        name: dto.name,
+        description: dto.description ?? null,
+        schema: { questions: dto.questions },
+        version: { increment: 1 },
+      },
+    });
+  }
+
+  async deleteTemplate(t: TenantAccess, id: string) {
+    const db = this.prisma.tenant(t.tenantId);
+    const tpl = await db.anamnesisTemplate.findFirst({
+      where: { id, tenantId: t.tenantId, deletedAt: null },
+    });
+    if (!tpl) throw notFound('Modelo não encontrado.');
+    await db.anamnesisTemplate.update({
+      where: { id },
+      data: { isActive: false, deletedAt: new Date() },
+    });
+    return { ok: true as const };
+  }
+
+  /** Reaplicação periódica: envia agora (ou na data) e repete a cada N dias. */
+  async assign(t: TenantAccess, dto: z.infer<typeof AnamnesisAssignmentInputSchema>) {
+    const db = this.prisma.tenant(t.tenantId);
+    const tpl = await db.anamnesisTemplate.findFirst({
+      where: { id: dto.templateId, deletedAt: null, isActive: true },
+    });
+    if (!tpl) throw notFound('Modelo não encontrado.');
+    if (tpl.kind === 'CUSTOM')
+      await this.entitlements.assertFeature(t.tenantId, 'assessment.anamnesis_custom');
+    const first = dto.firstDueOn ?? new Date().toISOString().slice(0, 10);
+    for (const studentLinkId of dto.studentLinkIds) {
+      await assertStudentInScope(this.prisma, t, studentLinkId);
+      await db.anamnesisAssignment.upsert({
+        where: { studentLinkId_templateId: { studentLinkId, templateId: tpl.id } },
+        create: {
+          studentLinkId,
+          templateId: tpl.id,
+          repeatEveryDays: dto.repeatEveryDays,
+          nextDueOn: new Date(first),
+        } as never,
+        update: {
+          repeatEveryDays: dto.repeatEveryDays,
+          nextDueOn: new Date(first),
+          isActive: true,
+          deletedAt: null,
+        },
+      });
+    }
+    return this.assignments(t);
+  }
+
+  assignments(t: TenantAccess, studentLinkId?: string) {
+    return this.prisma.tenant(t.tenantId).anamnesisAssignment.findMany({
+      where: {
+        deletedAt: null,
+        isActive: true,
+        studentLink: studentScope(t),
+        ...(studentLinkId ? { studentLinkId } : {}),
+      },
+      include: {
+        template: { select: { name: true } },
+        studentLink: { select: { displayName: true } },
+      },
+      orderBy: { nextDueOn: 'asc' },
+    });
+  }
+
+  async unassign(t: TenantAccess, id: string) {
+    const db = this.prisma.tenant(t.tenantId);
+    const a = await db.anamnesisAssignment.findFirst({
+      where: { id, deletedAt: null, studentLink: studentScope(t) },
+    });
+    if (!a) throw notFound('Reaplicação não encontrada.');
+    await db.anamnesisAssignment.update({
+      where: { id },
+      data: { isActive: false, deletedAt: new Date() },
+    });
+    return { ok: true as const };
   }
 
   async send(t: TenantAccess, dto: z.infer<typeof SendAnamnesisSchema>) {
@@ -179,15 +270,21 @@ export class AnamnesisService {
     });
     if (!r) throw notFound('Anamnese não encontrada.');
     if (r.status !== 'PENDING') throw conflict('Esta anamnese já foi respondida.');
-    const questions =
-      (r.template.schema as { questions?: { id: string; required?: boolean }[] }).questions ?? [];
-    const missing = questions.filter(
-      (q) => q.required !== false && (dto.answers[q.id] === undefined || dto.answers[q.id] === ''),
+    const questions = (
+      (r.template.schema as { questions?: AnamnesisQuestion[] }).questions ?? []
+    ).map((q) =>
+      // Modelos prontos (PAR-Q) tratam toda pergunta como obrigatória.
+      r.template.kind === 'PARQ' ? { ...q, required: q.required !== false } : q,
     );
-    if (r.template.kind === 'PARQ' && missing.length) {
-      throw badRequest('Responda todas as perguntas do PAR-Q.', 'VALIDATION_ERROR', {
-        missing: missing.map((m) => m.id),
-      });
+    const errors = validateAnswers(questions, dto.answers);
+    if (Object.keys(errors).length) {
+      throw badRequest(
+        r.template.kind === 'PARQ'
+          ? 'Responda todas as perguntas do PAR-Q.'
+          : 'Revise as respostas destacadas.',
+        'VALIDATION_ERROR',
+        { missing: Object.keys(errors), errors },
+      );
     }
     const hasRisk = anamnesisHasRisk(r.template.kind, dto.answers);
     await db.anamnesisResponse.update({
@@ -256,6 +353,46 @@ export class AnamnesisController {
   @RequireFeature('assessment.anamnesis_custom')
   createTemplate(@CurrentTenant() t: TenantAccess, @Body() dto: TemplateDto) {
     return this.anamnesis.createTemplate(t, dto);
+  }
+
+  @Put('templates/:id')
+  @Can('update', 'anamnesis')
+  @RequireFeature('assessment.anamnesis_custom')
+  updateTemplate(
+    @CurrentTenant() t: TenantAccess,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: TemplateDto,
+  ) {
+    return this.anamnesis.updateTemplate(t, id, dto);
+  }
+
+  @Delete('templates/:id')
+  @Can('delete', 'anamnesis')
+  @RequireFeature('assessment.anamnesis_custom')
+  deleteTemplate(@CurrentTenant() t: TenantAccess, @Param('id', ParseUUIDPipe) id: string) {
+    return this.anamnesis.deleteTemplate(t, id);
+  }
+
+  @Get('assignments')
+  @Can('read', 'anamnesis')
+  @RequireFeature('assessment.anamnesis')
+  assignments(@CurrentTenant() t: TenantAccess, @Query() q: AssignmentsQueryDto) {
+    requireStaffAccess(t);
+    return this.anamnesis.assignments(t, q.studentLinkId);
+  }
+
+  @Post('assignments')
+  @Can('create', 'anamnesis')
+  @RequireFeature('assessment.anamnesis')
+  assign(@CurrentTenant() t: TenantAccess, @Body() dto: AssignmentDto) {
+    return this.anamnesis.assign(t, dto);
+  }
+
+  @Delete('assignments/:id')
+  @Can('delete', 'anamnesis')
+  @RequireFeature('assessment.anamnesis')
+  unassign(@CurrentTenant() t: TenantAccess, @Param('id', ParseUUIDPipe) id: string) {
+    return this.anamnesis.unassign(t, id);
   }
 
   @Post('requests')

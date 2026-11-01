@@ -7,6 +7,7 @@ import {
   type NotificationChannel,
 } from '@vetta/contracts';
 import { MVP_RULES } from './rules-mvp';
+import { PRO_RULES } from './rules-pro';
 
 /**
  * Quem recebe o evento:
@@ -22,6 +23,8 @@ export type RecipientSpec =
   | 'tenant_owner'
   | 'tenant_staff'
   | 'student'
+  /** Aluno + equipe responsável (ex.: plano vendido perto do fim). */
+  | 'student_and_staff'
   /** Equipe da plataforma (só e-mail). */
   | 'platform_admins';
 
@@ -188,6 +191,7 @@ const RULES_LIST: NotificationRule[] = [
     immediate: true,
     deepLink: (e) => deepLinks.appointment(p(e, 'appointmentId')),
   },
+  ...PRO_RULES,
 ];
 
 export const NOTIFICATION_RULES: Readonly<Partial<Record<DomainEventName, NotificationRule>>> =

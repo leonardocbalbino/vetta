@@ -4,13 +4,20 @@ import {
   Delete,
   Get,
   HttpCode,
+  Inject,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
   Put,
   Query,
+  Res,
 } from '@nestjs/common';
+import { renderWorkoutPdf, type StorageProvider } from '@vetta/server';
+import type { Response } from 'express';
+import { EntitlementsService } from '../entitlements/entitlements.service';
+import { STORAGE } from '../infra/infra.module';
+import { PrismaService } from '../infra/prisma.service';
 import { ApiTags } from '@nestjs/swagger';
 import {
   ApplyProgramSchema,
@@ -62,7 +69,12 @@ class HistoryQueryDto extends createZodDto(
 @ApiTags('workouts')
 @Controller('programs')
 export class WorkoutsController {
-  constructor(private readonly workouts: WorkoutsService) {}
+  constructor(
+    private readonly workouts: WorkoutsService,
+    private readonly entitlements: EntitlementsService,
+    private readonly prisma: PrismaService,
+    @Inject(STORAGE) private readonly storage: StorageProvider,
+  ) {}
 
   @Get()
   @Can('read', 'workouts')
@@ -75,6 +87,25 @@ export class WorkoutsController {
   @RequireFeature('workouts.routines')
   create(@CurrentTenant() t: TenantAccess, @Body() dto: CreateProgramDto) {
     return this.workouts.create(t, dto);
+  }
+
+  /** PDF do programa; com assessment.pdf_branding leva a logo do personal. */
+  @Get(':id/pdf')
+  @Can('read', 'workouts')
+  async pdf(
+    @CurrentTenant() t: TenantAccess,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    const p = await this.workouts.get(t, id);
+    const branded = await this.entitlements.hasFeature(t.tenantId, 'assessment.pdf_branding');
+    const buf = await renderWorkoutPdf(
+      { db: this.prisma.system, storage: this.storage },
+      { programId: p.id, tenantId: t.tenantId, branded },
+    );
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="treino-${p.id.slice(0, 8)}.pdf"`);
+    res.send(buf);
   }
 
   @Get(':id')

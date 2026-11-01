@@ -700,3 +700,32 @@ async function onTransfer(deps: BillingDeps, e: WebhookEventNormalized) {
   }
   return 'IGNORED';
 }
+
+/** Aplica o resultado de uma cobrança do aluno (ex.: pagamento com cartão na hora). */
+export async function applyStudentInvoiceCharge(
+  deps: BillingDeps,
+  invoiceId: string,
+  charge: Charge,
+) {
+  const inv = await deps.db.invoice.findUniqueOrThrow({
+    where: { id: invoiceId },
+    include: { subscription: true },
+  });
+  const action =
+    charge.status === 'RECEIVED' || charge.status === 'CONFIRMED' ? 'RECEIVED' : 'UPDATED';
+  return applyStudentCharge(
+    deps,
+    {
+      id: `direct:${charge.id}:${charge.status}`,
+      type: 'DIRECT',
+      kind: 'charge',
+      action,
+      occurredAt: new Date(),
+      charge,
+      resourceId: charge.id,
+      raw: null,
+    },
+    inv,
+    charge,
+  );
+}

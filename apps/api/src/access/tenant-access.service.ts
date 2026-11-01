@@ -38,6 +38,12 @@ export class TenantAccessService {
     if (link.status === 'ARCHIVED') throw forbidden('Seu acesso a este personal está arquivado.');
     if (link.status === 'INVITED') throw forbidden('Aceite o convite para acessar.');
     if (tenant.status !== 'ACTIVE') throw forbidden('Este personal está com a conta suspensa.');
-    return { tenantId, role: 'ALUNO', memberId: null, studentLinkId: link.id };
+    return {
+      tenantId,
+      role: 'ALUNO',
+      memberId: null,
+      studentLinkId: link.id,
+      blocked: link.status === 'OVERDUE',
+    };
   }
 }

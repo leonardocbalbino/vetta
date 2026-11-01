@@ -1,7 +1,7 @@
 import { type CanActivate, type ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { can, type Action, type LimitFeatureKey, type Resource, type Role } from '@vetta/contracts';
-import { badRequest, forbidden, unauthorized } from '../common/errors';
+import { badRequest, forbidden, paymentOverdue, unauthorized } from '../common/errors';
 import type { AppRequest, Principal } from '../common/request';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { TokensService } from '../auth/tokens.service';
@@ -67,6 +67,8 @@ export class AccessGuard implements CanActivate {
       const access = await this.tenants.resolve(principal.userId, tenantId);
       req.tenantAccess = { ...access, scope: null };
       role = access.role;
+      if (access.blocked && !(this.meta<boolean>(META.allowBlocked, ctx) ?? false))
+        throw paymentOverdue();
     } else if (principal.kind === 'admin') {
       // Rotas de usuário comum não são para a equipe da plataforma (exceto as marcadas com @AllowAdmin).
       if (!allowAdmin) throw forbidden('Rota disponível apenas para usuários do app.');

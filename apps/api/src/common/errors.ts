@@ -38,3 +38,21 @@ export const upgradeRequired = (
   message: string,
   details: { feature: string; requiredPlan: PlanCode | null; used?: number; max?: number },
 ) => new AppException(code, message, HttpStatus.PAYMENT_REQUIRED, details);
+
+export const paymentNotConfigured = () =>
+  new AppException(
+    'PAYMENT_NOT_CONFIGURED',
+    'Pagamentos ainda não estão configurados neste ambiente.',
+    HttpStatus.SERVICE_UNAVAILABLE,
+  );
+
+export const paymentFailed = (message: string, details?: unknown) =>
+  new AppException('PAYMENT_FAILED', message, HttpStatus.UNPROCESSABLE_ENTITY, details);
+
+/** Aluno bloqueado por inadimplência: só as rotas de pagamento seguem liberadas. */
+export const paymentOverdue = () =>
+  new AppException(
+    'PAYMENT_OVERDUE',
+    'Seu acesso está pausado por uma cobrança em aberto. Regularize para voltar a treinar.',
+    HttpStatus.PAYMENT_REQUIRED,
+  );

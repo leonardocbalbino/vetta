@@ -8,6 +8,9 @@ import { assertStudentInScope, requireStudent, studentScope } from '../common/sc
 import { EVENTS } from '../infra/infra.module';
 import { PrismaService } from '../infra/prisma.service';
 import { LibraryService } from '../library/library.service';
+import { ChatService } from '../chat/chat';
+import { adjustSets, PeriodizationService } from '../workouts/periodization';
+import { randomUUID } from 'node:crypto';
 import { programInclude, type ProgramTree } from '../workouts/workouts.service';
 
 const RECORD_LABEL = {
@@ -21,6 +24,8 @@ export class TrainingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly library: LibraryService,
+    private readonly chat: ChatService,
+    private readonly periodization: PeriodizationService,
     @Inject(EVENTS) private readonly events: EventPublisher,
   ) {}
 
@@ -106,8 +111,25 @@ export class TrainingService {
       });
       const idx = last?.routineId ? p.routines.findIndex((r) => r.id === last.routineId) : -1;
       const next = p.routines.length ? p.routines[(idx + 1) % p.routines.length]! : null;
+      const enriched = await this.enrich(t.tenantId, studentLinkId, p);
+      // Periodização: séries, reps e carga da semana atual (deload incluído).
+      const week = await this.periodization.weekFor(t.tenantId, studentLinkId, p.id);
+      if (week) {
+        for (const r of enriched.routines as {
+          exercises: { sets: Parameters<typeof adjustSets>[0] }[];
+        }[])
+          for (const ex of r.exercises) ex.sets = adjustSets(ex.sets, week.adj, week.rule);
+      }
       out.push({
-        ...(await this.enrich(t.tenantId, studentLinkId, p)),
+        ...enriched,
+        periodization: week
+          ? {
+              name: week.periodization,
+              phase: week.phase,
+              week: week.week,
+              deload: week.adj.deload,
+            }
+          : null,
         nextRoutineId: next?.id ?? null,
         lastSessionAt: last?.startedAt ?? null,
       });
@@ -367,49 +389,24 @@ export class TrainingService {
     return { ok: true as const };
   }
 
-  /** Resposta ao feedback vira mensagem no chat do aluno. */
+  /** Responder o feedback abre o chat do aluno com a citação do treino. */
   async reply(t: TenantAccess, userId: string, sessionId: string, message: string) {
     const db = this.prisma.tenant(t.tenantId);
     const s = await db.workoutSession.findFirst({
       where: { id: sessionId, studentLink: studentScope(t) },
-      include: { studentLink: { select: { id: true, userId: true } } },
     });
     if (!s) throw notFound('Feedback não encontrado.');
-    const conversation =
-      (await db.conversation.findFirst({ where: { studentLinkId: s.studentLinkId } })) ??
-      (await db.conversation.create({ data: { studentLinkId: s.studentLinkId } as never }));
-    const msg = await db.message.create({
-      data: {
-        conversationId: conversation.id,
-        senderUserId: userId,
-        type: 'TEXT',
-        body: message,
-      } as never,
-    });
-    await db.conversation.update({
-      where: { id: conversation.id },
-      data: { lastMessageAt: new Date(), staffLastReadAt: new Date() },
+    const conversation = await this.chat.ensureForStudent(t, s.studentLinkId);
+    const msg = await this.chat.send(t, userId, conversation.id, {
+      clientId: randomUUID(),
+      type: 'TEXT',
+      body: message,
+      quote: { kind: 'workout_session', sessionId },
     });
     await db.workoutSession.update({
       where: { id: sessionId },
       data: { feedbackReadAt: new Date() },
     });
-    const sender = await this.prisma.system.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { name: true },
-    });
-    if (s.studentLink.userId) {
-      await this.events.publish('chat.message_created', {
-        tenantId: t.tenantId,
-        actorId: userId,
-        payload: {
-          userIds: [s.studentLink.userId],
-          conversationId: conversation.id,
-          senderName: sender.name,
-          preview: message.slice(0, 120),
-        },
-      });
-    }
     return { messageId: msg.id, conversationId: conversation.id };
   }
 }

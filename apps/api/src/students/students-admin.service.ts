@@ -504,12 +504,16 @@ export class StudentsAdminService {
 
   async updateSettings(
     t: TenantAccess,
-    dto: { inactivityAlertDays?: number | undefined; bio?: string | null | undefined },
+    dto: {
+      inactivityAlertDays?: number | undefined;
+      reassessmentDays?: number | null | undefined;
+      bio?: string | null | undefined;
+    },
   ) {
     return this.prisma.tenant(t.tenantId).tenant.update({
       where: { id: t.tenantId },
       data: dto,
-      select: { id: true, inactivityAlertDays: true, bio: true },
+      select: { id: true, inactivityAlertDays: true, reassessmentDays: true, bio: true },
     });
   }
 

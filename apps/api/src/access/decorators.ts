@@ -19,6 +19,7 @@ export const META = {
   limit: 'vetta:limit',
   optionalTenant: 'vetta:optional-tenant',
   allowAdmin: 'vetta:allow-admin',
+  allowBlocked: 'vetta:allow-blocked',
 } as const;
 
 const tenantHeader = ApiHeader({
@@ -80,3 +81,6 @@ export const AssertLimit = (key: LimitFeatureKey) =>
 
 /** Rota de usuário que também aceita a equipe da plataforma (ex.: uploads da biblioteca global). */
 export const AllowAdmin = () => SetMetadata(META.allowAdmin, true);
+
+/** Rota liberada para aluno bloqueado por inadimplência (pagar, ver a cobrança). */
+export const AllowBlocked = () => SetMetadata(META.allowBlocked, true);

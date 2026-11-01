@@ -75,6 +75,8 @@ export const StudentCsvRowSchema = z.object({
 
 export const TenantSettingsSchema = z.object({
   inactivityAlertDays: z.number().int().min(1).max(60).optional(),
+  /** Lembrete de reavaliação física a cada N dias (null desliga). */
+  reassessmentDays: z.number().int().min(15).max(365).nullable().optional(),
   bio: z.string().max(1000).nullable().optional(),
 });
 

@@ -29,7 +29,7 @@ import { type ApiEnv, ENV } from './config/env';
 import { AUTH_THROTTLE } from './auth/auth.controller';
 import { EntitlementsService } from './entitlements/entitlements.service';
 import { HealthController } from './health/health.controller';
-import { EVENTS, InfraModule, REDIS } from './infra/infra.module';
+import { BILLING_PROVIDER, EVENTS, InfraModule, REDIS } from './infra/infra.module';
 import { NotificationsController } from './notifications/notifications.controller';
 import { NotificationsGateway } from './notifications/notifications.gateway';
 import { AdminPlansController, PlansController } from './plans/plans.controller';
@@ -60,6 +60,27 @@ import {
 } from './workouts/workouts.controller';
 import { WorkoutsService } from './workouts/workouts.service';
 import { UsersService } from './users/users.service';
+import { SubscriptionController, SubscriptionService } from './subscription/subscription';
+import { WebhooksController } from './webhooks/webhooks';
+import { ScheduleController, ScheduleService } from './schedule/schedule';
+import { BroadcastsController, ChatController, ChatService } from './chat/chat';
+import { PeriodizationController, PeriodizationService } from './workouts/periodization';
+import {
+  DocumentsController,
+  DocumentsService,
+  PostureController,
+  PostureService,
+} from './assessments/posture-documents';
+import { AdminFinanceController } from './admin/admin-finance';
+import { FinanceController, MyFinanceController } from './finance/finance.controller';
+import { FinanceService } from './finance/finance.service';
+import {
+  BrandController,
+  MySalesController,
+  PublicSalesController,
+  SalesPageController,
+  SalesService,
+} from './sales/sales';
 
 @Module({})
 export class AppModule {
@@ -143,6 +164,21 @@ export class AppModule {
         DashboardController,
         AdminController,
         LegalController,
+        SubscriptionController,
+        WebhooksController,
+        FinanceController,
+        MyFinanceController,
+        SalesPageController,
+        MySalesController,
+        PublicSalesController,
+        BrandController,
+        ScheduleController,
+        ChatController,
+        BroadcastsController,
+        PeriodizationController,
+        PostureController,
+        DocumentsController,
+        AdminFinanceController,
       ],
       providers: [
         TokensService,
@@ -167,8 +203,17 @@ export class AppModule {
         TrainingService,
         ProgressService,
         DashboardService,
+        SubscriptionService,
+        FinanceService,
+        SalesService,
+        ScheduleService,
+        ChatService,
+        PeriodizationService,
+        PostureService,
+        DocumentsService,
         // Testes podem substituir o publicador de eventos (ex.: MemoryEventPublisher).
         ...(overrides.events ? [{ provide: EVENTS, useValue: overrides.events }] : []),
+        BILLING_PROVIDER,
         { provide: APP_PIPE, useClass: ZodValidationPipe },
         { provide: APP_FILTER, useClass: ErrorFilter },
         // Ordem importa: autentica antes do rate limit (que usa o usuário como chave).

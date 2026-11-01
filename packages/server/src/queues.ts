@@ -37,6 +37,21 @@ export const SCHEDULED_JOBS = {
   inactiveStudents: { name: 'students.inactive', every: 6 * 60 * 60 * 1000 },
   birthdays: { name: 'students.birthdays', every: 6 * 60 * 60 * 1000 },
   assessmentsDue: { name: 'assessments.due', every: 6 * 60 * 60 * 1000 },
+  // Fase 2
+  platformReminders: { name: 'billing.platform-reminders', every: 60 * 60 * 1000 },
+  platformGrace: { name: 'billing.platform-grace', every: 60 * 60 * 1000 },
+  platformPeriodEnd: { name: 'billing.platform-period-end', every: 30 * 60 * 1000 },
+  studentReminders: { name: 'billing.student-reminders', every: 60 * 60 * 1000 },
+  blockOverdue: { name: 'billing.block-overdue', every: 60 * 60 * 1000 },
+  planEndings: { name: 'billing.plan-endings', every: 6 * 60 * 60 * 1000 },
+  fiscalInvoices: { name: 'billing.fiscal-invoices', every: 10 * 60 * 1000 },
+  kycDocuments: { name: 'billing.kyc-documents', every: 5 * 60 * 1000 },
+  retryWebhooks: { name: 'billing.retry-webhooks', every: 2 * 60 * 1000 },
+  reconcile: { name: 'billing.reconcile', every: 24 * 60 * 60 * 1000 },
+  appointmentReminders: { name: 'schedule.reminders', every: 5 * 60 * 1000 },
+  broadcasts: { name: 'comms.scheduled-broadcasts', every: 60 * 1000 },
+  periodization: { name: 'workouts.periodization-switch', every: 60 * 60 * 1000 },
+  anamnesisReapply: { name: 'anamnesis.reapply', every: 6 * 60 * 60 * 1000 },
 } as const;
 export type ScheduledJobName = (typeof SCHEDULED_JOBS)[keyof typeof SCHEDULED_JOBS]['name'];
 

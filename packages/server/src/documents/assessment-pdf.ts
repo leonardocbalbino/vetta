@@ -2,6 +2,7 @@ import type { PrismaClient } from '@vetta/db';
 import { palette } from '@vetta/tokens';
 import { createElement as h, type ReactElement } from 'react';
 import { buildStorageKey, type StorageProvider } from '../storage/storage';
+import { loadTenantLogo } from './brand';
 
 const BMI_LABEL: Record<string, string> = {
   underweight: 'Abaixo do peso',
@@ -34,7 +35,7 @@ export async function generateAssessmentPdf(
   job: { assessmentId: string; tenantId: string; branded: boolean },
 ) {
   // react-pdf é ESM: import dinâmico a partir do worker (CommonJS).
-  const { Document, Page, Text, View, StyleSheet, renderToBuffer, Svg, Polyline } =
+  const { Document, Page, Text, View, StyleSheet, renderToBuffer, Svg, Polyline, Image } =
     await import('@react-pdf/renderer');
   const a = await deps.db.physicalAssessment.findUniqueOrThrow({
     where: { id: job.assessmentId },
@@ -105,6 +106,7 @@ export async function generateAssessmentPdf(
       : null;
 
   const brandName = job.branded ? a.tenant.name : 'Vetta';
+  const logo = job.branded ? await loadTenantLogo(deps.db, deps.storage, job.tenantId) : null;
   const doc: ReactElement = h(
     Document,
     { title: `Avaliação física — ${a.studentLink.displayName}`, author: brandName },
@@ -117,16 +119,18 @@ export async function generateAssessmentPdf(
         h(
           View,
           { style: s.brand },
-          h(
-            Svg,
-            { width: 22, height: 22, viewBox: '0 0 48 48' },
-            h(Polyline, {
-              points: '7,16 19,36 41,9',
-              stroke: palette.tinta,
-              strokeWidth: 7.5,
-              fill: 'none',
-            }),
-          ),
+          logo
+            ? h(Image, { src: logo, style: { height: 28, maxWidth: 120, objectFit: 'contain' } })
+            : h(
+                Svg,
+                { width: 22, height: 22, viewBox: '0 0 48 48' },
+                h(Polyline, {
+                  points: '7,16 19,36 41,9',
+                  stroke: palette.tinta,
+                  strokeWidth: 7.5,
+                  fill: 'none',
+                }),
+              ),
           h(
             Text,
             { style: { fontSize: 14, fontFamily: 'Helvetica-Bold', marginLeft: 6 } },

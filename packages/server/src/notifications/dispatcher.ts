@@ -74,6 +74,13 @@ export async function resolveRecipients(
     }
     case 'platform_admins':
       return [];
+    case 'student_and_staff': {
+      const [a, b] = await Promise.all([
+        resolveRecipients(db, { ...rule, recipients: 'student' }, e),
+        resolveRecipients(db, { ...rule, recipients: 'tenant_staff' }, e),
+      ]);
+      return [...new Set([...a, ...b])];
+    }
     case 'student': {
       if (typeof p.studentLinkId !== 'string') return [];
       const link = await db.studentLink.findUnique({
@@ -194,7 +201,11 @@ export async function dispatchEvent(
       grouped = count > 1;
     }
 
-    for (const channel of rule.channels) {
+    // Comunicados escolhem os canais (subconjunto dos canais da regra).
+    const wanted = Array.isArray(event.payload.channels)
+      ? (event.payload.channels as string[])
+      : null;
+    for (const channel of rule.channels.filter((c) => !wanted || wanted.includes(c))) {
       const base = {
         eventId: event.id,
         event: event.name,

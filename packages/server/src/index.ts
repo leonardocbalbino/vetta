@@ -33,3 +33,5 @@ export * from './billing/platform';
 export * from './billing/webhooks';
 export * from './jobs/billing';
 export * from './jobs/pro';
+export * from './documents/brand';
+export * from './documents/workout-pdf';

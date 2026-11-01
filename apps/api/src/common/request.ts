@@ -25,6 +25,8 @@ export interface TenantAccess {
   role: TenantRole;
   memberId: string | null;
   studentLinkId: string | null;
+  /** Aluno bloqueado por inadimplência (só rotas @AllowBlocked). */
+  blocked?: boolean;
   /** Escopo concedido por can() para a ação da rota. */
   scope: Scope | null;
 }

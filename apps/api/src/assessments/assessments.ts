@@ -136,6 +136,17 @@ export class AssessmentsService {
     );
   }
 
+  /** Lembrete de reavaliação a cada N dias (configuração do tenant). */
+  private async defaultNextAssessment(tenantId: string, assessedAt: Date) {
+    const tenant = await this.prisma.tenant(tenantId).tenant.findFirstOrThrow({
+      where: { id: tenantId },
+      select: { reassessmentDays: true },
+    });
+    return tenant.reassessmentDays
+      ? new Date(assessedAt.getTime() + tenant.reassessmentDays * 86_400_000)
+      : null;
+  }
+
   async create(t: TenantAccess, studentLinkId: string, input: AssessmentInput) {
     const link = await assertStudentInScope(this.prisma, t, studentLinkId);
     await this.assertPerStudentLimit(t.tenantId, studentLinkId);
@@ -155,7 +166,9 @@ export class AssessmentsService {
         bioimpedance: (input.bioimpedance ?? {}) as Prisma.InputJsonValue,
         results: results as Prisma.InputJsonValue,
         equation: input.equation,
-        nextAssessmentOn: input.nextAssessmentOn ? new Date(input.nextAssessmentOn) : null,
+        nextAssessmentOn: input.nextAssessmentOn
+          ? new Date(input.nextAssessmentOn)
+          : await this.defaultNextAssessment(t.tenantId, assessedAt),
         notes: input.notes ?? null,
       } as never,
     });
