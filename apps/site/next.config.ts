@@ -1,9 +1,11 @@
+import createMDX from '@next/mdx';
 import type { NextConfig } from 'next';
 
-/** Landing estática (SSG). Páginas de venda /p/[slug] chegam com o módulo M12. */
+/** Landing SSG com ISR (preços e documentos legais vêm da API) e blog em MDX. */
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  pageExtensions: ['ts', 'tsx', 'mdx'],
 };
 
-export default config;
+export default createMDX({})(config);

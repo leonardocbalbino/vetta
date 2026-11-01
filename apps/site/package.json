@@ -11,6 +11,9 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@mdx-js/loader": "^3.1.1",
+    "@mdx-js/react": "^3.1.1",
+    "@next/mdx": "~15.5.28",
     "@sentry/nextjs": "^10.20.0",
     "@vetta/contracts": "workspace:*",
     "@vetta/tokens": "workspace:*",
@@ -23,6 +26,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.14",
+    "@types/mdx": "^2.0.14",
     "@types/node": "^22.18.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
