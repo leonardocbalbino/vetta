@@ -1,0 +1,93 @@
+name: vetta
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vetta
+      POSTGRES_PASSWORD: vetta
+      POSTGRES_DB: vetta
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U vetta -d vetta']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Storage S3 local (simula o Cloudflare R2). A MinIO deixou de publicar imagens
+  # públicas em 2025; usamos SeaweedFS (Apache 2.0), compatível com a API S3. Ver ADR-008.
+  s3:
+    image: chrislusf/seaweedfs:latest
+    command: ['server', '-dir=/data', '-s3', '-s3.port=9000', '-s3.config=/etc/seaweedfs/s3.json']
+    ports:
+      - '9000:9000'
+    volumes:
+      - s3-data:/data
+      - ./docker/s3/s3.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1:9000/healthz || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Cria o bucket privado e aplica CORS para upload direto do navegador.
+  s3-setup:
+    image: amazon/aws-cli:latest
+    depends_on:
+      s3:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: vetta
+      AWS_SECRET_ACCESS_KEY: vetta-s3-secret
+      AWS_DEFAULT_REGION: auto
+    volumes:
+      - ./docker/s3/cors.json:/cors.json:ro
+    entrypoint: >
+      /bin/sh -c "
+      aws --endpoint-url http://s3:9000 s3api head-bucket --bucket vetta-media 2>/dev/null ||
+      aws --endpoint-url http://s3:9000 s3api create-bucket --bucket vetta-media;
+      aws --endpoint-url http://s3:9000 s3api put-bucket-cors --bucket vetta-media --cors-configuration file:///cors.json || true;
+      echo 'bucket vetta-media pronto'
+      "
+    restart: 'no'
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  # Antivírus para documentos. Consome ~1 GB de RAM: suba com `docker compose --profile full up -d`.
+  clamav:
+    image: clamav/clamav:stable
+    profiles: ['full']
+    ports:
+      - '3310:3310'
+    volumes:
+      - clamav-data:/var/lib/clamav
+
+volumes:
+  postgres-data:
+  redis-data:
+  s3-data:
+  clamav-data:

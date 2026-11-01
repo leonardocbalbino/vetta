@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "vetta",
+      "credentials": [{ "accessKey": "vetta", "secretKey": "vetta-s3-secret" }],
+      "actions": ["Admin", "Read", "List", "Tagging", "Write"]
+    }
+  ]
+}
