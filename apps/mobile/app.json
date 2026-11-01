@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "Vetta",
+    "slug": "vetta",
+    "scheme": "vetta",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "br.com.vettafit.app",
+      "supportsTablet": true,
+      "associatedDomains": ["applinks:app.vettafit.com.br"],
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use o Face ID para entrar na Vetta com segurança.",
+        "NSCameraUsageDescription": "A câmera é usada para fotos de progresso e avaliação postural."
+      }
+    },
+    "android": {
+      "package": "br.com.vettafit.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "https", "host": "app.vettafit.com.br" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-video",
+      [
+        "expo-camera",
+        { "cameraPermission": "A câmera é usada para fotos de progresso e avaliação postural." }
+      ],
+      [
+        "expo-local-authentication",
+        { "faceIDPermission": "Use o Face ID para entrar na Vetta com segurança." }
+      ],
+      ["expo-notifications", { "color": "#101418" }]
+    ],
+    "experiments": { "typedRoutes": true },
+    "extra": {
+      "apiUrl": "http://localhost:4000"
+    }
+  }
+}
