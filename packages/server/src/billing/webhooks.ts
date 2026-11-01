@@ -83,6 +83,7 @@ async function onPlatformCharge(
     (await db.platformInvoice.findUnique({ where: { gatewayInvoiceId: charge.id } })) ??
     (r.kind === 'pinv' ? await db.platformInvoice.findUnique({ where: { id: r.id } }) : null);
 
+  let created = false;
   if (!inv && r.kind === 'psub') {
     // Cobrança nova gerada pela recorrência: cria a fatura do período.
     const sub = await db.tenantSubscription.findUnique({ where: { id: r.id } });
@@ -107,6 +108,7 @@ async function onPlatformCharge(
         description: charge.description,
       },
     });
+    created = true;
   }
   if (!inv) return 'IGNORED';
   if (!inv.gatewayInvoiceId)
@@ -134,7 +136,7 @@ async function onPlatformCharge(
   const next = nextInvoiceStatus(inv.status as InvoiceStatusCode, incoming, {
     dueDateMovedForward: charge.dueDate > toDateOnly(inv.dueDate),
   });
-  if (next === inv.status && incoming !== 'PAID') return 'IGNORED';
+  if (next === inv.status && incoming !== 'PAID') return created ? 'PROCESSED' : 'IGNORED';
 
   if (next === 'PAID') {
     await applyPlatformInvoicePaid(deps, inv.id, {
@@ -208,6 +210,8 @@ async function onStudentCharge(
           : null;
     if (!ss) return 'IGNORED';
     inv = await createStudentInvoiceFromCharge(db, ss, charge);
+    const r2 = await applyStudentCharge(deps, e, inv, charge);
+    return r2 === 'IGNORED' ? 'PROCESSED' : r2;
   }
   return applyStudentCharge(deps, e, inv, charge);
 }

@@ -34,6 +34,7 @@ import {
   type PaymentProvider,
 } from '@vetta/server';
 import { createZodDto } from 'nestjs-zod';
+import { z } from 'zod';
 import { Can } from '../access/decorators';
 import {
   badRequest,
@@ -49,6 +50,9 @@ import { PrismaService } from '../infra/prisma.service';
 
 class CheckoutDto extends createZodDto(PlatformCheckoutSchema) {}
 class CouponPreviewDto extends createZodDto(CouponPreviewSchema) {}
+class QuoteDto extends createZodDto(
+  CouponPreviewSchema.extend({ code: CouponPreviewSchema.shape.code.optional().or(z.literal('')) }),
+) {}
 
 const DAY = 86_400_000;
 
@@ -493,7 +497,7 @@ export class SubscriptionController {
   @Post('quote')
   @HttpCode(200)
   @Can('read', 'subscription')
-  async quote(@CurrentTenant() t: TenantAccess, @Body() dto: CouponPreviewDto) {
+  async quote(@CurrentTenant() t: TenantAccess, @Body() dto: QuoteDto) {
     const q = await this.service.quote(t.tenantId, dto.planCode, dto.cycle, dto.code || undefined);
     return {
       kind: q.kind,

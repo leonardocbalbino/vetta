@@ -169,7 +169,7 @@ export class AdminFinanceController {
     ]);
     return {
       mrrCents: Math.round(mrr),
-      arrCents: Math.round(mrr * 12),
+      arrCents: Math.round(mrr) * 12,
       payingSubscribers: subs.length,
       trialing,
       pastDue,
