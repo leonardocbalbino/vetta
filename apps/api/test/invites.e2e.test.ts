@@ -55,14 +55,12 @@ describe('convite de aluno', () => {
     // uso único
     expect(
       (
-        await ctx.http
-          .post('/v1/invites/accept')
-          .send({
-            token,
-            password: 'Marina-2026',
-            acceptTerms: true,
-            acceptHealthDataConsent: false,
-          })
+        await ctx.http.post('/v1/invites/accept').send({
+          token,
+          password: 'Marina-2026',
+          acceptTerms: true,
+          acceptHealthDataConsent: false,
+        })
       ).body.code,
     ).toBe('TOKEN_INVALID');
     // convite repetido
@@ -122,16 +120,14 @@ describe('convite de aluno', () => {
       .post('/v1/invites/accept')
       .send({ token, password: 'Pedro-2026', acceptTerms: true, acceptHealthDataConsent: false });
     expect(noEmail.status).toBe(400);
-    const ok = await ctx.http
-      .post('/v1/invites/accept')
-      .send({
-        token,
-        email: 'pedro@test.dev',
-        password: 'Pedro-2026',
-        name: 'Pedro Alves',
-        acceptTerms: true,
-        acceptHealthDataConsent: false,
-      });
+    const ok = await ctx.http.post('/v1/invites/accept').send({
+      token,
+      email: 'pedro@test.dev',
+      password: 'Pedro-2026',
+      name: 'Pedro Alves',
+      acceptTerms: true,
+      acceptHealthDataConsent: false,
+    });
     expect(ok.status).toBe(200);
     // e-mail não comprovado por link
     expect((await as(ctx, ok.body.accessToken).get('/v1/me')).body.emailVerified).toBe(false);

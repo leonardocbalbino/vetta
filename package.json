@@ -6,7 +6,7 @@
     "node": ">=22.12 <23"
   },
   "scripts": {
-    "dev": "turbo run dev --filter=!@vetta/mobile",
+    "dev": "node scripts/ensure-env.mjs && pnpm --filter @vetta/db build && pnpm --filter @vetta/db migrate:deploy && turbo run dev --filter=!@vetta/mobile",
     "dev:mobile": "pnpm --filter @vetta/mobile dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
@@ -18,7 +18,8 @@
     "db:deploy": "pnpm --filter @vetta/db migrate:deploy",
     "db:seed": "pnpm --filter @vetta/db seed",
     "db:reset": "pnpm --filter @vetta/db reset",
-    "prepare": "husky"
+    "prepare": "husky",
+    "setup": "node scripts/ensure-env.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

@@ -183,12 +183,10 @@ describe('2FA, reset de senha e magic link', () => {
       .post('/v1/auth/login')
       .send({ email: w.ownerEmail, password: PASSWORD });
     expect(step1.body).toMatchObject({ twoFactorRequired: true });
-    const step2 = await ctx.http
-      .post('/v1/auth/login/2fa')
-      .send({
-        challengeToken: step1.body.challengeToken,
-        code: authenticator.generate(setup.body.secret),
-      });
+    const step2 = await ctx.http.post('/v1/auth/login/2fa').send({
+      challengeToken: step1.body.challengeToken,
+      code: authenticator.generate(setup.body.secret),
+    });
     expect(step2.status).toBe(200);
     expect(step2.body.accessToken).toBeTruthy();
 
@@ -283,12 +281,10 @@ describe('admin: 2FA obrigatório e impersonação', () => {
     const setup = await ctx.http
       .post('/v1/admin/auth/2fa/setup')
       .send({ token: step1.body.challengeToken });
-    const verify = await ctx.http
-      .post('/v1/admin/auth/2fa/verify')
-      .send({
-        challengeToken: step1.body.challengeToken,
-        code: authenticator.generate(setup.body.secret),
-      });
+    const verify = await ctx.http.post('/v1/admin/auth/2fa/verify').send({
+      challengeToken: step1.body.challengeToken,
+      code: authenticator.generate(setup.body.secret),
+    });
     expect(verify.status).toBe(200);
     expect(verify.body.recoveryCodes).toHaveLength(10);
     const admin = verify.body.accessToken as string;

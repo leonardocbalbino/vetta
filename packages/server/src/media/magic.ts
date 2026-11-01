@@ -37,7 +37,9 @@ export function detectMime(b: Buffer): string | null {
       : 'application/zip';
   }
 
-  const head = ascii(b, 0, Math.min(b.length, MAGIC_BYTES_NEEDED)).replace(/^﻿/, '').trimStart();
+  const head = ascii(b, 0, Math.min(b.length, MAGIC_BYTES_NEEDED))
+    .replace(String.fromCharCode(0xfeff), '')
+    .trimStart();
   if (/^(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE svg[^>]*>\s*)?<svg[\s>]/i.test(head))
     return 'image/svg+xml';
   return null;

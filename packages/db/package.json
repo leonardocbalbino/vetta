@@ -22,6 +22,7 @@
   ],
   "scripts": {
     "generate": "prisma generate",
+    "postinstall": "prisma generate",
     "build": "prisma generate && tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "lint": "eslint .",
@@ -29,6 +30,7 @@
     "test": "vitest run",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
+    "migrate:status": "prisma migrate status",
     "reset": "prisma migrate reset --force",
     "seed": "prisma db seed",
     "seed:catalog": "tsx src/seed/catalog.ts",

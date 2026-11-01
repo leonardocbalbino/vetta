@@ -23,6 +23,7 @@ import { hash } from 'argon2';
 import ffmpegPath from 'ffmpeg-static';
 import { Redis } from 'ioredis';
 import request from 'supertest';
+import { TokensService } from '../src/auth/tokens.service';
 import { createApp } from '../src/bootstrap';
 import { loadApiEnv, type ApiEnv } from '../src/config/env';
 import { TEST_S3 } from './global-setup';
@@ -195,7 +196,6 @@ export async function adminToken(
   ctx: TestContext,
   role: 'SUPER_ADMIN' | 'ADMIN_OPERADOR' = 'SUPER_ADMIN',
 ) {
-  const { TokensService } = await import('../src/auth/tokens.service');
   const admin = await ctx.db.adminUser.create({
     data: { email: `admin-${uid()}@vettafit.dev`, name: 'Admin', passwordHash: 'x', role },
   });
