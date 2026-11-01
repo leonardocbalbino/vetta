@@ -1,0 +1,8 @@
+/*
+ * Estilos do design system para apps Next.js. No globals.css do app:
+ *   @import 'tailwindcss';
+ *   @import '@vetta/tokens/tailwind.css';
+ *   @import '@vetta/config/tailwind/preset.css';
+ *   @import '@vetta/ui/styles.css';
+ */
+@source "./components";
