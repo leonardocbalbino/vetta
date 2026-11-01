@@ -27,6 +27,8 @@ export interface SemanticColors {
   warningForeground: string;
   danger: string;
   dangerForeground: string;
+  /** Série única de gráficos (validada pelo script de dataviz contra a superfície). */
+  chart: string;
   overlay: string;
 }
 
@@ -55,6 +57,7 @@ export const lightTheme: SemanticColors = {
   // erro da paleta fica em 4.4:1 sobre névoa; texto de erro usa variação um tom abaixo
   danger: '#C42F2F',
   dangerForeground: palette.branco,
+  chart: palette.cobalto,
   overlay: 'rgba(16, 20, 24, 0.6)',
 };
 
@@ -82,6 +85,7 @@ export const darkTheme: SemanticColors = {
   warningForeground: palette.tinta,
   danger: '#F06A6A',
   dangerForeground: palette.tinta,
+  chart: '#5B7DFF',
   overlay: 'rgba(0, 0, 0, 0.7)',
 };
 
