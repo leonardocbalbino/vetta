@@ -22,7 +22,7 @@ import { PrismaService } from '../infra/prisma.service';
 
 async function listPlans(prisma: PrismaService, onlyPublic: boolean) {
   const plans = await prisma.system.plan.findMany({
-    where: { isActive: true, ...(onlyPublic ? { isPublic: true } : {}) },
+    where: onlyPublic ? { isActive: true, isPublic: true } : {},
     orderBy: { sortOrder: 'asc' },
     include: { prices: { where: { isActive: true } }, features: { include: { feature: true } } },
   });
@@ -30,6 +30,7 @@ async function listPlans(prisma: PrismaService, onlyPublic: boolean) {
     code: p.code,
     name: p.name,
     description: p.description,
+    ...(onlyPublic ? {} : { isPublic: p.isPublic, isActive: p.isActive, sortOrder: p.sortOrder }),
     prices: p.prices.map((x) => ({
       cycle: x.cycle,
       amountCents: x.amountCents,

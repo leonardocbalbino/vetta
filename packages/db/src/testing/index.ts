@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { PrismaClient } from '../../generated/client';
 
+export { seedDevExercises } from '../seed/exercises';
 export { createTenantWorld, type TenantWorld, type TenantWorldOptions } from '../fixtures';
 
 export interface TestDatabase {

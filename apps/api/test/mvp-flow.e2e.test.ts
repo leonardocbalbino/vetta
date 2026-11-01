@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { seedDevExercises } from '../../../packages/db/src/seed/exercises';
 import { syncGlobalContent } from '@vetta/db';
+import { seedDevExercises } from '@vetta/db/testing';
 import {
   adminToken,
   as,
