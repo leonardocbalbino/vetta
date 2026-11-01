@@ -189,3 +189,20 @@ export function lastEvent(ctx: TestContext, name: Parameters<MemoryEventPublishe
   if (!e) throw new Error(`evento ${name} não publicado`);
   return e;
 }
+
+/** Token de admin sem passar pelo 2FA (o fluxo completo é testado em auth.e2e). */
+export async function adminToken(
+  ctx: TestContext,
+  role: 'SUPER_ADMIN' | 'ADMIN_OPERADOR' = 'SUPER_ADMIN',
+) {
+  const { TokensService } = await import('../src/auth/tokens.service');
+  const admin = await ctx.db.adminUser.create({
+    data: { email: `admin-${uid()}@vettafit.dev`, name: 'Admin', passwordHash: 'x', role },
+  });
+  const session = await ctx.db.session.create({
+    data: { adminUserId: admin.id, expiresAt: new Date(Date.now() + 3_600_000) },
+  });
+  const tokens = ctx.app.get(TokensService);
+  const { token } = await tokens.signAccess({ sub: admin.id, sid: session.id, typ: 'admin' });
+  return { token, adminId: admin.id };
+}

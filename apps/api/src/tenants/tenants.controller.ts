@@ -87,9 +87,10 @@ export class StudentsController {
     return this.students.invite(t, u, dto);
   }
 
+  /** Arquivar e reativar é gestão da carteira: só o personal. */
   @Post(':id/archive')
   @HttpCode(200)
-  @Can('update', 'students')
+  @Can('delete', 'students')
   archive(@CurrentTenant() t: TenantAccess, @Param('id', ParseUUIDPipe) id: string) {
     return this.students.archive(t, id);
   }
