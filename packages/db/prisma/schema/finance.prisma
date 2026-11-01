@@ -13,10 +13,23 @@ enum PaymentAccountStatus {
 }
 
 enum StudentSubscriptionStatus {
+  /// Aguardando o primeiro pagamento.
+  PENDING
   ACTIVE
   PAUSED
   OVERDUE
   CANCELED
+  /// Plano à vista/parcelado que chegou ao fim.
+  ENDED
+}
+
+enum ConsultingPaymentMode {
+  /// À vista: uma cobrança pelo período inteiro.
+  ONE_TIME
+  /// Parcelado no cartão.
+  INSTALLMENTS
+  /// Assinatura recorrente no ciclo do plano.
+  RECURRING
 }
 
 enum WithdrawalStatus {
@@ -34,24 +47,51 @@ enum WalletEntryType {
   REFUND
 }
 
+enum ManualEntryKind {
+  EXPENSE
+  INCOME
+}
+
+enum KycDocumentStatus {
+  PENDING
+  SENT
+  APPROVED
+  REJECTED
+}
+
+enum CheckoutStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+}
+
 /// Plano de consultoria que o personal vende ao aluno.
 model ConsultingPlan {
-  id          String       @id @default(uuid(7)) @db.Uuid
-  tenantId    String       @map("tenant_id") @db.Uuid
-  name        String
-  description String?
-  priceCents  Int          @map("price_cents")
-  cycle       BillingCycle @default(MONTHLY)
-  isActive    Boolean      @default(true) @map("is_active")
+  id              String                @id @default(uuid(7)) @db.Uuid
+  tenantId        String                @map("tenant_id") @db.Uuid
+  name            String
+  description     String?
+  /// Valor do período inteiro (ex.: trimestral = valor dos 3 meses).
+  priceCents      Int                   @map("price_cents")
+  cycle           BillingCycle          @default(MONTHLY)
+  paymentMode     ConsultingPaymentMode @default(RECURRING) @map("payment_mode")
+  maxInstallments Int                   @default(1) @map("max_installments")
+  methods         PaymentMethod[]
+  /// Dias de atraso tolerados antes do bloqueio (sobrepõe a configuração do tenant).
+  toleranceDays   Int?                  @map("tolerance_days")
+  isActive        Boolean               @default(true) @map("is_active")
   /// Exibido na página de vendas.
-  isPublic    Boolean      @default(false) @map("is_public")
-  benefits    String[]
-  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt   DateTime?    @map("deleted_at") @db.Timestamptz(3)
+  isPublic        Boolean               @default(false) @map("is_public")
+  benefits        String[]
+  sortOrder       Int                   @default(0) @map("sort_order")
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime?             @map("deleted_at") @db.Timestamptz(3)
 
   tenant        Tenant                @relation(fields: [tenantId], references: [id])
   subscriptions StudentSubscription[]
+  checkouts     Checkout[]
 
   @@index([tenantId, isActive])
   @@map("consulting_plans")
@@ -64,11 +104,22 @@ model StudentSubscription {
   consultingPlanId      String                    @map("consulting_plan_id") @db.Uuid
   status                StudentSubscriptionStatus @default(ACTIVE)
   method                PaymentMethod?
+  paymentMode           ConsultingPaymentMode     @default(RECURRING) @map("payment_mode")
+  installments          Int                       @default(1)
+  /// Valor e taxa congelados na venda.
+  priceCents            Int                       @default(0) @map("price_cents")
+  platformFeeBps        Int                       @default(0) @map("platform_fee_bps")
   startedAt             DateTime                  @map("started_at") @db.Timestamptz(3)
   nextDueDate           DateTime?                 @map("next_due_date") @db.Date
+  /// Fim do acesso (à vista/parcelado) ou do período pago (recorrente).
+  endsAt                DateTime?                 @map("ends_at") @db.Timestamptz(3)
+  endNoticeSentAt       DateTime?                 @map("end_notice_sent_at") @db.Timestamptz(3)
   canceledAt            DateTime?                 @map("canceled_at") @db.Timestamptz(3)
   /// Bloqueia o acesso do aluno ao atrasar.
   blockOnOverdue        Boolean                   @default(true) @map("block_on_overdue")
+  blockedAt             DateTime?                 @map("blocked_at") @db.Timestamptz(3)
+  source                String                    @default("MANUAL")
+  gatewayCustomerId     String?                   @map("gateway_customer_id")
   gatewaySubscriptionId String?                   @unique @map("gateway_subscription_id")
   createdAt             DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -78,9 +129,11 @@ model StudentSubscription {
   studentLink    StudentLink    @relation(fields: [studentLinkId], references: [id])
   consultingPlan ConsultingPlan @relation(fields: [consultingPlanId], references: [id])
   invoices       Invoice[]
+  checkouts      Checkout[]
 
   @@index([tenantId, status])
   @@index([tenantId, studentLinkId])
+  @@index([status, endsAt])
   @@map("student_subscriptions")
 }
 
@@ -99,12 +152,21 @@ model Invoice {
   method                PaymentMethod?
   dueDate               DateTime             @map("due_date") @db.Date
   paidAt                DateTime?            @map("paid_at") @db.Timestamptz(3)
+  /// Data em que o valor fica disponível para saque.
+  creditAt              DateTime?            @map("credit_at") @db.Timestamptz(3)
   provider              PaymentProviderCode?
   gatewayChargeId       String?              @unique @map("gateway_charge_id")
+  gatewayInstallmentId  String?              @map("gateway_installment_id")
+  installmentNumber     Int?                 @map("installment_number")
+  installmentCount      Int?                 @map("installment_count")
   pixQrCode             String?              @map("pix_qr_code")
   pixCopyPaste          String?              @map("pix_copy_paste")
   boletoUrl             String?              @map("boleto_url")
   invoiceUrl            String?              @map("invoice_url")
+  failureReason         String?              @map("failure_reason")
+  refundedAt            DateTime?            @map("refunded_at") @db.Timestamptz(3)
+  /// Deslocamentos da régua já avisados (ex.: -3, 0, 1, 5).
+  remindersSent         Int[]                @map("reminders_sent")
   lastReminderAt        DateTime?            @map("last_reminder_at") @db.Timestamptz(3)
   createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -117,10 +179,11 @@ model Invoice {
 
   @@index([tenantId, status, dueDate])
   @@index([tenantId, studentLinkId])
+  @@index([status, dueDate])
   @@map("invoices")
 }
 
-/// Subconta do personal no gateway (KYC em media.kyc_document).
+/// Subconta do personal no gateway, com os dados de KYC.
 model PaymentAccount {
   id                String               @id @default(uuid(7)) @db.Uuid
   tenantId          String               @unique @map("tenant_id") @db.Uuid
@@ -131,13 +194,53 @@ model PaymentAccount {
   statusReason      String?              @map("status_reason")
   /// Chave de API da subconta, cifrada.
   apiKeyEncrypted   String?              @map("api_key_encrypted")
+  /// Dados enviados no KYC.
+  personType        DocumentType?        @map("person_type")
+  cpfCnpj           String?              @map("cpf_cnpj")
+  companyType       String?              @map("company_type")
+  birthDate         DateTime?            @map("birth_date") @db.Date
+  incomeValueCents  Int?                 @map("income_value_cents")
+  mobilePhone       String?              @map("mobile_phone")
+  /// { bankCode, agency, account, accountDigit, accountType, holderName, holderDocument }
+  bankAccount       Json?                @map("bank_account")
+  pixKey            String?              @map("pix_key")
+  pixKeyType        String?              @map("pix_key_type")
+  /// Link do gateway para envio de documentos quando ele exigir.
+  onboardingUrl     String?              @map("onboarding_url")
+  submittedAt       DateTime?            @map("submitted_at") @db.Timestamptz(3)
+  reviewedAt        DateTime?            @map("reviewed_at") @db.Timestamptz(3)
   createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt         DateTime?            @map("deleted_at") @db.Timestamptz(3)
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  kycDocuments KycDocument[]
 
+  @@index([externalAccountId])
   @@map("payment_accounts")
+}
+
+/// Documento de KYC (upload kyc_document) enviado ao gateway pelo worker.
+model KycDocument {
+  id                String            @id @default(uuid(7)) @db.Uuid
+  tenantId          String            @map("tenant_id") @db.Uuid
+  paymentAccountId  String            @map("payment_account_id") @db.Uuid
+  mediaId           String            @map("media_id") @db.Uuid
+  /// IDENTIFICATION, IDENTIFICATION_SELFIE, SOCIAL_CONTRACT, ENTREPRENEUR_REQUIREMENT, CUSTOM
+  type              String
+  status            KycDocumentStatus @default(PENDING)
+  gatewayDocumentId String?           @map("gateway_document_id")
+  error             String?
+  sentAt            DateTime?         @map("sent_at") @db.Timestamptz(3)
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt         DateTime?         @map("deleted_at") @db.Timestamptz(3)
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id])
+  paymentAccount PaymentAccount @relation(fields: [paymentAccountId], references: [id])
+
+  @@index([tenantId, paymentAccountId])
+  @@map("kyc_documents")
 }
 
 model Withdrawal {
@@ -173,6 +276,8 @@ model WalletEntry {
   description  String
   availableAt  DateTime?       @map("available_at") @db.Timestamptz(3)
   occurredAt   DateTime        @map("occurred_at") @db.Timestamptz(3)
+  /// Chave de idempotência (ex.: "credit:<invoiceId>").
+  dedupeKey    String?         @unique @map("dedupe_key")
   createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt    DateTime?       @map("deleted_at") @db.Timestamptz(3)
@@ -185,20 +290,64 @@ model WalletEntry {
   @@map("wallet_entries")
 }
 
+/// Despesas e receitas avulsas (fora do gateway).
 model Expense {
-  id          String    @id @default(uuid(7)) @db.Uuid
-  tenantId    String    @map("tenant_id") @db.Uuid
+  id          String          @id @default(uuid(7)) @db.Uuid
+  tenantId    String          @map("tenant_id") @db.Uuid
+  kind        ManualEntryKind @default(EXPENSE)
   description String
   category    String
-  amountCents Int       @map("amount_cents")
-  paidOn      DateTime  @map("paid_on") @db.Date
+  amountCents Int             @map("amount_cents")
+  paidOn      DateTime        @map("paid_on") @db.Date
   notes       String?
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime?       @map("deleted_at") @db.Timestamptz(3)
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId, paidOn])
   @@map("expenses")
+}
+
+/// Compra pela página de vendas: vira aluno + assinatura quando o pagamento confirma.
+model Checkout {
+  id                    String         @id @default(uuid(7)) @db.Uuid
+  tenantId              String         @map("tenant_id") @db.Uuid
+  consultingPlanId      String         @map("consulting_plan_id") @db.Uuid
+  status                CheckoutStatus @default(PENDING)
+  buyerName             String         @map("buyer_name")
+  buyerEmail            String         @map("buyer_email")
+  buyerPhone            String?        @map("buyer_phone")
+  buyerDocument         String         @map("buyer_document")
+  method                PaymentMethod
+  installments          Int            @default(1)
+  amountCents           Int            @map("amount_cents")
+  gatewayCustomerId     String?        @map("gateway_customer_id")
+  gatewayPaymentId      String?        @unique @map("gateway_payment_id")
+  gatewaySubscriptionId String?        @unique @map("gateway_subscription_id")
+  gatewayInstallmentId  String?        @map("gateway_installment_id")
+  invoiceUrl            String?        @map("invoice_url")
+  pixQrCode             String?        @map("pix_qr_code")
+  pixCopyPaste          String?        @map("pix_copy_paste")
+  boletoUrl             String?        @map("boleto_url")
+  failureReason         String?        @map("failure_reason")
+  studentLinkId         String?        @map("student_link_id") @db.Uuid
+  studentSubscriptionId String?        @map("student_subscription_id") @db.Uuid
+  /// Versão dos termos aceitos pelo comprador.
+  termsVersion          String?        @map("terms_version")
+  ip                    String?
+  expiresAt             DateTime       @map("expires_at") @db.Timestamptz(3)
+  paidAt                DateTime?      @map("paid_at") @db.Timestamptz(3)
+  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt             DateTime?      @map("deleted_at") @db.Timestamptz(3)
+
+  tenant         Tenant               @relation(fields: [tenantId], references: [id])
+  consultingPlan ConsultingPlan       @relation(fields: [consultingPlanId], references: [id])
+  subscription   StudentSubscription? @relation(fields: [studentSubscriptionId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([status, expiresAt])
+  @@map("checkouts")
 }

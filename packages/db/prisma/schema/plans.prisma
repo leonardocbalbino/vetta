@@ -58,6 +58,8 @@ model Plan {
   features      PlanFeature[]
   prices        PlanPrice[]
   subscriptions TenantSubscription[]
+  pendingFor    TenantSubscription[] @relation("PendingPlan")
+  invoices      PlatformInvoice[]
 
   @@map("plans")
 }
@@ -127,16 +129,32 @@ model TenantSubscription {
   couponId              String?            @map("coupon_id") @db.Uuid
   gatewayCustomerId     String?            @map("gateway_customer_id")
   gatewaySubscriptionId String?            @map("gateway_subscription_id")
+  paymentMethod         PaymentMethod?     @map("payment_method")
+  /// Token do cartão no gateway (cifrado). Nunca guardamos o número.
+  cardTokenEncrypted    String?            @map("card_token_encrypted")
+  cardBrand             String?            @map("card_brand")
+  cardLast4             String?            @map("card_last4")
+  /// Cobranças já feitas com o cupom (duração em ciclos).
+  couponCyclesUsed      Int                @default(0) @map("coupon_cycles_used")
+  /// Crédito de pró-rata que sobrou para as próximas cobranças.
+  creditCents           Int                @default(0) @map("credit_cents")
+  /// Downgrade agendado para o fim do período.
+  pendingPlanId         String?            @map("pending_plan_id") @db.Uuid
+  pendingCycle          BillingCycle?      @map("pending_cycle")
+  pastDueSince          DateTime?          @map("past_due_since") @db.Timestamptz(3)
+  graceEndsAt           DateTime?          @map("grace_ends_at") @db.Timestamptz(3)
   createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt             DateTime?          @map("deleted_at") @db.Timestamptz(3)
 
-  tenant   Tenant            @relation(fields: [tenantId], references: [id])
-  plan     Plan              @relation(fields: [planId], references: [id])
-  coupon   Coupon?           @relation(fields: [couponId], references: [id])
-  invoices PlatformInvoice[]
+  tenant      Tenant            @relation(fields: [tenantId], references: [id])
+  plan        Plan              @relation(fields: [planId], references: [id])
+  pendingPlan Plan?             @relation("PendingPlan", fields: [pendingPlanId], references: [id])
+  coupon      Coupon?           @relation(fields: [couponId], references: [id])
+  invoices    PlatformInvoice[]
 
   @@index([status, trialEndsAt])
+  @@index([status, graceEndsAt])
   @@map("tenant_subscriptions")
 }
 
@@ -201,14 +219,111 @@ model PlatformInvoice {
   periodEnd        DateTime       @map("period_end") @db.Timestamptz(3)
   gatewayInvoiceId String?        @unique @map("gateway_invoice_id")
   invoiceUrl       String?        @map("invoice_url")
+  planId           String?        @map("plan_id") @db.Uuid
+  cycle            BillingCycle?
+  /// Crédito de pró-rata abatido nesta fatura.
+  creditCents      Int            @default(0) @map("credit_cents")
+  description      String?
+  pixQrCode        String?        @map("pix_qr_code")
+  pixCopyPaste     String?        @map("pix_copy_paste")
+  boletoUrl        String?        @map("boleto_url")
+  failureReason    String?        @map("failure_reason")
+  failedAt         DateTime?      @map("failed_at") @db.Timestamptz(3)
+  refundedAt       DateTime?      @map("refunded_at") @db.Timestamptz(3)
+  refundedCents    Int            @default(0) @map("refunded_cents")
+  /// Deslocamentos da régua já avisados (ex.: -7, -1, 0).
+  remindersSent    Int[]          @map("reminders_sent")
   createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt        DateTime?      @map("deleted_at") @db.Timestamptz(3)
 
-  tenant       Tenant             @relation(fields: [tenantId], references: [id])
-  subscription TenantSubscription @relation(fields: [subscriptionId], references: [id])
-  coupon       Coupon?            @relation(fields: [couponId], references: [id])
+  tenant        Tenant             @relation(fields: [tenantId], references: [id])
+  subscription  TenantSubscription @relation(fields: [subscriptionId], references: [id])
+  coupon        Coupon?            @relation(fields: [couponId], references: [id])
+  plan          Plan?              @relation(fields: [planId], references: [id])
+  fiscalInvoice FiscalInvoice?
 
   @@index([tenantId, status])
+  @@index([status, dueDate])
+  @@index([paidAt])
   @@map("platform_invoices")
+}
+
+enum FiscalInvoiceStatus {
+  PENDING
+  PENDING_CONFIG
+  PROCESSING
+  ISSUED
+  FAILED
+  CANCELED
+}
+
+/// Nota fiscal de serviço (NFS-e) emitida pela Vetta para a fatura da plataforma.
+model FiscalInvoice {
+  id                String              @id @default(uuid(7)) @db.Uuid
+  tenantId          String              @map("tenant_id") @db.Uuid
+  platformInvoiceId String              @unique @map("platform_invoice_id") @db.Uuid
+  provider          String              @default("NFEIO")
+  externalId        String?             @unique @map("external_id")
+  status            FiscalInvoiceStatus @default(PENDING)
+  number            String?
+  amountCents       Int                 @map("amount_cents")
+  pdfUrl            String?             @map("pdf_url")
+  xmlUrl            String?             @map("xml_url")
+  error             String?
+  attempts          Int                 @default(0)
+  issuedAt          DateTime?           @map("issued_at") @db.Timestamptz(3)
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt         DateTime?           @map("deleted_at") @db.Timestamptz(3)
+
+  tenant          Tenant          @relation(fields: [tenantId], references: [id])
+  platformInvoice PlatformInvoice @relation(fields: [platformInvoiceId], references: [id])
+
+  @@index([status])
+  @@map("fiscal_invoices")
+}
+
+enum WebhookEventStatus {
+  RECEIVED
+  PROCESSED
+  IGNORED
+  FAILED
+}
+
+/// Webhooks recebidos. Único por provedor + id do evento: cada evento é processado uma vez.
+model WebhookEvent {
+  id          String             @id @default(uuid(7)) @db.Uuid
+  provider    String
+  eventId     String             @map("event_id")
+  type        String
+  /// Id do recurso no gateway (cobrança, assinatura, conta).
+  resourceId  String?            @map("resource_id")
+  payload     Json
+  status      WebhookEventStatus @default(RECEIVED)
+  error       String?
+  attempts    Int                @default(0)
+  receivedAt  DateTime           @default(now()) @map("received_at") @db.Timestamptz(3)
+  processedAt DateTime?          @map("processed_at") @db.Timestamptz(3)
+
+  @@unique([provider, eventId])
+  @@index([status, receivedAt])
+  @@index([resourceId])
+  @@map("webhook_events")
+}
+
+/// Conciliação diária: nossas faturas x cobranças no gateway.
+model ReconciliationRun {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  date       DateTime  @unique @db.Date
+  status     String    @default("RUNNING")
+  checked    Int       @default(0)
+  fixed      Int       @default(0)
+  /// [{ kind, invoiceId, gatewayId, ours, theirs, action }]
+  mismatches Json      @default("[]")
+  error      String?
+  startedAt  DateTime  @default(now()) @map("started_at") @db.Timestamptz(3)
+  finishedAt DateTime? @map("finished_at") @db.Timestamptz(3)
+
+  @@map("reconciliation_runs")
 }

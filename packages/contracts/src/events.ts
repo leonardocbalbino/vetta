@@ -45,6 +45,35 @@ export const DOMAIN_EVENTS = {
   'invoice.created': 'FINANCE',
   'invoice.overdue': 'FINANCE',
   'appointment.reminder': 'TRAINING',
+  // Fase 2 – assinatura da plataforma
+  'subscription.activated': 'FINANCE',
+  'subscription.plan_changed': 'FINANCE',
+  'subscription.payment_reminder': 'FINANCE',
+  'subscription.payment_failed': 'FINANCE',
+  'subscription.past_due': 'FINANCE',
+  'subscription.downgraded': 'FINANCE',
+  'platform_invoice.paid': 'FINANCE',
+  'platform_invoice.refunded': 'FINANCE',
+  'fiscal_invoice.issued': 'FINANCE',
+  // Fase 2 – financeiro do personal
+  'payment_account.status_changed': 'FINANCE',
+  'invoice.paid': 'FINANCE',
+  'invoice.reminder': 'FINANCE',
+  'invoice.payment_failed': 'FINANCE',
+  'student.blocked': 'FINANCE',
+  'student.unblocked': 'FINANCE',
+  'student_plan.ending': 'FINANCE',
+  'checkout.paid': 'FINANCE',
+  'withdrawal.done': 'FINANCE',
+  'withdrawal.failed': 'FINANCE',
+  // Fase 2 – agenda, comunicados, periodização, página de vendas, documentos
+  'appointment.booked': 'TRAINING',
+  'appointment.canceled': 'TRAINING',
+  'broadcast.sent': 'CHAT',
+  'periodization.phase_started': 'TRAINING',
+  'testimonial.submitted': 'SYSTEM',
+  'result.consent_requested': 'SYSTEM',
+  'document.shared': 'SYSTEM',
 } as const satisfies Record<string, NotificationCategory>;
 
 export type DomainEventName = keyof typeof DOMAIN_EVENTS;

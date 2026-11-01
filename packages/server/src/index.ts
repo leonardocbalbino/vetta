@@ -23,3 +23,5 @@ export * from './notifications/delivery';
 export * from './jobs/engagement';
 export * from './documents/assessment-pdf';
 export * from './notifications/rules-mvp';
+export * from './billing/billing';
+export * from './schedule/recurrence';

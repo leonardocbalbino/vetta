@@ -14,3 +14,4 @@ export * from './students.js';
 export * from './workouts.js';
 export * from './training.js';
 export * from './assessments.js';
+export * from './pro.js';

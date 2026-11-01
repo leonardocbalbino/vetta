@@ -1,5 +1,11 @@
 // ─── M6 Treinos e M7 Player ─────────────────────────────────────────────────
 
+enum PeriodizationModel {
+  LINEAR
+  UNDULATING
+  BLOCK
+}
+
 enum ProgramStatus {
   DRAFT
   ACTIVE
@@ -143,16 +149,20 @@ model ExerciseSet {
 }
 
 model Periodization {
-  id            String    @id @default(uuid(7)) @db.Uuid
-  tenantId      String    @map("tenant_id") @db.Uuid
-  studentLinkId String    @map("student_link_id") @db.Uuid
+  id            String             @id @default(uuid(7)) @db.Uuid
+  tenantId      String             @map("tenant_id") @db.Uuid
+  studentLinkId String             @map("student_link_id") @db.Uuid
   name          String
   goal          String?
-  startsOn      DateTime  @map("starts_on") @db.Date
-  endsOn        DateTime? @map("ends_on") @db.Date
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+  startsOn      DateTime           @map("starts_on") @db.Date
+  endsOn        DateTime?          @map("ends_on") @db.Date
+  model         PeriodizationModel @default(LINEAR)
+  isActive      Boolean            @default(true) @map("is_active")
+  /// Fase cuja rotina está publicada para o aluno (troca automática).
+  activePhaseId String?            @map("active_phase_id") @db.Uuid
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime?          @map("deleted_at") @db.Timestamptz(3)
 
   tenant      Tenant               @relation(fields: [tenantId], references: [id])
   studentLink StudentLink          @relation(fields: [studentLinkId], references: [id])

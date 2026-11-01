@@ -50,6 +50,11 @@ model SalesPage {
   photoMediaId   String?   @map("photo_media_id") @db.Uuid
   /// Blocos configuráveis (depoimentos, FAQ, resultados).
   sections       Json      @default("[]")
+  specialties    String[]
+  /// [{ question, answer }]
+  faq            Json      @default("[]")
+  /// { instagram, youtube, tiktok, site, whatsapp }
+  socialLinks    Json      @default("{}") @map("social_links")
   seoTitle       String?   @map("seo_title")
   seoDescription String?   @map("seo_description")
   isPublished    Boolean   @default(false) @map("is_published")
@@ -61,6 +66,62 @@ model SalesPage {
   tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@map("sales_pages")
+}
+
+enum TestimonialStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+}
+
+/// Depoimento enviado pelo aluno; só aparece na página depois da aprovação do personal.
+model Testimonial {
+  id            String            @id @default(uuid(7)) @db.Uuid
+  tenantId      String            @map("tenant_id") @db.Uuid
+  studentLinkId String?           @map("student_link_id") @db.Uuid
+  authorName    String            @map("author_name")
+  text          String
+  rating        Int?
+  status        TestimonialStatus @default(PENDING)
+  approvedAt    DateTime?         @map("approved_at") @db.Timestamptz(3)
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime?         @map("deleted_at") @db.Timestamptz(3)
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  studentLink StudentLink? @relation(fields: [studentLinkId], references: [id])
+
+  @@index([tenantId, status])
+  @@map("testimonials")
+}
+
+enum ResultConsentStatus {
+  REQUESTED
+  GRANTED
+  DENIED
+  REVOKED
+}
+
+/// Foto de resultado (antes/depois) na página de vendas: só com consentimento do aluno.
+model SalesPageResult {
+  id            String              @id @default(uuid(7)) @db.Uuid
+  tenantId      String              @map("tenant_id") @db.Uuid
+  studentLinkId String              @map("student_link_id") @db.Uuid
+  beforePhotoId String              @map("before_photo_id") @db.Uuid
+  afterPhotoId  String              @map("after_photo_id") @db.Uuid
+  caption       String?
+  consentStatus ResultConsentStatus @default(REQUESTED) @map("consent_status")
+  consentAt     DateTime?           @map("consent_at") @db.Timestamptz(3)
+  sortOrder     Int                 @default(0) @map("sort_order")
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime?           @map("deleted_at") @db.Timestamptz(3)
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  studentLink StudentLink @relation(fields: [studentLinkId], references: [id])
+
+  @@index([tenantId, consentStatus])
+  @@map("sales_page_results")
 }
 
 model StudentDocument {

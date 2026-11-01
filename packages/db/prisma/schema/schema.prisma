@@ -6,9 +6,9 @@
 // - Ao criar uma tabela com tenant_id, rode `pnpm --filter @vetta/db rls:generate`.
 
 generator client {
-  provider        = "prisma-client-js"
-  output          = "../../generated/client"
-  binaryTargets   = ["native", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
+  provider      = "prisma-client-js"
+  output        = "../../generated/client"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {

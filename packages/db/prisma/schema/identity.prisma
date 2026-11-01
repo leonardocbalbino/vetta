@@ -161,37 +161,45 @@ model AdminUser {
 
 /// Tenant = negócio do personal.
 model Tenant {
-  id                  String        @id @default(uuid(7)) @db.Uuid
-  slug                String        @unique
-  name                String
-  ownerUserId         String        @map("owner_user_id") @db.Uuid
-  status              TenantStatus  @default(ACTIVE)
-  cref                String?
-  crefState           String?       @map("cref_state") @db.Char(2)
-  legalName           String?       @map("legal_name")
-  documentType        DocumentType? @map("document_type")
-  documentNumber      String?       @map("document_number")
-  billingEmail        String?       @map("billing_email")
-  phone               String?
-  addressStreet       String?       @map("address_street")
-  addressNumber       String?       @map("address_number")
-  addressComplement   String?       @map("address_complement")
-  addressDistrict     String?       @map("address_district")
-  addressCity         String?       @map("address_city")
-  addressState        String?       @map("address_state") @db.Char(2)
-  addressZip          String?       @map("address_zip")
-  timezone            String        @default("America/Sao_Paulo")
-  locale              String        @default("pt-BR")
-  bio                 String?
+  id                    String        @id @default(uuid(7)) @db.Uuid
+  slug                  String        @unique
+  name                  String
+  ownerUserId           String        @map("owner_user_id") @db.Uuid
+  status                TenantStatus  @default(ACTIVE)
+  cref                  String?
+  crefState             String?       @map("cref_state") @db.Char(2)
+  legalName             String?       @map("legal_name")
+  documentType          DocumentType? @map("document_type")
+  documentNumber        String?       @map("document_number")
+  billingEmail          String?       @map("billing_email")
+  phone                 String?
+  addressStreet         String?       @map("address_street")
+  addressNumber         String?       @map("address_number")
+  addressComplement     String?       @map("address_complement")
+  addressDistrict       String?       @map("address_district")
+  addressCity           String?       @map("address_city")
+  addressState          String?       @map("address_state") @db.Char(2)
+  addressZip            String?       @map("address_zip")
+  timezone              String        @default("America/Sao_Paulo")
+  locale                String        @default("pt-BR")
+  bio                   String?
   /// Dias sem treinar para o alerta de aluno sumido.
-  inactivityAlertDays Int           @default(5) @map("inactivity_alert_days")
+  inactivityAlertDays   Int           @default(5) @map("inactivity_alert_days")
   /// Passos concluídos do onboarding guiado (profile, first_student, first_workout).
-  onboardingSteps     String[]      @map("onboarding_steps")
-  blockedAt           DateTime?     @map("blocked_at") @db.Timestamptz(3)
-  blockedReason       String?       @map("blocked_reason")
-  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt           DateTime?     @map("deleted_at") @db.Timestamptz(3)
+  onboardingSteps       String[]      @map("onboarding_steps")
+  /// Bloqueia o aluno inadimplente depois de N dias de atraso.
+  blockOverdueStudents  Boolean       @default(false) @map("block_overdue_students")
+  blockOverdueAfterDays Int           @default(5) @map("block_overdue_after_days")
+  /// Antecedência mínima (h) para o aluno agendar e cancelar.
+  bookingMinHours       Int           @default(2) @map("booking_min_hours")
+  cancelMinHours        Int           @default(12) @map("cancel_min_hours")
+  /// Lembrete de reavaliação física a cada N dias (null = desligado).
+  reassessmentDays      Int?          @map("reassessment_days")
+  blockedAt             DateTime?     @map("blocked_at") @db.Timestamptz(3)
+  blockedReason         String?       @map("blocked_reason")
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt             DateTime?     @map("deleted_at") @db.Timestamptz(3)
 
   owner User @relation("TenantOwner", fields: [ownerUserId], references: [id])
 
@@ -240,6 +248,15 @@ model Tenant {
   salesPage            SalesPage?
   studentDocuments     StudentDocument[]
   consents             Consent[]
+  kycDocuments         KycDocument[]
+  checkouts            Checkout[]
+  appointmentAttendees AppointmentAttendee[]
+  availabilityRules    AvailabilityRule[]
+  scheduleBlocks       ScheduleBlock[]
+  testimonials         Testimonial[]
+  salesPageResults     SalesPageResult[]
+  anamnesisAssignments AnamnesisAssignment[]
+  fiscalInvoices       FiscalInvoice[]
 
   @@index([ownerUserId])
   @@map("tenants")
@@ -262,6 +279,8 @@ model TenantMember {
   programs             WorkoutProgram[]
   appointments         Appointment[]
   calendarIntegrations CalendarIntegration[]
+  availabilityRules    AvailabilityRule[]
+  scheduleBlocks       ScheduleBlock[]
   physicalAssessments  PhysicalAssessment[]
 
   @@unique([tenantId, userId])
@@ -306,23 +325,27 @@ model StudentLink {
   user      User?         @relation(fields: [userId], references: [id])
   assistant TenantMember? @relation("AssignedAssistant", fields: [assistantMemberId], references: [id])
 
-  groupMemberships    StudentGroupMember[]
-  activities          StudentActivity[]
-  programs            WorkoutProgram[]
-  periodizations      Periodization[]
-  workoutSessions     WorkoutSession[]
-  personalRecords     PersonalRecord[]
-  anamnesisResponses  AnamnesisResponse[]
-  physicalAssessments PhysicalAssessment[]
-  postureAssessments  PostureAssessment[]
-  progressPhotos      ProgressPhoto[]
-  bodyMeasurements    BodyMeasurement[]
-  conversation        Conversation?
-  appointments        Appointment[]
-  subscriptions       StudentSubscription[]
-  invoices            Invoice[]
-  documents           StudentDocument[]
-  media               Media[]
+  groupMemberships     StudentGroupMember[]
+  activities           StudentActivity[]
+  programs             WorkoutProgram[]
+  periodizations       Periodization[]
+  workoutSessions      WorkoutSession[]
+  personalRecords      PersonalRecord[]
+  anamnesisResponses   AnamnesisResponse[]
+  physicalAssessments  PhysicalAssessment[]
+  postureAssessments   PostureAssessment[]
+  progressPhotos       ProgressPhoto[]
+  bodyMeasurements     BodyMeasurement[]
+  conversation         Conversation?
+  appointments         Appointment[]
+  subscriptions        StudentSubscription[]
+  invoices             Invoice[]
+  documents            StudentDocument[]
+  media                Media[]
+  appointmentAttendees AppointmentAttendee[]
+  testimonials         Testimonial[]
+  salesPageResults     SalesPageResult[]
+  anamnesisAssignments AnamnesisAssignment[]
 
   @@unique([tenantId, userId])
   @@index([tenantId, status])
