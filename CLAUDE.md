@@ -3,7 +3,7 @@ Vetta é um SaaS multi-tenant de gestão de treino para personal trainers, inspi
 Slogan: Seu método. Seu aluno. Sua evolução.
 Idioma da interface: português do Brasil (pt-BR), com i18n preparado para en e es. Moeda BRL. Fuso padrão America/Sao_Paulo, mas sempre gravar em UTC e exibir no fuso do usuário.
 Domínio: vettafit.com.br
-- usevetta.com.br: landing page e páginas de venda dos personais (/p/[slug])
+- vettafit.com.br: landing page e páginas de venda dos personais (/p/[slug])
 - app.vettafit.com.br: web do personal e do aluno
 - admin.vettafit.com.br: painel ADMIN
 - api.vettafit.com.br: API
@@ -65,9 +65,9 @@ Backend: decorator @RequireFeature(key) e assertLimit(key) antes de criar recurs
 # 7. ESTRUTURA DO MONOREPO
 apps/api            NestJS
 apps/worker         processadores BullMQ (mídia, notificações, cobranças, agendador)
-apps/web            Next.js personal + aluno (app.usevetta.com.br)
-apps/admin          Next.js admin (admin.usevetta.com.br)
-apps/site           Next.js landing + páginas de venda (usevetta.com.br)
+apps/web            Next.js personal + aluno (app.vettafit.com.br)
+apps/admin          Next.js admin (admin.vettafit.com.br)
+apps/site           Next.js landing + páginas de venda (vettafit.com.br)
 apps/mobile         Expo
 packages/db         schema Prisma, migrations, seed, cliente
 packages/contracts  schemas Zod, tipos e enums compartilhados (fonte única de DTOs)
