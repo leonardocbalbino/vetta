@@ -1,0 +1,156 @@
+// ─── M9 Comunicação e M10 Agenda ────────────────────────────────────────────
+
+enum MessageType {
+  TEXT
+  AUDIO
+  IMAGE
+  VIDEO
+  FILE
+  SYSTEM
+}
+
+enum BroadcastStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELED
+}
+
+enum AppointmentType {
+  IN_PERSON
+  ONLINE
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  CANCELED
+  DONE
+  NO_SHOW
+}
+
+/// Conversa 1:1 entre o tenant (personal/assistente) e o aluno.
+model Conversation {
+  id                     String    @id @default(uuid(7)) @db.Uuid
+  tenantId               String    @map("tenant_id") @db.Uuid
+  studentLinkId          String    @unique @map("student_link_id") @db.Uuid
+  lastMessageAt          DateTime? @map("last_message_at") @db.Timestamptz(3)
+  staffLastReadAt        DateTime? @map("staff_last_read_at") @db.Timestamptz(3)
+  studentLastReadAt      DateTime? @map("student_last_read_at") @db.Timestamptz(3)
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt              DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  studentLink StudentLink @relation(fields: [studentLinkId], references: [id])
+  messages    Message[]
+
+  @@index([tenantId, lastMessageAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             String      @id @default(uuid(7)) @db.Uuid
+  tenantId       String      @map("tenant_id") @db.Uuid
+  conversationId String      @map("conversation_id") @db.Uuid
+  senderUserId   String      @map("sender_user_id") @db.Uuid
+  type           MessageType @default(TEXT)
+  body           String?
+  mediaId        String?     @map("media_id") @db.Uuid
+  clientId       String?     @map("client_id")
+  editedAt       DateTime?   @map("edited_at") @db.Timestamptz(3)
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt      DateTime?   @map("deleted_at") @db.Timestamptz(3)
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id])
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, clientId])
+  @@index([tenantId, conversationId, createdAt])
+  @@map("messages")
+}
+
+/// Comunicado em massa para alunos (todos ou grupos).
+model Broadcast {
+  id              String          @id @default(uuid(7)) @db.Uuid
+  tenantId        String          @map("tenant_id") @db.Uuid
+  createdByUserId String          @map("created_by_user_id") @db.Uuid
+  title           String
+  body            String
+  /// { all: true } | { groupIds: [...] } | { studentLinkIds: [...] }
+  audience        Json
+  channels        NotificationChannel[]
+  status          BroadcastStatus @default(DRAFT)
+  scheduledAt     DateTime?       @map("scheduled_at") @db.Timestamptz(3)
+  sentAt          DateTime?       @map("sent_at") @db.Timestamptz(3)
+  recipientsCount Int             @default(0) @map("recipients_count")
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime?       @map("deleted_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, status])
+  @@map("broadcasts")
+}
+
+model Appointment {
+  id                 String            @id @default(uuid(7)) @db.Uuid
+  tenantId           String            @map("tenant_id") @db.Uuid
+  memberId           String            @map("member_id") @db.Uuid
+  studentLinkId      String?           @map("student_link_id") @db.Uuid
+  title              String
+  type               AppointmentType   @default(IN_PERSON)
+  status             AppointmentStatus @default(SCHEDULED)
+  location           String?
+  meetingUrl         String?           @map("meeting_url")
+  startsAt           DateTime          @map("starts_at") @db.Timestamptz(3)
+  endsAt             DateTime          @map("ends_at") @db.Timestamptz(3)
+  /// Regra RFC 5545 (RRULE) quando recorrente.
+  recurrenceRule     String?           @map("recurrence_rule")
+  recurrenceParentId String?           @map("recurrence_parent_id") @db.Uuid
+  googleEventId      String?           @map("google_event_id")
+  confirmedAt        DateTime?         @map("confirmed_at") @db.Timestamptz(3)
+  reminderSentAt     DateTime?         @map("reminder_sent_at") @db.Timestamptz(3)
+  notes              String?
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt          DateTime?         @map("deleted_at") @db.Timestamptz(3)
+
+  tenant            Tenant        @relation(fields: [tenantId], references: [id])
+  member            TenantMember  @relation(fields: [memberId], references: [id])
+  studentLink       StudentLink?  @relation(fields: [studentLinkId], references: [id])
+  recurrenceParent  Appointment?  @relation("Recurrence", fields: [recurrenceParentId], references: [id])
+  occurrences       Appointment[] @relation("Recurrence")
+
+  @@index([tenantId, startsAt])
+  @@index([tenantId, memberId, startsAt])
+  @@index([tenantId, studentLinkId, startsAt])
+  @@map("appointments")
+}
+
+model CalendarIntegration {
+  id                    String    @id @default(uuid(7)) @db.Uuid
+  tenantId              String    @map("tenant_id") @db.Uuid
+  memberId              String    @map("member_id") @db.Uuid
+  provider              String    @default("GOOGLE")
+  externalAccountEmail  String?   @map("external_account_email")
+  calendarId            String?   @map("calendar_id")
+  /// Tokens cifrados (AES-GCM) com a chave da aplicação.
+  accessTokenEncrypted  String?   @map("access_token_encrypted")
+  refreshTokenEncrypted String?   @map("refresh_token_encrypted")
+  tokenExpiresAt        DateTime? @map("token_expires_at") @db.Timestamptz(3)
+  syncToken             String?   @map("sync_token")
+  lastSyncedAt          DateTime? @map("last_synced_at") @db.Timestamptz(3)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt             DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id])
+  member TenantMember @relation(fields: [memberId], references: [id])
+
+  @@unique([tenantId, memberId, provider])
+  @@map("calendar_integrations")
+}

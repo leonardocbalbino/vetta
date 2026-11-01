@@ -1,0 +1,204 @@
+// ─── M11 Financeiro do personal (cobrança dos alunos) ───────────────────────
+
+enum PaymentProviderCode {
+  ASAAS
+  PAGARME
+}
+
+enum PaymentAccountStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum StudentSubscriptionStatus {
+  ACTIVE
+  PAUSED
+  OVERDUE
+  CANCELED
+}
+
+enum WithdrawalStatus {
+  REQUESTED
+  PROCESSING
+  DONE
+  FAILED
+}
+
+enum WalletEntryType {
+  CREDIT
+  DEBIT
+  FEE
+  WITHDRAWAL
+  REFUND
+}
+
+/// Plano de consultoria que o personal vende ao aluno.
+model ConsultingPlan {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  tenantId    String       @map("tenant_id") @db.Uuid
+  name        String
+  description String?
+  priceCents  Int          @map("price_cents")
+  cycle       BillingCycle @default(MONTHLY)
+  isActive    Boolean      @default(true) @map("is_active")
+  /// Exibido na página de vendas.
+  isPublic    Boolean      @default(false) @map("is_public")
+  benefits    String[]
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime?    @map("deleted_at") @db.Timestamptz(3)
+
+  tenant        Tenant                @relation(fields: [tenantId], references: [id])
+  subscriptions StudentSubscription[]
+
+  @@index([tenantId, isActive])
+  @@map("consulting_plans")
+}
+
+model StudentSubscription {
+  id                    String                    @id @default(uuid(7)) @db.Uuid
+  tenantId              String                    @map("tenant_id") @db.Uuid
+  studentLinkId         String                    @map("student_link_id") @db.Uuid
+  consultingPlanId      String                    @map("consulting_plan_id") @db.Uuid
+  status                StudentSubscriptionStatus @default(ACTIVE)
+  method                PaymentMethod?
+  startedAt             DateTime                  @map("started_at") @db.Timestamptz(3)
+  nextDueDate           DateTime?                 @map("next_due_date") @db.Date
+  canceledAt            DateTime?                 @map("canceled_at") @db.Timestamptz(3)
+  /// Bloqueia o acesso do aluno ao atrasar.
+  blockOnOverdue        Boolean                   @default(true) @map("block_on_overdue")
+  gatewaySubscriptionId String?                   @unique @map("gateway_subscription_id")
+  createdAt             DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt             DateTime?                 @map("deleted_at") @db.Timestamptz(3)
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id])
+  studentLink    StudentLink    @relation(fields: [studentLinkId], references: [id])
+  consultingPlan ConsultingPlan @relation(fields: [consultingPlanId], references: [id])
+  invoices       Invoice[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, studentLinkId])
+  @@map("student_subscriptions")
+}
+
+/// Cobrança do personal ao aluno (Pix, boleto, cartão) com split.
+model Invoice {
+  id                    String         @id @default(uuid(7)) @db.Uuid
+  tenantId              String         @map("tenant_id") @db.Uuid
+  studentLinkId         String         @map("student_link_id") @db.Uuid
+  studentSubscriptionId String?        @map("student_subscription_id") @db.Uuid
+  description           String
+  amountCents           Int            @map("amount_cents")
+  platformFeeCents      Int            @default(0) @map("platform_fee_cents")
+  gatewayFeeCents       Int            @default(0) @map("gateway_fee_cents")
+  netCents              Int            @default(0) @map("net_cents")
+  status                InvoiceStatus  @default(PENDING)
+  method                PaymentMethod?
+  dueDate               DateTime       @map("due_date") @db.Date
+  paidAt                DateTime?      @map("paid_at") @db.Timestamptz(3)
+  provider              PaymentProviderCode?
+  gatewayChargeId       String?        @unique @map("gateway_charge_id")
+  pixQrCode             String?        @map("pix_qr_code")
+  pixCopyPaste          String?        @map("pix_copy_paste")
+  boletoUrl             String?        @map("boleto_url")
+  invoiceUrl            String?        @map("invoice_url")
+  lastReminderAt        DateTime?      @map("last_reminder_at") @db.Timestamptz(3)
+  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt             DateTime?      @map("deleted_at") @db.Timestamptz(3)
+
+  tenant       Tenant               @relation(fields: [tenantId], references: [id])
+  studentLink  StudentLink          @relation(fields: [studentLinkId], references: [id])
+  subscription StudentSubscription? @relation(fields: [studentSubscriptionId], references: [id])
+  walletEntries WalletEntry[]
+
+  @@index([tenantId, status, dueDate])
+  @@index([tenantId, studentLinkId])
+  @@map("invoices")
+}
+
+/// Subconta do personal no gateway (KYC em media.kyc_document).
+model PaymentAccount {
+  id                String               @id @default(uuid(7)) @db.Uuid
+  tenantId          String               @unique @map("tenant_id") @db.Uuid
+  provider          PaymentProviderCode  @default(ASAAS)
+  externalAccountId String?              @map("external_account_id")
+  walletId          String?              @map("wallet_id")
+  status            PaymentAccountStatus @default(PENDING)
+  statusReason      String?              @map("status_reason")
+  /// Chave de API da subconta, cifrada.
+  apiKeyEncrypted   String?              @map("api_key_encrypted")
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt         DateTime?            @map("deleted_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("payment_accounts")
+}
+
+model Withdrawal {
+  id                String           @id @default(uuid(7)) @db.Uuid
+  tenantId          String           @map("tenant_id") @db.Uuid
+  amountCents       Int              @map("amount_cents")
+  feeCents          Int              @default(0) @map("fee_cents")
+  status            WithdrawalStatus @default(REQUESTED)
+  pixKey            String?          @map("pix_key")
+  gatewayTransferId String?          @unique @map("gateway_transfer_id")
+  failureReason     String?          @map("failure_reason")
+  requestedAt       DateTime         @default(now()) @map("requested_at") @db.Timestamptz(3)
+  completedAt       DateTime?        @map("completed_at") @db.Timestamptz(3)
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt         DateTime?        @map("deleted_at") @db.Timestamptz(3)
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  walletEntries WalletEntry[]
+
+  @@index([tenantId, status])
+  @@map("withdrawals")
+}
+
+/// Livro-razão da carteira do personal.
+model WalletEntry {
+  id           String          @id @default(uuid(7)) @db.Uuid
+  tenantId     String          @map("tenant_id") @db.Uuid
+  type         WalletEntryType
+  amountCents  Int             @map("amount_cents")
+  invoiceId    String?         @map("invoice_id") @db.Uuid
+  withdrawalId String?         @map("withdrawal_id") @db.Uuid
+  description  String
+  availableAt  DateTime?       @map("available_at") @db.Timestamptz(3)
+  occurredAt   DateTime        @map("occurred_at") @db.Timestamptz(3)
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt    DateTime?       @map("deleted_at") @db.Timestamptz(3)
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id])
+  invoice    Invoice?    @relation(fields: [invoiceId], references: [id])
+  withdrawal Withdrawal? @relation(fields: [withdrawalId], references: [id])
+
+  @@index([tenantId, occurredAt])
+  @@map("wallet_entries")
+}
+
+model Expense {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  description String
+  category    String
+  amountCents Int       @map("amount_cents")
+  paidOn      DateTime  @map("paid_on") @db.Date
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, paidOn])
+  @@map("expenses")
+}

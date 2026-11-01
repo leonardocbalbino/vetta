@@ -1,0 +1,214 @@
+// ─── Planos, features, assinatura da plataforma ────────────────────────────
+
+enum PlanCode {
+  FREE
+  PRO
+  PRO_PLUS
+}
+
+enum FeatureType {
+  BOOLEAN
+  LIMIT
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  SEMIANNUAL
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  PIX
+  BOLETO
+  CREDIT_CARD
+}
+
+model Plan {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  code        PlanCode @unique
+  name        String
+  description String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  isPublic    Boolean  @default(true) @map("is_public")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  features      PlanFeature[]
+  prices        PlanPrice[]
+  subscriptions TenantSubscription[]
+
+  @@map("plans")
+}
+
+/// Catálogo de features. Valores: BOOLEAN = 0/1; LIMIT = número (-1 ilimitado).
+model Feature {
+  key          String      @id
+  type         FeatureType
+  module       String
+  name         String
+  description  String?
+  defaultValue Int         @default(0) @map("default_value")
+  unit         String?
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  planValues PlanFeature[]
+  overrides  TenantFeatureOverride[]
+
+  @@map("features")
+}
+
+model PlanFeature {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  planId     String   @map("plan_id") @db.Uuid
+  featureKey String   @map("feature_key")
+  value      Int
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  plan    Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  feature Feature @relation(fields: [featureKey], references: [key], onDelete: Cascade)
+
+  @@unique([planId, featureKey])
+  @@map("plan_features")
+}
+
+model PlanPrice {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  planId         String       @map("plan_id") @db.Uuid
+  cycle          BillingCycle
+  amountCents    Int          @map("amount_cents")
+  currency       String       @default("BRL") @db.Char(3)
+  isActive       Boolean      @default(true) @map("is_active")
+  gatewayPriceId String?      @map("gateway_price_id")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, cycle])
+  @@map("plan_prices")
+}
+
+model TenantSubscription {
+  id                    String             @id @default(uuid(7)) @db.Uuid
+  tenantId              String             @unique @map("tenant_id") @db.Uuid
+  planId                String             @map("plan_id") @db.Uuid
+  status                SubscriptionStatus
+  cycle                 BillingCycle       @default(MONTHLY)
+  trialEndsAt           DateTime?          @map("trial_ends_at") @db.Timestamptz(3)
+  trialEndingNotifiedAt DateTime?          @map("trial_ending_notified_at") @db.Timestamptz(3)
+  currentPeriodStart    DateTime?          @map("current_period_start") @db.Timestamptz(3)
+  currentPeriodEnd      DateTime?          @map("current_period_end") @db.Timestamptz(3)
+  cancelAtPeriodEnd     Boolean            @default(false) @map("cancel_at_period_end")
+  canceledAt            DateTime?          @map("canceled_at") @db.Timestamptz(3)
+  couponId              String?            @map("coupon_id") @db.Uuid
+  gatewayCustomerId     String?            @map("gateway_customer_id")
+  gatewaySubscriptionId String?            @map("gateway_subscription_id")
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt             DateTime?          @map("deleted_at") @db.Timestamptz(3)
+
+  tenant   Tenant            @relation(fields: [tenantId], references: [id])
+  plan     Plan              @relation(fields: [planId], references: [id])
+  coupon   Coupon?           @relation(fields: [couponId], references: [id])
+  invoices PlatformInvoice[]
+
+  @@index([status, trialEndsAt])
+  @@map("tenant_subscriptions")
+}
+
+model TenantFeatureOverride {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  featureKey       String    @map("feature_key")
+  value            Int
+  expiresAt        DateTime? @map("expires_at") @db.Timestamptz(3)
+  reason           String
+  createdByAdminId String?   @map("created_by_admin_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  feature   Feature    @relation(fields: [featureKey], references: [key], onDelete: Cascade)
+  createdBy AdminUser? @relation(fields: [createdByAdminId], references: [id])
+
+  @@unique([tenantId, featureKey])
+  @@index([expiresAt])
+  @@map("tenant_feature_overrides")
+}
+
+model Coupon {
+  id               String       @id @default(uuid(7)) @db.Uuid
+  code             String       @unique
+  description      String?
+  discountType     DiscountType @map("discount_type")
+  percentOff       Int?         @map("percent_off")
+  amountOffCents   Int?         @map("amount_off_cents")
+  durationCycles   Int?         @map("duration_cycles")
+  maxRedemptions   Int?         @map("max_redemptions")
+  redemptionsCount Int          @default(0) @map("redemptions_count")
+  planCodes        PlanCode[]   @map("plan_codes")
+  validFrom        DateTime?    @map("valid_from") @db.Timestamptz(3)
+  validUntil       DateTime?    @map("valid_until") @db.Timestamptz(3)
+  isActive         Boolean      @default(true) @map("is_active")
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime?    @map("deleted_at") @db.Timestamptz(3)
+
+  subscriptions TenantSubscription[]
+  invoices      PlatformInvoice[]
+
+  @@map("coupons")
+}
+
+/// Fatura da assinatura do personal com a plataforma.
+model PlatformInvoice {
+  id               String         @id @default(uuid(7)) @db.Uuid
+  tenantId         String         @map("tenant_id") @db.Uuid
+  subscriptionId   String         @map("subscription_id") @db.Uuid
+  couponId         String?        @map("coupon_id") @db.Uuid
+  amountCents      Int            @map("amount_cents")
+  discountCents    Int            @default(0) @map("discount_cents")
+  status           InvoiceStatus  @default(PENDING)
+  method           PaymentMethod?
+  dueDate          DateTime       @map("due_date") @db.Date
+  paidAt           DateTime?      @map("paid_at") @db.Timestamptz(3)
+  periodStart      DateTime       @map("period_start") @db.Timestamptz(3)
+  periodEnd        DateTime       @map("period_end") @db.Timestamptz(3)
+  gatewayInvoiceId String?        @unique @map("gateway_invoice_id")
+  invoiceUrl       String?        @map("invoice_url")
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime?      @map("deleted_at") @db.Timestamptz(3)
+
+  tenant       Tenant             @relation(fields: [tenantId], references: [id])
+  subscription TenantSubscription @relation(fields: [subscriptionId], references: [id])
+  coupon       Coupon?            @relation(fields: [couponId], references: [id])
+
+  @@index([tenantId, status])
+  @@map("platform_invoices")
+}

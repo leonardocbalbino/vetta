@@ -1,0 +1,81 @@
+// ─── M5 Biblioteca de exercícios ────────────────────────────────────────────
+// tenant_id nulo = biblioteca global (mantida pelo admin), legível por todos.
+
+enum ExerciseCategory {
+  STRENGTH
+  CARDIO
+  MOBILITY
+  STRETCHING
+  FUNCTIONAL
+  PLYOMETRIC
+  OTHER
+}
+
+model ExerciseFolder {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  parentId  String?   @map("parent_id") @db.Uuid
+  name      String
+  sortOrder Int       @default(0) @map("sort_order")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant    Tenant           @relation(fields: [tenantId], references: [id])
+  parent    ExerciseFolder?  @relation("FolderTree", fields: [parentId], references: [id])
+  children  ExerciseFolder[] @relation("FolderTree")
+  exercises Exercise[]
+
+  @@index([tenantId, parentId])
+  @@map("exercise_folders")
+}
+
+model Exercise {
+  id               String           @id @default(uuid(7)) @db.Uuid
+  tenantId         String?          @map("tenant_id") @db.Uuid
+  folderId         String?          @map("folder_id") @db.Uuid
+  name             String
+  description      String?
+  instructions     String?
+  category         ExerciseCategory @default(STRENGTH)
+  primaryMuscles   String[]         @map("primary_muscles")
+  secondaryMuscles String[]         @map("secondary_muscles")
+  equipment        String[]
+  videoMediaId     String?          @map("video_media_id") @db.Uuid
+  imageMediaId     String?          @map("image_media_id") @db.Uuid
+  gifMediaId       String?          @map("gif_media_id") @db.Uuid
+  externalVideoUrl String?          @map("external_video_url")
+  isActive         Boolean          @default(true) @map("is_active")
+  createdByUserId  String?          @map("created_by_user_id") @db.Uuid
+  createdByAdminId String?          @map("created_by_admin_id") @db.Uuid
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime?        @map("deleted_at") @db.Timestamptz(3)
+
+  tenant           Tenant?            @relation(fields: [tenantId], references: [id])
+  folder           ExerciseFolder?    @relation(fields: [folderId], references: [id])
+  favorites        ExerciseFavorite[]
+  routineExercises RoutineExercise[]
+  setLogs          SessionSetLog[]
+  personalRecords  PersonalRecord[]
+
+  @@index([tenantId, name])
+  @@index([folderId])
+  @@map("exercises")
+}
+
+model ExerciseFavorite {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  exerciseId String    @map("exercise_id") @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, exerciseId])
+  @@map("exercise_favorites")
+}
