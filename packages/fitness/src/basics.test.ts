@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bmi, bmiClass, oneRepMax, volume, waistHipRatio } from './index.js';
+import { bmi, bmiClass, oneRepMax, volume, waistHipRatio } from './basics.js';
 
 describe('bmi', () => {
   it('calcula peso/altura²', () => {
