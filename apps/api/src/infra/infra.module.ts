@@ -17,6 +17,7 @@ export const STORAGE = Symbol('STORAGE');
 export const EVENTS = Symbol('EVENTS');
 export const MEDIA_QUEUE = Symbol('MEDIA_QUEUE');
 export const EVENTS_QUEUE = Symbol('EVENTS_QUEUE');
+export const DOCUMENTS_QUEUE = Symbol('DOCUMENTS_QUEUE');
 
 const providers: Provider[] = [
   PrismaService,
@@ -50,6 +51,12 @@ const providers: Provider[] = [
     useFactory: (env: ApiEnv) => new Queue(QUEUES.media, { connection: { url: env.REDIS_URL } }),
   },
   {
+    provide: DOCUMENTS_QUEUE,
+    inject: [ENV],
+    useFactory: (env: ApiEnv) =>
+      new Queue(QUEUES.documents, { connection: { url: env.REDIS_URL } }),
+  },
+  {
     provide: EVENTS,
     inject: [EVENTS_QUEUE],
     useFactory: (q: Queue): EventPublisher => new QueueEventPublisher(q),
@@ -69,10 +76,11 @@ export class InfraModule implements OnApplicationShutdown {
     @Inject(REDIS) private readonly redis: Redis,
     @Inject(EVENTS_QUEUE) private readonly events: Queue,
     @Inject(MEDIA_QUEUE) private readonly media: Queue,
+    @Inject(DOCUMENTS_QUEUE) private readonly documents: Queue,
   ) {}
 
   async onApplicationShutdown() {
-    await Promise.allSettled([this.events.close(), this.media.close()]);
+    await Promise.allSettled([this.events.close(), this.media.close(), this.documents.close()]);
     this.redis.disconnect();
   }
 }

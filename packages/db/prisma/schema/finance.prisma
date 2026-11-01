@@ -86,33 +86,33 @@ model StudentSubscription {
 
 /// Cobrança do personal ao aluno (Pix, boleto, cartão) com split.
 model Invoice {
-  id                    String         @id @default(uuid(7)) @db.Uuid
-  tenantId              String         @map("tenant_id") @db.Uuid
-  studentLinkId         String         @map("student_link_id") @db.Uuid
-  studentSubscriptionId String?        @map("student_subscription_id") @db.Uuid
+  id                    String               @id @default(uuid(7)) @db.Uuid
+  tenantId              String               @map("tenant_id") @db.Uuid
+  studentLinkId         String               @map("student_link_id") @db.Uuid
+  studentSubscriptionId String?              @map("student_subscription_id") @db.Uuid
   description           String
-  amountCents           Int            @map("amount_cents")
-  platformFeeCents      Int            @default(0) @map("platform_fee_cents")
-  gatewayFeeCents       Int            @default(0) @map("gateway_fee_cents")
-  netCents              Int            @default(0) @map("net_cents")
-  status                InvoiceStatus  @default(PENDING)
+  amountCents           Int                  @map("amount_cents")
+  platformFeeCents      Int                  @default(0) @map("platform_fee_cents")
+  gatewayFeeCents       Int                  @default(0) @map("gateway_fee_cents")
+  netCents              Int                  @default(0) @map("net_cents")
+  status                InvoiceStatus        @default(PENDING)
   method                PaymentMethod?
-  dueDate               DateTime       @map("due_date") @db.Date
-  paidAt                DateTime?      @map("paid_at") @db.Timestamptz(3)
+  dueDate               DateTime             @map("due_date") @db.Date
+  paidAt                DateTime?            @map("paid_at") @db.Timestamptz(3)
   provider              PaymentProviderCode?
-  gatewayChargeId       String?        @unique @map("gateway_charge_id")
-  pixQrCode             String?        @map("pix_qr_code")
-  pixCopyPaste          String?        @map("pix_copy_paste")
-  boletoUrl             String?        @map("boleto_url")
-  invoiceUrl            String?        @map("invoice_url")
-  lastReminderAt        DateTime?      @map("last_reminder_at") @db.Timestamptz(3)
-  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt             DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt             DateTime?      @map("deleted_at") @db.Timestamptz(3)
+  gatewayChargeId       String?              @unique @map("gateway_charge_id")
+  pixQrCode             String?              @map("pix_qr_code")
+  pixCopyPaste          String?              @map("pix_copy_paste")
+  boletoUrl             String?              @map("boleto_url")
+  invoiceUrl            String?              @map("invoice_url")
+  lastReminderAt        DateTime?            @map("last_reminder_at") @db.Timestamptz(3)
+  createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt             DateTime?            @map("deleted_at") @db.Timestamptz(3)
 
-  tenant       Tenant               @relation(fields: [tenantId], references: [id])
-  studentLink  StudentLink          @relation(fields: [studentLinkId], references: [id])
-  subscription StudentSubscription? @relation(fields: [studentSubscriptionId], references: [id])
+  tenant        Tenant               @relation(fields: [tenantId], references: [id])
+  studentLink   StudentLink          @relation(fields: [studentLinkId], references: [id])
+  subscription  StudentSubscription? @relation(fields: [studentSubscriptionId], references: [id])
   walletEntries WalletEntry[]
 
   @@index([tenantId, status, dueDate])

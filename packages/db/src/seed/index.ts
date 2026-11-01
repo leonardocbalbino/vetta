@@ -10,6 +10,7 @@ import { syncCatalog } from '../catalog';
 import { syncGlobalContent } from '../catalog-content';
 import { syncNotificationTemplates } from '../catalog-templates';
 import { createTenantWorld } from '../fixtures';
+import { seedDevExercises } from './exercises';
 
 const PASSWORD = process.env.SEED_PASSWORD ?? 'Vetta@2026dev';
 
@@ -23,6 +24,8 @@ async function main() {
     const catalog = await syncCatalog(db);
     const templates = await syncNotificationTemplates(db);
     await syncGlobalContent(db);
+    const exercises = await seedDevExercises(db);
+    console.warn(`Biblioteca global de dev: ${exercises} exercícios novos.`);
     console.warn(
       `Catálogo: ${catalog.features} features, ${catalog.plans} planos novos, ${templates} templates novos.`,
     );

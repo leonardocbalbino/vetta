@@ -68,6 +68,10 @@ model AnamnesisResponse {
   templateVersion Int             @map("template_version")
   status          AnamnesisStatus @default(PENDING)
   answers         Json            @default("{}")
+  dueAt           DateTime?       @map("due_at") @db.Timestamptz(3)
+  /// PAR-Q com alguma resposta "sim" (ou risco no modelo).
+  hasRisk         Boolean         @default(false) @map("has_risk")
+  reviewedAt      DateTime?       @map("reviewed_at") @db.Timestamptz(3)
   requestedAt     DateTime        @default(now()) @map("requested_at") @db.Timestamptz(3)
   answeredAt      DateTime?       @map("answered_at") @db.Timestamptz(3)
   createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -98,6 +102,10 @@ model PhysicalAssessment {
   bioimpedance     Json                    @default("{}")
   /// Resultados calculados por @vetta/fitness (IMC, % gordura, massa magra, RCQ...).
   results          Json                    @default("{}")
+  equation         String                  @default("siri")
+  nextAssessmentOn DateTime?               @map("next_assessment_on") @db.Date
+  reminderSentAt   DateTime?               @map("reminder_sent_at") @db.Timestamptz(3)
+  pdfMediaId       String?                 @map("pdf_media_id") @db.Uuid
   notes            String?
   createdAt        DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime                @updatedAt @map("updated_at") @db.Timestamptz(3)

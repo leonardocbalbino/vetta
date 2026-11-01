@@ -6,6 +6,7 @@ import {
   type NotificationCategory,
   type NotificationChannel,
 } from '@vetta/contracts';
+import { MVP_RULES } from './rules-mvp';
 
 /**
  * Quem recebe o evento:
@@ -15,7 +16,14 @@ import {
  * - tenant_staff: dono + assistente responsável pelo aluno (payload.studentLinkId)
  * - student: usuário do aluno (payload.studentLinkId)
  */
-export type RecipientSpec = 'user' | 'users' | 'tenant_owner' | 'tenant_staff' | 'student';
+export type RecipientSpec =
+  | 'user'
+  | 'users'
+  | 'tenant_owner'
+  | 'tenant_staff'
+  | 'student'
+  /** Equipe da plataforma (só e-mail). */
+  | 'platform_admins';
 
 export interface NotificationRule {
   event: DomainEventName;
@@ -34,6 +42,7 @@ export interface NotificationRule {
 const p = (e: DomainEvent, k: string) => String(e.payload[k] ?? '');
 
 const RULES_LIST: NotificationRule[] = [
+  ...MVP_RULES,
   {
     event: 'auth.email_verification_requested',
     category: 'SECURITY',
@@ -142,18 +151,11 @@ const RULES_LIST: NotificationRule[] = [
   },
   // Próximas fases — regras já declaradas para os módulos publicarem os eventos.
   {
-    event: 'workout.assigned',
-    category: 'TRAINING',
-    recipients: 'student',
-    channels: ['IN_APP', 'PUSH'],
-    deepLink: (e) => deepLinks.workout(p(e, 'programId')),
-  },
-  {
     event: 'workout.completed',
     category: 'TRAINING',
     recipients: 'tenant_staff',
     channels: ['IN_APP', 'PUSH'],
-    group: { key: (e) => `workout.completed:${e.tenantId}`, windowSeconds: 600 },
+    group: { key: (e) => `workout.completed:${e.tenantId}`, windowSeconds: 3600 }, // agrupado por hora
     deepLink: (e) => deepLinks.student(p(e, 'studentLinkId')),
   },
   {

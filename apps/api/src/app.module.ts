@@ -42,6 +42,23 @@ import {
 import { UploadsController } from './uploads/uploads.controller';
 import { UploadsService } from './uploads/uploads.service';
 import { MeController } from './users/users.controller';
+import { AdminController, LegalController } from './admin/admin';
+import { AnamnesisController, AnamnesisService } from './anamnesis/anamnesis';
+import { AssessmentsController, AssessmentsService } from './assessments/assessments';
+import { DashboardController, DashboardService } from './dashboard/dashboard';
+import { AdminLibraryController, LibraryController } from './library/library.controller';
+import { LibraryService } from './library/library.service';
+import { ProgressController, ProgressService } from './progress/progress';
+import { StudentsManagementController } from './students/students.controller';
+import { StudentsAdminService } from './students/students-admin.service';
+import { TrainingService } from './training/training.service';
+import {
+  FeedbacksController,
+  PublicWorkoutsController,
+  TrainingController,
+  WorkoutsController,
+} from './workouts/workouts.controller';
+import { WorkoutsService } from './workouts/workouts.service';
 import { UsersService } from './users/users.service';
 
 @Module({})
@@ -113,6 +130,19 @@ export class AppModule {
         AdminPlansController,
         UploadsController,
         NotificationsController,
+        LibraryController,
+        AdminLibraryController,
+        StudentsManagementController,
+        AnamnesisController,
+        AssessmentsController,
+        WorkoutsController,
+        TrainingController,
+        FeedbacksController,
+        PublicWorkoutsController,
+        ProgressController,
+        DashboardController,
+        AdminController,
+        LegalController,
       ],
       providers: [
         TokensService,
@@ -129,6 +159,14 @@ export class AppModule {
         StudentsService,
         UploadsService,
         NotificationsGateway,
+        LibraryService,
+        StudentsAdminService,
+        AnamnesisService,
+        AssessmentsService,
+        WorkoutsService,
+        TrainingService,
+        ProgressService,
+        DashboardService,
         // Testes podem substituir o publicador de eventos (ex.: MemoryEventPublisher).
         ...(overrides.events ? [{ provide: EVENTS, useValue: overrides.events }] : []),
         { provide: APP_PIPE, useClass: ZodValidationPipe },

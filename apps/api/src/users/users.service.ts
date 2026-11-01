@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Locale, MeResponse, Membership } from '@vetta/contracts';
+import type { UpdateMeSchema } from '@vetta/contracts';
+import type { z } from 'zod';
 import { SIGNED_URL_TTL_SECONDS } from '@vetta/contracts';
 import type { StorageProvider } from '@vetta/server';
 import { SessionsService } from '../auth/sessions.service';
@@ -78,16 +80,7 @@ export class UsersService {
     };
   }
 
-  async update(
-    p: UserPrincipal,
-    dto: {
-      name?: string | undefined;
-      phone?: string | null | undefined;
-      locale?: Locale | undefined;
-      timezone?: string | undefined;
-      avatarMediaId?: string | null | undefined;
-    },
-  ) {
+  async update(p: UserPrincipal, dto: z.infer<typeof UpdateMeSchema>) {
     if (dto.timezone) {
       try {
         new Intl.DateTimeFormat('pt-BR', { timeZone: dto.timezone });
@@ -108,6 +101,15 @@ export class UsersService {
         ...(dto.locale !== undefined ? { locale: dto.locale } : {}),
         ...(dto.timezone !== undefined ? { timezone: dto.timezone } : {}),
         ...(dto.avatarMediaId !== undefined ? { avatarMediaId: dto.avatarMediaId } : {}),
+        ...(dto.birthDate !== undefined
+          ? { birthDate: dto.birthDate ? new Date(dto.birthDate) : null }
+          : {}),
+        ...(dto.trainingReminderEnabled !== undefined
+          ? { trainingReminderEnabled: dto.trainingReminderEnabled }
+          : {}),
+        ...(dto.trainingReminderTime !== undefined
+          ? { trainingReminderTime: dto.trainingReminderTime }
+          : {}),
       },
     });
     return this.me(p);

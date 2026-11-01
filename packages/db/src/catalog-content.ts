@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient } from '../generated/client';
+import { LEGAL_DOCUMENTS } from './legal-documents';
 
 /** Modelos de anamnese prontos da plataforma (tenant_id nulo). */
 const ANAMNESIS_TEMPLATES: {
@@ -95,72 +96,7 @@ const ANAMNESIS_TEMPLATES: {
   },
 ];
 
-const GLOBAL_EXERCISES: {
-  name: string;
-  category: 'STRENGTH' | 'CARDIO' | 'MOBILITY';
-  primaryMuscles: string[];
-  equipment: string[];
-}[] = [
-  {
-    name: 'Agachamento livre',
-    category: 'STRENGTH',
-    primaryMuscles: ['quadríceps', 'glúteos'],
-    equipment: ['barra'],
-  },
-  {
-    name: 'Supino reto',
-    category: 'STRENGTH',
-    primaryMuscles: ['peitoral'],
-    equipment: ['barra', 'banco'],
-  },
-  {
-    name: 'Remada curvada',
-    category: 'STRENGTH',
-    primaryMuscles: ['dorsais'],
-    equipment: ['barra'],
-  },
-  {
-    name: 'Levantamento terra',
-    category: 'STRENGTH',
-    primaryMuscles: ['posteriores', 'glúteos', 'lombar'],
-    equipment: ['barra'],
-  },
-  {
-    name: 'Desenvolvimento com halteres',
-    category: 'STRENGTH',
-    primaryMuscles: ['ombros'],
-    equipment: ['halteres'],
-  },
-  {
-    name: 'Puxada frontal',
-    category: 'STRENGTH',
-    primaryMuscles: ['dorsais'],
-    equipment: ['polia'],
-  },
-  {
-    name: 'Leg press 45°',
-    category: 'STRENGTH',
-    primaryMuscles: ['quadríceps', 'glúteos'],
-    equipment: ['máquina'],
-  },
-  { name: 'Rosca direta', category: 'STRENGTH', primaryMuscles: ['bíceps'], equipment: ['barra'] },
-  {
-    name: 'Tríceps na polia',
-    category: 'STRENGTH',
-    primaryMuscles: ['tríceps'],
-    equipment: ['polia'],
-  },
-  { name: 'Prancha', category: 'STRENGTH', primaryMuscles: ['core'], equipment: [] },
-  { name: 'Esteira', category: 'CARDIO', primaryMuscles: [], equipment: ['esteira'] },
-  {
-    name: 'Mobilidade de quadril 90/90',
-    category: 'MOBILITY',
-    primaryMuscles: ['quadril'],
-    equipment: [],
-  },
-];
-
-/** Conteúdo global (modelos de anamnese + biblioteca inicial). Seguro em produção. */
+/** Conteúdo global (modelos de anamnese e documentos legais). Seguro em produção. */
 export async function syncGlobalContent(db: PrismaClient): Promise<void> {
   for (const t of ANAMNESIS_TEMPLATES) {
     const exists = await db.anamnesisTemplate.findFirst({
@@ -168,8 +104,11 @@ export async function syncGlobalContent(db: PrismaClient): Promise<void> {
     });
     if (!exists) await db.anamnesisTemplate.create({ data: { ...t, tenantId: null } });
   }
-  for (const e of GLOBAL_EXERCISES) {
-    const exists = await db.exercise.findFirst({ where: { tenantId: null, name: e.name } });
-    if (!exists) await db.exercise.create({ data: { ...e, tenantId: null } });
+  for (const doc of LEGAL_DOCUMENTS) {
+    await db.legalDocument.upsert({
+      where: { kind_version: { kind: doc.kind, version: doc.version } },
+      create: { ...doc, publishedAt: new Date() },
+      update: {},
+    });
   }
 }

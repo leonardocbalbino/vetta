@@ -3,7 +3,13 @@ import { Emitter } from '@socket.io/redis-emitter';
 import type { DomainEvent } from '@vetta/contracts';
 import { createPrismaClient } from '@vetta/db';
 import {
+  assessmentsDue,
+  birthdays,
   checkPushReceipts,
+  generateAssessmentPdf,
+  inactiveStudents,
+  trainingReminders,
+  trialEndsToday,
   CloudflareStreamVideoProvider,
   cleanupPendingUploads,
   createEmailProvider,
@@ -109,6 +115,7 @@ const deliveryDeps = {
   whatsapp: new UnconfiguredWhatsAppProvider(),
   sms: new UnconfiguredSmsProvider(),
   webUrl: env.APP_WEB_URL,
+  adminUrl: env.APP_ADMIN_URL,
 };
 const jobDeps = {
   db,
@@ -119,7 +126,14 @@ const jobDeps = {
 /** Jobs agendados (BullMQ job schedulers). Novas fases registram lembretes aqui. */
 const scheduled: Record<string, () => Promise<unknown>> = {
   [SCHEDULED_JOBS.expireTrials.name]: () => expireTrials(jobDeps),
-  [SCHEDULED_JOBS.notifyTrialEnding.name]: () => notifyTrialEnding(jobDeps),
+  [SCHEDULED_JOBS.notifyTrialEnding.name]: async () => ({
+    threeDays: await notifyTrialEnding(jobDeps),
+    today: await trialEndsToday(jobDeps),
+  }),
+  [SCHEDULED_JOBS.trainingReminders.name]: () => trainingReminders(jobDeps),
+  [SCHEDULED_JOBS.inactiveStudents.name]: () => inactiveStudents(jobDeps),
+  [SCHEDULED_JOBS.birthdays.name]: () => birthdays(jobDeps),
+  [SCHEDULED_JOBS.assessmentsDue.name]: () => assessmentsDue(jobDeps),
   [SCHEDULED_JOBS.expireOverrides.name]: () => expireOverrides(jobDeps),
   [SCHEDULED_JOBS.cleanupPendingUploads.name]: () => cleanupPendingUploads(db, storage),
   [SCHEDULED_JOBS.purgeDeletedMedia.name]: () => purgeDeletedMedia(db, storage),
@@ -186,6 +200,12 @@ async function main() {
         }
       },
       { connection, concurrency: env.MEDIA_CONCURRENCY },
+    ),
+    // Documentos (PDF de avaliação física)
+    new Worker<{ assessmentId: string; tenantId: string; branded: boolean }>(
+      QUEUES.documents,
+      (job) => generateAssessmentPdf({ db, storage }, job.data),
+      { connection, concurrency: 2 },
     ),
     // Agendador
     new Worker(

@@ -24,30 +24,6 @@ export class StudentsService {
     @Inject(EVENTS) private readonly events: EventPublisher,
   ) {}
 
-  /** Lista alunos no escopo do papel (assistente: só os atribuídos). */
-  async list(t: TenantAccess) {
-    const db = this.prisma.tenant(t.tenantId);
-    const items = await db.studentLink.findMany({
-      where: {
-        deletedAt: null,
-        ...(t.scope === 'assigned' ? { assistantMemberId: t.memberId } : {}),
-      },
-      orderBy: [{ status: 'asc' }, { displayName: 'asc' }],
-      select: {
-        id: true,
-        displayName: true,
-        email: true,
-        status: true,
-        assistantMemberId: true,
-        lastActivityAt: true,
-        lastWorkoutAt: true,
-        invitedAt: true,
-        joinedAt: true,
-      },
-    });
-    return { items };
-  }
-
   /** Convite por e-mail ou link (token de uso único, 7 dias). */
   async invite(t: TenantAccess, actor: UserPrincipal, dto: InviteStudentInput) {
     const db = this.prisma.tenant(t.tenantId);
@@ -110,11 +86,11 @@ export class StudentsService {
         payload: { userId, token, tenantName: tenant.name, studentLinkId: link.id },
       });
     }
-    return {
-      studentLinkId: link.id,
-      inviteUrl: this.auth.inviteUrl(token),
-      expiresAt: expiresAt.toISOString(),
-    };
+    const inviteUrl = this.auth.inviteUrl(token);
+    const digits = (dto.phone ?? '').replace(/\D/g, '');
+    const text = `Olá, ${dto.name}! ${tenant.name} convidou você para treinar pela Vetta: ${inviteUrl}`;
+    const whatsappUrl = digits ? `https://wa.me/${digits}?text=${encodeURIComponent(text)}` : null;
+    return { studentLinkId: link.id, inviteUrl, whatsappUrl, expiresAt: expiresAt.toISOString() };
   }
 
   async preview(token: string) {

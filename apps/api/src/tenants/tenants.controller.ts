@@ -18,6 +18,7 @@ import {
   type UserPrincipal,
 } from '../common/request';
 import { PrismaService } from '../infra/prisma.service';
+import { StudentsAdminService } from '../students/students-admin.service';
 import { StudentsService } from './students.service';
 
 @ApiTags('tenants')
@@ -66,25 +67,25 @@ export class TenantsController {
 @ApiTags('students')
 @Controller('students')
 export class StudentsController {
-  constructor(private readonly students: StudentsService) {}
-
-  @Get()
-  @Can('read', 'students')
-  list(@CurrentTenant() t: TenantAccess) {
-    return this.students.list(t);
-  }
+  constructor(
+    private readonly students: StudentsService,
+    private readonly admin: StudentsAdminService,
+  ) {}
 
   /** Convida um aluno (respeita o limite de alunos do plano). */
   @Post('invites')
   @Can('create', 'students')
   @AssertLimit('students.max')
   @ApiOkResponse({ type: InviteResponseDto })
-  invite(
+  async invite(
     @CurrentTenant() t: TenantAccess,
     @CurrentUser() u: UserPrincipal,
     @Body() dto: InviteStudentDto,
   ) {
-    return this.students.invite(t, u, dto);
+    const r = await this.students.invite(t, u, dto);
+    await this.admin.markOnboarding(t.tenantId, 'first_student');
+    await this.admin.publishLimitThresholds(t.tenantId);
+    return r;
   }
 
   /** Arquivar e reativar é gestão da carteira: só o personal. */

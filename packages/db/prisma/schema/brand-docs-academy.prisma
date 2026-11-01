@@ -22,19 +22,19 @@ enum AcademyContentType {
 
 /// White label: logo, cores, domínio e remetente de e-mail.
 model TenantBrand {
-  id                    String    @id @default(uuid(7)) @db.Uuid
-  tenantId              String    @unique @map("tenant_id") @db.Uuid
-  logoMediaId           String?   @map("logo_media_id") @db.Uuid
-  primaryColor          String?   @map("primary_color")
-  accentColor           String?   @map("accent_color")
-  customDomain          String?   @unique @map("custom_domain")
+  id                     String    @id @default(uuid(7)) @db.Uuid
+  tenantId               String    @unique @map("tenant_id") @db.Uuid
+  logoMediaId            String?   @map("logo_media_id") @db.Uuid
+  primaryColor           String?   @map("primary_color")
+  accentColor            String?   @map("accent_color")
+  customDomain           String?   @unique @map("custom_domain")
   customDomainVerifiedAt DateTime? @map("custom_domain_verified_at") @db.Timestamptz(3)
-  emailFromName         String?   @map("email_from_name")
-  emailFromAddress      String?   @map("email_from_address")
-  emailDomainVerifiedAt DateTime? @map("email_domain_verified_at") @db.Timestamptz(3)
-  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt             DateTime? @map("deleted_at") @db.Timestamptz(3)
+  emailFromName          String?   @map("email_from_name")
+  emailFromAddress       String?   @map("email_from_address")
+  emailDomainVerifiedAt  DateTime? @map("email_domain_verified_at") @db.Timestamptz(3)
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt              DateTime? @map("deleted_at") @db.Timestamptz(3)
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
 
@@ -141,4 +141,25 @@ model AcademyProgress {
 
   @@unique([userId, lessonId])
   @@map("academy_progress")
+}
+
+enum LegalDocumentKind {
+  TERMS
+  PRIVACY
+}
+
+/// Termos de uso e política de privacidade versionados (exibidos no site e aceitos em consents).
+model LegalDocument {
+  id          String            @id @default(uuid(7)) @db.Uuid
+  kind        LegalDocumentKind
+  version     String
+  title       String
+  /// Markdown.
+  content     String
+  publishedAt DateTime?         @map("published_at") @db.Timestamptz(3)
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([kind, version])
+  @@map("legal_documents")
 }

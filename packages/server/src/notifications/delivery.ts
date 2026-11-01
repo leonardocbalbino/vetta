@@ -20,6 +20,7 @@ export interface DeliveryDeps {
   whatsapp: WhatsAppProvider;
   sms: SmsProvider;
   webUrl: string;
+  adminUrl?: string;
 }
 
 const pushTicketKey = (ticketId: string) => `push:ticket:${ticketId}`;
@@ -40,6 +41,36 @@ export async function deliver(
     where: { id: log.userId },
     include: { devices: { where: { disabledAt: null } } },
   });
+  if (!user && job.channel === 'EMAIL') {
+    // Destinatário da equipe da plataforma (ex.: novo personal cadastrado).
+    const admin = await db.adminUser.findUnique({ where: { id: log.userId } });
+    if (admin) {
+      const { html, text } = await renderNotificationEmail({
+        title: job.title,
+        body: job.body,
+        ctaLabel: job.ctaLabel,
+        ctaUrl: new URL(job.deepLink, deps.adminUrl ?? deps.webUrl).toString(),
+      });
+      const r = await deps.email.send({
+        to: admin.email,
+        subject: job.subject ?? job.title,
+        html,
+        text,
+      });
+      await db.deliveryLog.update({
+        where: { id: log.id },
+        data: {
+          status: 'SENT',
+          sentAt: new Date(),
+          attempts: { increment: 1 },
+          provider: deps.email.name,
+          providerMessageId: r.id,
+          recipient: maskRecipient(admin.email),
+        },
+      });
+      return;
+    }
+  }
   if (!user || user.deletedAt) {
     await db.deliveryLog.update({
       where: { id: log.id },

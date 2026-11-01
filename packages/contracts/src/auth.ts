@@ -90,6 +90,7 @@ export type InviteStudentInput = z.infer<typeof InviteStudentSchema>;
 export const InviteResponseSchema = z.object({
   studentLinkId: z.uuid(),
   inviteUrl: z.url(),
+  whatsappUrl: z.url().nullable(),
   expiresAt: z.iso.datetime(),
 });
 
@@ -190,6 +191,13 @@ export const UpdateMeSchema = z.object({
   locale: z.enum(Locale).optional(),
   timezone: TimezoneSchema.optional(),
   avatarMediaId: z.uuid().nullable().optional(),
+  birthDate: z.iso.date().nullable().optional(),
+  trainingReminderEnabled: z.boolean().optional(),
+  trainingReminderTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/)
+    .nullable()
+    .optional(),
 });
 
 export const UpdateTenantSchema = z.object({

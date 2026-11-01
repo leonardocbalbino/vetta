@@ -60,7 +60,7 @@ describe('preferências por categoria e canal', () => {
       quietHours: prefs.body.quietHours,
     });
 
-    const e = createDomainEvent('workout.assigned', {
+    const e = createDomainEvent('workout.published', {
       tenantId: w.tenantId,
       payload: { studentLinkId: linkId, programId: 'p1', workoutName: 'Treino A' },
     });
@@ -71,7 +71,7 @@ describe('preferências por categoria e canal', () => {
     });
     expect(out.find((o) => o.channel === 'IN_APP')).toMatchObject({ status: 'sent' });
     expect(scheduled).toHaveLength(0);
-    expect(emitted[0]!.n).toMatchObject({ title: 'Treino novo', deepLink: '/treinos/p1' });
+    expect(emitted[0]!.n).toMatchObject({ title: 'Treino novo', deepLink: '/treino' });
     expect(emitted[0]!.n.body).toContain('Treino A');
 
     // sino: lista, contador, marcar como lida
@@ -98,7 +98,7 @@ describe('horário de silêncio (22h–7h no fuso do usuário)', () => {
     const now = spTime(23);
     const out = await dispatchEvent(
       deps(now),
-      createDomainEvent('workout.assigned', {
+      createDomainEvent('workout.published', {
         tenantId: w.tenantId,
         payload: { studentLinkId: linkId, programId: 'p2' },
       }),
@@ -119,7 +119,7 @@ describe('horário de silêncio (22h–7h no fuso do usuário)', () => {
     await ctx.db.user.update({ where: { id: userId }, data: { timezone: 'Asia/Tokyo' } });
     await dispatchEvent(
       deps(spTime(23)),
-      createDomainEvent('workout.assigned', {
+      createDomainEvent('workout.published', {
         tenantId: w.tenantId,
         payload: { studentLinkId: linkId, programId: 'p3' },
       }),

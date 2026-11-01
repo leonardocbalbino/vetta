@@ -84,6 +84,7 @@ export class AuthService {
       meta,
     });
     await this.sendVerification(user.id, user.name);
+    await this.notifyNewPersonal(user.id);
     return this.sessions.createUserSession(user.id, device, meta, {
       method: 'PASSWORD',
       notifyNewLogin: false,
@@ -189,6 +190,20 @@ export class AuthService {
       ip: meta.ip,
       userAgent: meta.userAgent,
     }));
+  }
+
+  /** Avisa a equipe da plataforma sobre um novo cadastro. */
+  private async notifyNewPersonal(userId: string) {
+    const t = await this.prisma.system.tenant.findFirst({
+      where: { ownerUserId: userId },
+      orderBy: { createdAt: 'desc' },
+      include: { owner: true },
+    });
+    if (!t) return;
+    await this.events.publish('personal.registered', {
+      tenantId: t.id,
+      payload: { tenantName: t.name, ownerName: t.owner.name, ownerEmail: t.owner.email },
+    });
   }
 
   // ─── Verificação de e-mail ───────────────────────────────────────────────

@@ -10,6 +10,8 @@ export const QUEUES = {
   media: 'media',
   /** Jobs agendados (repeatable). */
   scheduler: 'scheduler',
+  /** Documentos gerados (PDF de avaliação). */
+  documents: 'documents',
 } as const;
 
 export type DomainEventJob = DomainEvent;
@@ -31,6 +33,10 @@ export const SCHEDULED_JOBS = {
   cleanupPendingUploads: { name: 'media.cleanup-pending', every: 24 * 60 * 60 * 1000 },
   purgeDeletedMedia: { name: 'media.purge-deleted', every: 24 * 60 * 60 * 1000 },
   pushReceipts: { name: 'push.check-receipts', every: 15 * 60 * 1000 },
+  trainingReminders: { name: 'training.reminders', every: 5 * 60 * 1000 },
+  inactiveStudents: { name: 'students.inactive', every: 6 * 60 * 60 * 1000 },
+  birthdays: { name: 'students.birthdays', every: 6 * 60 * 60 * 1000 },
+  assessmentsDue: { name: 'assessments.due', every: 6 * 60 * 60 * 1000 },
 } as const;
 export type ScheduledJobName = (typeof SCHEDULED_JOBS)[keyof typeof SCHEDULED_JOBS]['name'];
 

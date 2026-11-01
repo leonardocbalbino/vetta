@@ -72,6 +72,8 @@ export async function resolveRecipients(
       }
       return [...new Set(ids)];
     }
+    case 'platform_admins':
+      return [];
     case 'student': {
       if (typeof p.studentLinkId !== 'string') return [];
       const link = await db.studentLink.findUnique({
@@ -143,6 +145,7 @@ export async function dispatchEvent(
   const now = deps.now?.() ?? new Date();
   const outcomes: DispatchOutcome[] = [];
 
+  if (rule.recipients === 'platform_admins') return dispatchToAdmins(deps, rule, event, now);
   const recipients = await resolveRecipients(db, rule, event);
   if (!recipients.length) return [];
   const tenant = event.tenantId
@@ -309,4 +312,50 @@ export async function dispatchEvent(
     }
   }
   return outcomes;
+}
+
+/** Avisos para a equipe da plataforma: só e-mail, sem preferências (admin não é User). */
+async function dispatchToAdmins(
+  deps: DispatcherDeps,
+  rule: NotificationRule,
+  event: DomainEvent,
+  now: Date,
+): Promise<DispatchOutcome[]> {
+  const admins = await deps.db.adminUser.findMany({ where: { isActive: true, deletedAt: null } });
+  const tpl = await findTemplate(deps.db, event.name, 'EMAIL', 'pt-BR', null);
+  if (!tpl) return [];
+  const vars = { ...event.payload };
+  const out: DispatchOutcome[] = [];
+  for (const admin of admins) {
+    const log = await deps.db.deliveryLog.upsert({
+      where: { eventId_userId_channel: { eventId: event.id, userId: admin.id, channel: 'EMAIL' } },
+      create: {
+        eventId: event.id,
+        event: event.name,
+        userId: admin.id,
+        tenantId: event.tenantId,
+        channel: 'EMAIL',
+        status: 'QUEUED',
+        scheduledFor: now,
+        templateVersion: tpl.version,
+      },
+      update: {},
+    });
+    if (log.status !== 'QUEUED') continue;
+    await deps.scheduleDelivery(
+      {
+        deliveryLogId: log.id,
+        channel: 'EMAIL',
+        subject: tpl.subject ? renderTemplate(tpl.subject, vars) : null,
+        title: renderTemplate(tpl.title, vars),
+        body: renderTemplate(tpl.body, vars),
+        ctaLabel: tpl.ctaLabel,
+        deepLink: rule.deepLink(event),
+        groupKey: null,
+      },
+      0,
+    );
+    out.push({ userId: admin.id, channel: 'EMAIL', status: 'queued', scheduledFor: now });
+  }
+  return out;
 }

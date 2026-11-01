@@ -77,26 +77,30 @@ enum Sex {
 
 /// Usuário global: personal, assistente e aluno (pode ser aluno de vários personais).
 model User {
-  id                    String     @id @default(uuid(7)) @db.Uuid
-  email                 String     @unique
-  emailVerifiedAt       DateTime?  @map("email_verified_at") @db.Timestamptz(3)
-  passwordHash          String?    @map("password_hash")
-  name                  String
-  phone                 String?
-  avatarMediaId         String?    @map("avatar_media_id") @db.Uuid
-  locale                String     @default("pt-BR")
-  timezone              String     @default("America/Sao_Paulo")
-  status                UserStatus @default(PENDING)
-  twoFactorSecret       String?    @map("two_factor_secret")
-  twoFactorEnabledAt    DateTime?  @map("two_factor_enabled_at") @db.Timestamptz(3)
-  twoFactorRecoveryCodes String[]  @map("two_factor_recovery_codes")
-  quietHoursEnabled     Boolean    @default(true) @map("quiet_hours_enabled")
-  quietHoursStart       String     @default("22:00") @map("quiet_hours_start")
-  quietHoursEnd         String     @default("07:00") @map("quiet_hours_end")
-  lastLoginAt           DateTime?  @map("last_login_at") @db.Timestamptz(3)
-  createdAt             DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt             DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt             DateTime?  @map("deleted_at") @db.Timestamptz(3)
+  id                      String     @id @default(uuid(7)) @db.Uuid
+  email                   String     @unique
+  emailVerifiedAt         DateTime?  @map("email_verified_at") @db.Timestamptz(3)
+  passwordHash            String?    @map("password_hash")
+  name                    String
+  phone                   String?
+  avatarMediaId           String?    @map("avatar_media_id") @db.Uuid
+  locale                  String     @default("pt-BR")
+  timezone                String     @default("America/Sao_Paulo")
+  status                  UserStatus @default(PENDING)
+  twoFactorSecret         String?    @map("two_factor_secret")
+  twoFactorEnabledAt      DateTime?  @map("two_factor_enabled_at") @db.Timestamptz(3)
+  twoFactorRecoveryCodes  String[]   @map("two_factor_recovery_codes")
+  quietHoursEnabled       Boolean    @default(true) @map("quiet_hours_enabled")
+  quietHoursStart         String     @default("22:00") @map("quiet_hours_start")
+  quietHoursEnd           String     @default("07:00") @map("quiet_hours_end")
+  trainingReminderEnabled Boolean    @default(false) @map("training_reminder_enabled")
+  /// "HH:MM" no fuso do usuário.
+  trainingReminderTime    String?    @map("training_reminder_time")
+  birthDate               DateTime?  @map("birth_date") @db.Date
+  lastLoginAt             DateTime?  @map("last_login_at") @db.Timestamptz(3)
+  createdAt               DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt               DateTime?  @map("deleted_at") @db.Timestamptz(3)
 
   identities              UserIdentity[]
   ownedTenants            Tenant[]                 @relation("TenantOwner")
@@ -146,41 +150,48 @@ model AdminUser {
   updatedAt              DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt              DateTime?    @map("deleted_at") @db.Timestamptz(3)
 
-  sessions           Session[]               @relation("AdminSession")
-  impersonations     Session[]               @relation("Impersonator")
-  authTokens         AuthToken[]
-  featureOverrides   TenantFeatureOverride[]
-  ownedMedia         Media[]                 @relation("MediaOwnerAdmin")
+  sessions         Session[]               @relation("AdminSession")
+  impersonations   Session[]               @relation("Impersonator")
+  authTokens       AuthToken[]
+  featureOverrides TenantFeatureOverride[]
+  ownedMedia       Media[]                 @relation("MediaOwnerAdmin")
 
   @@map("admin_users")
 }
 
 /// Tenant = negócio do personal.
 model Tenant {
-  id               String        @id @default(uuid(7)) @db.Uuid
-  slug             String        @unique
-  name             String
-  ownerUserId      String        @map("owner_user_id") @db.Uuid
-  status           TenantStatus  @default(ACTIVE)
-  cref             String?
-  crefState        String?       @map("cref_state") @db.Char(2)
-  legalName        String?       @map("legal_name")
-  documentType     DocumentType? @map("document_type")
-  documentNumber   String?       @map("document_number")
-  billingEmail     String?       @map("billing_email")
-  phone            String?
-  addressStreet    String?       @map("address_street")
-  addressNumber    String?       @map("address_number")
-  addressComplement String?      @map("address_complement")
-  addressDistrict  String?       @map("address_district")
-  addressCity      String?       @map("address_city")
-  addressState     String?       @map("address_state") @db.Char(2)
-  addressZip       String?       @map("address_zip")
-  timezone         String        @default("America/Sao_Paulo")
-  locale           String        @default("pt-BR")
-  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt        DateTime?     @map("deleted_at") @db.Timestamptz(3)
+  id                  String        @id @default(uuid(7)) @db.Uuid
+  slug                String        @unique
+  name                String
+  ownerUserId         String        @map("owner_user_id") @db.Uuid
+  status              TenantStatus  @default(ACTIVE)
+  cref                String?
+  crefState           String?       @map("cref_state") @db.Char(2)
+  legalName           String?       @map("legal_name")
+  documentType        DocumentType? @map("document_type")
+  documentNumber      String?       @map("document_number")
+  billingEmail        String?       @map("billing_email")
+  phone               String?
+  addressStreet       String?       @map("address_street")
+  addressNumber       String?       @map("address_number")
+  addressComplement   String?       @map("address_complement")
+  addressDistrict     String?       @map("address_district")
+  addressCity         String?       @map("address_city")
+  addressState        String?       @map("address_state") @db.Char(2)
+  addressZip          String?       @map("address_zip")
+  timezone            String        @default("America/Sao_Paulo")
+  locale              String        @default("pt-BR")
+  bio                 String?
+  /// Dias sem treinar para o alerta de aluno sumido.
+  inactivityAlertDays Int           @default(5) @map("inactivity_alert_days")
+  /// Passos concluídos do onboarding guiado (profile, first_student, first_workout).
+  onboardingSteps     String[]      @map("onboarding_steps")
+  blockedAt           DateTime?     @map("blocked_at") @db.Timestamptz(3)
+  blockedReason       String?       @map("blocked_reason")
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt           DateTime?     @map("deleted_at") @db.Timestamptz(3)
 
   owner User @relation("TenantOwner", fields: [ownerUserId], references: [id])
 
@@ -245,13 +256,13 @@ model TenantMember {
   updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt DateTime?        @map("deleted_at") @db.Timestamptz(3)
 
-  tenant           Tenant          @relation(fields: [tenantId], references: [id])
-  user             User            @relation(fields: [userId], references: [id])
-  assignedStudents StudentLink[]   @relation("AssignedAssistant")
-  programs         WorkoutProgram[]
-  appointments     Appointment[]
+  tenant               Tenant                @relation(fields: [tenantId], references: [id])
+  user                 User                  @relation(fields: [userId], references: [id])
+  assignedStudents     StudentLink[]         @relation("AssignedAssistant")
+  programs             WorkoutProgram[]
+  appointments         Appointment[]
   calendarIntegrations CalendarIntegration[]
-  physicalAssessments PhysicalAssessment[]
+  physicalAssessments  PhysicalAssessment[]
 
   @@unique([tenantId, userId])
   @@index([userId])
@@ -260,49 +271,58 @@ model TenantMember {
 
 /// Vínculo aluno x personal (tenant).
 model StudentLink {
-  id                String            @id @default(uuid(7)) @db.Uuid
-  tenantId          String            @map("tenant_id") @db.Uuid
-  userId            String?           @map("user_id") @db.Uuid
-  displayName       String            @map("display_name")
-  email             String?
-  phone             String?
-  status            StudentLinkStatus @default(INVITED)
-  assistantMemberId String?           @map("assistant_member_id") @db.Uuid
-  birthDate         DateTime?         @map("birth_date") @db.Date
-  sex               Sex?
-  goal              String?
-  notes             String?
-  invitedAt         DateTime?         @map("invited_at") @db.Timestamptz(3)
-  joinedAt          DateTime?         @map("joined_at") @db.Timestamptz(3)
-  archivedAt        DateTime?         @map("archived_at") @db.Timestamptz(3)
-  archivedReason    String?           @map("archived_reason")
-  lastActivityAt    DateTime?         @map("last_activity_at") @db.Timestamptz(3)
-  lastWorkoutAt     DateTime?         @map("last_workout_at") @db.Timestamptz(3)
-  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt         DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt         DateTime?         @map("deleted_at") @db.Timestamptz(3)
+  id                    String            @id @default(uuid(7)) @db.Uuid
+  tenantId              String            @map("tenant_id") @db.Uuid
+  userId                String?           @map("user_id") @db.Uuid
+  displayName           String            @map("display_name")
+  email                 String?
+  phone                 String?
+  status                StudentLinkStatus @default(INVITED)
+  assistantMemberId     String?           @map("assistant_member_id") @db.Uuid
+  birthDate             DateTime?         @map("birth_date") @db.Date
+  sex                   Sex?
+  goal                  String?
+  level                 String?
+  restrictions          String?
+  injuries              String?
+  whatsapp              String?
+  emergencyContactName  String?           @map("emergency_contact_name")
+  emergencyContactPhone String?           @map("emergency_contact_phone")
+  tags                  String[]
+  /// Observações privadas do personal (o aluno não vê).
+  notes                 String?
+  inactivityNotifiedAt  DateTime?         @map("inactivity_notified_at") @db.Timestamptz(3)
+  invitedAt             DateTime?         @map("invited_at") @db.Timestamptz(3)
+  joinedAt              DateTime?         @map("joined_at") @db.Timestamptz(3)
+  archivedAt            DateTime?         @map("archived_at") @db.Timestamptz(3)
+  archivedReason        String?           @map("archived_reason")
+  lastActivityAt        DateTime?         @map("last_activity_at") @db.Timestamptz(3)
+  lastWorkoutAt         DateTime?         @map("last_workout_at") @db.Timestamptz(3)
+  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt             DateTime?         @map("deleted_at") @db.Timestamptz(3)
 
   tenant    Tenant        @relation(fields: [tenantId], references: [id])
   user      User?         @relation(fields: [userId], references: [id])
   assistant TenantMember? @relation("AssignedAssistant", fields: [assistantMemberId], references: [id])
 
-  groupMemberships     StudentGroupMember[]
-  activities           StudentActivity[]
-  programs             WorkoutProgram[]
-  periodizations       Periodization[]
-  workoutSessions      WorkoutSession[]
-  personalRecords      PersonalRecord[]
-  anamnesisResponses   AnamnesisResponse[]
-  physicalAssessments  PhysicalAssessment[]
-  postureAssessments   PostureAssessment[]
-  progressPhotos       ProgressPhoto[]
-  bodyMeasurements     BodyMeasurement[]
-  conversation         Conversation?
-  appointments         Appointment[]
-  subscriptions        StudentSubscription[]
-  invoices             Invoice[]
-  documents            StudentDocument[]
-  media                Media[]
+  groupMemberships    StudentGroupMember[]
+  activities          StudentActivity[]
+  programs            WorkoutProgram[]
+  periodizations      Periodization[]
+  workoutSessions     WorkoutSession[]
+  personalRecords     PersonalRecord[]
+  anamnesisResponses  AnamnesisResponse[]
+  physicalAssessments PhysicalAssessment[]
+  postureAssessments  PostureAssessment[]
+  progressPhotos      ProgressPhoto[]
+  bodyMeasurements    BodyMeasurement[]
+  conversation        Conversation?
+  appointments        Appointment[]
+  subscriptions       StudentSubscription[]
+  invoices            Invoice[]
+  documents           StudentDocument[]
+  media               Media[]
 
   @@unique([tenantId, userId])
   @@index([tenantId, status])
@@ -313,22 +333,22 @@ model StudentLink {
 
 /// Sessão por dispositivo; refresh tokens rotativos em refresh_tokens.
 model Session {
-  id                     String         @id @default(uuid(7)) @db.Uuid
-  userId                 String?        @map("user_id") @db.Uuid
-  adminUserId            String?        @map("admin_user_id") @db.Uuid
-  deviceName             String?        @map("device_name")
-  platform               DevicePlatform @default(WEB)
-  ip                     String?
-  userAgent              String?        @map("user_agent")
-  authMethod             AuthProvider   @default(PASSWORD) @map("auth_method")
-  impersonatorAdminId    String?        @map("impersonator_admin_id") @db.Uuid
-  impersonationReason    String?        @map("impersonation_reason")
-  lastUsedAt             DateTime       @default(now()) @map("last_used_at") @db.Timestamptz(3)
-  expiresAt              DateTime       @map("expires_at") @db.Timestamptz(3)
-  revokedAt              DateTime?      @map("revoked_at") @db.Timestamptz(3)
-  revokedReason          String?        @map("revoked_reason")
-  createdAt              DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt              DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id                  String         @id @default(uuid(7)) @db.Uuid
+  userId              String?        @map("user_id") @db.Uuid
+  adminUserId         String?        @map("admin_user_id") @db.Uuid
+  deviceName          String?        @map("device_name")
+  platform            DevicePlatform @default(WEB)
+  ip                  String?
+  userAgent           String?        @map("user_agent")
+  authMethod          AuthProvider   @default(PASSWORD) @map("auth_method")
+  impersonatorAdminId String?        @map("impersonator_admin_id") @db.Uuid
+  impersonationReason String?        @map("impersonation_reason")
+  lastUsedAt          DateTime       @default(now()) @map("last_used_at") @db.Timestamptz(3)
+  expiresAt           DateTime       @map("expires_at") @db.Timestamptz(3)
+  revokedAt           DateTime?      @map("revoked_at") @db.Timestamptz(3)
+  revokedReason       String?        @map("revoked_reason")
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   user          User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
   adminUser     AdminUser?     @relation("AdminSession", fields: [adminUserId], references: [id], onDelete: Cascade)
@@ -341,13 +361,13 @@ model Session {
 }
 
 model RefreshToken {
-  id           String    @id @default(uuid(7)) @db.Uuid
-  sessionId    String    @map("session_id") @db.Uuid
-  tokenHash    String    @unique @map("token_hash")
-  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(3)
+  id        String    @id @default(uuid(7)) @db.Uuid
+  sessionId String    @map("session_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
   /// Preenchido quando o token é trocado; reapresentá-lo = reuso.
-  rotatedAt    DateTime? @map("rotated_at") @db.Timestamptz(3)
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  rotatedAt DateTime? @map("rotated_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 

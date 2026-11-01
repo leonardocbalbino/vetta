@@ -50,6 +50,8 @@ model WorkoutProgram {
   startsOn          DateTime?     @map("starts_on") @db.Date
   endsOn            DateTime?     @map("ends_on") @db.Date
   publicToken       String?       @unique @map("public_token")
+  publishedAt       DateTime?     @map("published_at") @db.Timestamptz(3)
+  version           Int           @default(1)
   aiGenerated       Boolean       @default(false) @map("ai_generated")
   createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -126,6 +128,8 @@ model ExerciseSet {
   distanceMeters    Int?      @map("distance_meters")
   restSeconds       Int?      @map("rest_seconds")
   rpe               Decimal?  @db.Decimal(3, 1)
+  rir               Int?
+  cadence           String?
   notes             String?
   createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -194,8 +198,15 @@ model WorkoutSession {
   finishedAt      DateTime? @map("finished_at") @db.Timestamptz(3)
   durationSeconds Int?      @map("duration_seconds")
   perceivedEffort Int?      @map("perceived_effort")
+  /// Nota do treino (1 a 5).
+  rating          Int?
+  hasPain         Boolean?  @map("has_pain")
+  painLocation    String?   @map("pain_location")
   mood            String?
   feedback        String?
+  totalVolumeKg   Decimal?  @map("total_volume_kg") @db.Decimal(10, 1)
+  feedbackReadAt  DateTime? @map("feedback_read_at") @db.Timestamptz(3)
+  critical        Boolean   @default(false)
   isExtra         Boolean   @default(false) @map("is_extra")
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -210,6 +221,7 @@ model WorkoutSession {
 
   @@unique([tenantId, clientId])
   @@index([tenantId, studentLinkId, startedAt])
+  @@index([tenantId, finishedAt])
   @@map("workout_sessions")
 }
 
@@ -225,6 +237,9 @@ model SessionSetLog {
   durationSeconds   Int?      @map("duration_seconds")
   distanceMeters    Int?      @map("distance_meters")
   completed         Boolean   @default(true)
+  skipped           Boolean   @default(false)
+  rpe               Decimal?  @db.Decimal(3, 1)
+  notes             String?
   createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(3)

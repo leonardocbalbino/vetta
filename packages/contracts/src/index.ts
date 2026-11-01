@@ -9,3 +9,8 @@ export * from './entitlements.js';
 export * from './notifications.js';
 export * from './events.js';
 export * from './deep-links.js';
+export * from './library.js';
+export * from './students.js';
+export * from './workouts.js';
+export * from './training.js';
+export * from './assessments.js';
