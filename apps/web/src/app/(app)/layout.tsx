@@ -29,7 +29,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const active = me.data?.memberships.find((m) => m.tenantId === tenantId);
   useEffect(() => {
     if (!active) return;
-    const studentArea = STUDENT_ROUTES.some((r) => path.startsWith(r));
+    const studentArea = STUDENT_ROUTES.some((r) => path === r || path.startsWith(`${r}/`));
     if (active.role === 'ALUNO' && !studentArea) router.replace('/treino');
     if (active.role !== 'ALUNO' && studentArea) router.replace('/inicio');
   }, [active, path, router]);

@@ -76,3 +76,41 @@ jobs:
           key: turbo-test-${{ runner.os }}-${{ github.sha }}
           restore-keys: turbo-test-${{ runner.os }}-
       - run: pnpm turbo run test --cache-dir=.turbo --filter=!@vetta/web --filter=!@vetta/admin --filter=!@vetta/site --filter=!@vetta/mobile
+
+  e2e-web:
+    name: E2E web (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: vetta
+          POSTGRES_PASSWORD: vetta
+          POSTGRES_DB: vetta
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U vetta" --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+    env:
+      DATABASE_URL: postgresql://vetta:vetta@localhost:5432/vetta
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run build --filter=@vetta/api --filter=@vetta/web
+      - run: pnpm --filter @vetta/db migrate:deploy && pnpm --filter @vetta/db seed
+      - run: pnpm --filter @vetta/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @vetta/web test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
