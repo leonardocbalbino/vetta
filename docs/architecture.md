@@ -93,3 +93,23 @@ O in-app é gravado e emitido na hora via Socket.IO. Os canais externos viram `d
 - Logs: pino com `x-request-id` propagado e campos sensíveis mascarados.
 - Erros e traces: Sentry na API (`instrument.ts`), no worker e na web, ativado por DSN.
 - Saúde: `/health` checa banco, Redis e storage.
+
+## Treino e player (Fase 1)
+
+- **Prescrição:** programa → rotinas (A, B, C) → itens → séries. O construtor web envia o programa inteiro em `PUT /v1/programs/:id` e a API reconcilia a árvore numa transação (ids existentes são atualizados, ausentes recebem `deleted_at`). Publicar incrementa `version` e emite `workout.published`.
+- **Player:** a lógica é pura e compartilhada em `packages/sdk/src/player.ts` (`buildPlayer`, `nextPosition` com alternância de bi-set/circuito, `toSyncPayload`) e usada pela web e pelo mobile.
+- **Offline-first (mobile):** `apps/mobile/src/lib/offline.ts` guarda o treino do dia e o progresso da sessão em SQLite. Sem internet, a sessão finalizada vai para `pending_sessions` e é reenviada ao voltar a conexão. A idempotência vem do `clientSessionId` gerado no aparelho: reenviar a mesma sessão devolve o registro existente.
+- **Recordes:** `detectRecords` (`packages/fitness`) compara a sessão com os melhores anteriores (carga máxima, 1RM estimado, volume) e publica `record.achieved`.
+- **Feedback:** obrigatório para finalizar. Nota ≤ 2 ou dor marcam a sessão como crítica (`feedback.critical`). A resposta do personal vira mensagem no chat do aluno.
+
+## Avaliações e PDF
+
+As fórmulas (Pollock 3 e 7, Jackson-Pollock, Guedes, Petroski, Faulkner, Durnin-Womersley, IMC, RCQ) vivem em `packages/fitness`, com 100% de cobertura. O PDF é gerado no worker (fila `documents`, `@react-pdf/renderer`) e salvo como mídia `document` do tenant.
+
+## Site
+
+SSG com ISR de 1 h: preços (`GET /v1/plans`) e documentos legais (`GET /v1/legal/:kind`) vêm da API, então o admin altera sem novo deploy. Sem API no build (CI), os preços caem para o seed. GA4 e Meta Pixel só carregam após consentimento por finalidade (banner LGPD versionado em `localStorage`).
+
+## Impersonação (admin → web)
+
+O admin cria a sessão em `POST /v1/admin/impersonations` (motivo obrigatório, auditado) e abre `app…/impersonar#<tokens>`. Os tokens vão no fragmento, que o navegador não envia a servidores; a página grava a sessão e apaga o fragmento. A web mostra o banner de impersonação a partir de `impersonatedBy` em `/me`.

@@ -48,12 +48,12 @@ Cada app tem um `.env.example`. Na inicialização, o app valida as variáveis c
 
 ## Front-ends
 
-| App    | Variáveis                                                              |
-| ------ | ---------------------------------------------------------------------- |
-| web    | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SENTRY_DSN` |
-| admin  | `NEXT_PUBLIC_API_URL`                                                  |
-| site   | `NEXT_PUBLIC_APP_URL`                                                  |
-| mobile | `EXPO_PUBLIC_API_URL`                                                  |
+| App    | Variáveis                                                                                                                                                                                                                                                               |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| web    | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SENTRY_DSN`                                                                                                                                                                                                  |
+| admin  | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WEB_URL` (destino da impersonação)                                                                                                                                                                                                  |
+| site   | `NEXT_PUBLIC_APP_URL`, `API_URL` (preços e documentos legais no build/ISR; sem API usa o seed), `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_META_PIXEL_ID` (só carregam após consentimento), `NEXT_PUBLIC_SHOW_PLACEHOLDERS` (depoimentos ilustrativos; nunca `true` em produção) |
+| mobile | `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_WEB_URL`, `EXPO_PUBLIC_GOOGLE_CLIENT_ID` (login Google), `EAS_PROJECT_ID` (push e EAS Update, lido em `app.config.ts`)                                                                                                              |
 
 ## Testes
 

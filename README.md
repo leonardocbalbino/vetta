@@ -63,6 +63,15 @@ TEST_REDIS_URL=redis://localhost:6379/1 \
 TEST_S3_ENDPOINT=http://localhost:9000 pnpm test
 ```
 
+Testes de ponta a ponta:
+
+| Comando                             | O que faz                                                                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `pnpm --filter @vetta/web test:e2e` | Playwright: cadastro → aluno conclui o primeiro treino pelo link público (precisa da API rodando) |
+| `maestro test apps/mobile/.maestro` | Maestro: login do aluno, treino offline e sincronização (emulador com build de desenvolvimento)   |
+
+App mobile com EAS: `eas build --profile development|preview|production` (defina `EAS_PROJECT_ID`).
+
 ## Mapa do monorepo
 
 ```
