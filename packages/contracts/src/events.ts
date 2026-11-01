@@ -1,0 +1,46 @@
+import type { NotificationCategory } from './enums.js';
+
+/**
+ * Catálogo de eventos de domínio. Módulos apenas publicam eventos;
+ * o NotificationService decide quem recebe, por qual canal e quando.
+ */
+export const DOMAIN_EVENTS = {
+  // segurança / conta
+  'auth.email_verification_requested': 'SECURITY',
+  'auth.password_reset_requested': 'SECURITY',
+  'auth.magic_link_requested': 'SECURITY',
+  'auth.new_login': 'SECURITY',
+  'auth.two_factor_enabled': 'SECURITY',
+  'auth.refresh_token_reused': 'SECURITY',
+  'student.invited': 'SYSTEM',
+  'student.joined': 'SYSTEM',
+  'students.archived': 'SYSTEM',
+  // plano
+  'subscription.trial_ending': 'FINANCE',
+  'subscription.trial_expired': 'FINANCE',
+  // mídia
+  'media.ready': 'SYSTEM',
+  'media.failed': 'SYSTEM',
+  'storage.quota_warning': 'SYSTEM',
+  'storage.quota_exceeded': 'SYSTEM',
+  // próximas fases (regras já declaradas)
+  'workout.assigned': 'TRAINING',
+  'workout.completed': 'TRAINING',
+  'chat.message_created': 'CHAT',
+  'invoice.created': 'FINANCE',
+  'invoice.overdue': 'FINANCE',
+  'appointment.reminder': 'TRAINING',
+} as const satisfies Record<string, NotificationCategory>;
+
+export type DomainEventName = keyof typeof DOMAIN_EVENTS;
+
+export interface DomainEvent<P extends Record<string, unknown> = Record<string, unknown>> {
+  /** Id único do evento (idempotência). */
+  id: string;
+  name: DomainEventName;
+  tenantId: string | null;
+  /** Usuário que causou o evento, quando houver. */
+  actorId: string | null;
+  occurredAt: string;
+  payload: P;
+}
