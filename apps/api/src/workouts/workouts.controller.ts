@@ -23,7 +23,7 @@ import {
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { SetMetadata } from '@nestjs/common';
-import { Can, Public, RequireFeature } from '../access/decorators';
+import { Can, Public, RequireFeature, Roles } from '../access/decorators';
 import { AUTH_THROTTLE } from '../auth/auth.controller';
 import {
   CurrentTenant,
@@ -148,6 +148,7 @@ export class TrainingController {
 
   /** Treino do dia do aluno (com última execução e sugestão de carga). */
   @Get('today')
+  @Roles('ALUNO')
   @Can('read', 'workouts')
   @RequireFeature('training.player')
   today(@CurrentTenant() t: TenantAccess) {
@@ -156,6 +157,7 @@ export class TrainingController {
 
   /** Sincroniza uma sessão concluída (idempotente por clientSessionId). */
   @Post('sessions')
+  @Roles('ALUNO')
   @Can('create', 'training')
   @RequireFeature('training.player')
   sync(@CurrentTenant() t: TenantAccess, @CurrentUser() u: UserPrincipal, @Body() dto: SyncDto) {
@@ -193,6 +195,7 @@ export class FeedbacksController {
   }
 
   @Post(':sessionId/reply')
+  @Roles('PERSONAL', 'PERSONAL_ASSISTENTE')
   @Can('create', 'chat')
   reply(
     @CurrentTenant() t: TenantAccess,

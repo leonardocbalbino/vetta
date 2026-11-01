@@ -65,7 +65,14 @@ export function injectTenant(
   const shared = SHARED_MODEL_NAMES.has(model);
   if (READ_OPS.has(operation)) {
     a.where = shared
-      ? { ...(a.where ?? {}), AND: [{ OR: [{ tenantId }, { tenantId: null }] }] }
+      ? {
+          ...(a.where ?? {}),
+          // Mescla com um AND existente em vez de sobrescrevê-lo.
+          AND: [
+            ...(Array.isArray(a.where?.AND) ? a.where.AND : a.where?.AND ? [a.where.AND] : []),
+            { OR: [{ tenantId }, { tenantId: null }] },
+          ],
+        }
       : { ...(a.where ?? {}), tenantId };
   } else if (WHERE_WRITE_OPS.has(operation)) {
     a.where = { ...(a.where ?? {}), tenantId };

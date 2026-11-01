@@ -58,3 +58,11 @@ describe('injectTenant', () => {
     expect(injectTenant('Tenant', 'findMany', {}, T).where).toEqual({ id: T });
   });
 });
+
+describe('injectTenant preserva filtros AND existentes', () => {
+  it('modelo compartilhado mescla o AND do chamador', () => {
+    const T = '0190f1e2-0000-7000-8000-000000000001';
+    const w = injectTenant('Exercise', 'findMany', { where: { AND: [{ name: 'a' }] } }, T).where;
+    expect(w).toEqual({ AND: [{ name: 'a' }, { OR: [{ tenantId: T }, { tenantId: null }] }] });
+  });
+});

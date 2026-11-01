@@ -16,7 +16,7 @@ import type { Prisma } from '@vetta/db';
 import type { EventPublisher } from '@vetta/server';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { Can, RequireFeature } from '../access/decorators';
+import { Can, RequireFeature, Roles } from '../access/decorators';
 import { AuthService } from '../auth/auth.service';
 import { badRequest, conflict, notFound } from '../common/errors';
 import {
@@ -279,6 +279,7 @@ export class AnamnesisController {
 
   @Post('responses/:id/answer')
   @HttpCode(200)
+  @Roles('ALUNO')
   @Can('update', 'anamnesis')
   answer(
     @CurrentTenant() t: TenantAccess,
