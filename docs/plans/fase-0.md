@@ -41,3 +41,11 @@ Telas de produto (só shells com login e demonstração de entitlements/upload),
 
 - Expo SDK 58 em monorepo pnpm: build do mobile no CI será `typecheck` + `expo export` só sob demanda (EAS em fase posterior).
 - ClamAV consome ~1 GB de RAM; no compose fica no profile `full` e o worker trata ausência conforme `CLAMAV_ENABLED`.
+
+## Status da execução
+
+Concluída. Durante a execução surgiram três desvios do plano:
+
+- **ADR-008:** a MinIO deixou de publicar imagens; o storage local é o SeaweedFS (compatível com S3).
+- **ADR-009:** versões fixadas e `expo-av` descontinuado (usamos `expo-video`).
+- **Permissões:** o assistente não convida, arquiva nem reativa alunos (gestão da carteira é do personal), conforme `can()` em `@vetta/contracts`.
