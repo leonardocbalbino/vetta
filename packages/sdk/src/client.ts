@@ -76,6 +76,8 @@ export class VettaClient {
     body?: unknown,
     query?: Query,
     retry = true,
+    /** Força o vínculo (ex.: sessão offline feita em outro tenant). */
+    tenantOverride?: string,
   ): Promise<T> {
     const url = new URL(
       path.replace(/^\//, ''),
@@ -84,7 +86,7 @@ export class VettaClient {
     for (const [k, v] of Object.entries(query ?? {}))
       if (v !== undefined) url.searchParams.set(k, String(v));
     const tokens = await this.tokens.get();
-    const tenantId = this.o.getTenantId?.();
+    const tenantId = tenantOverride ?? this.o.getTenantId?.();
     const res = await this.fetcher(url, {
       method,
       headers: {
@@ -97,7 +99,7 @@ export class VettaClient {
 
     if (res.status === 401 && retry && tokens?.refreshToken) {
       const fresh = await this.refresh();
-      if (fresh) return this.request<T>(method, path, body, query, false);
+      if (fresh) return this.request<T>(method, path, body, query, false, tenantOverride);
     }
     const text = await res.text();
     const json = text ? (JSON.parse(text) as unknown) : undefined;

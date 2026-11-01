@@ -1,0 +1,22 @@
+# Login do aluno com senha e chegada no treino do dia.
+# Pré-requisito: API local com seed de desenvolvimento (aluno01@vettafit.dev / Vetta@2026dev).
+appId: br.com.vettafit.app
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: email
+- inputText: ${ALUNO_EMAIL || 'aluno01@vettafit.dev'}
+- tapOn:
+    id: password
+- inputText: ${ALUNO_PASSWORD || 'Vetta@2026dev'}
+- tapOn:
+    id: login
+- runFlow:
+    when:
+      visible: Como você quer entrar?
+    commands:
+      - tapOn:
+          text: Entrar
+          index: 0
+- assertVisible: Treino do dia

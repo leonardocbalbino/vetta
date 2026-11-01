@@ -14,7 +14,8 @@
       "infoPlist": {
         "NSFaceIDUsageDescription": "Use o Face ID para entrar na Vetta com segurança.",
         "NSCameraUsageDescription": "A câmera é usada para fotos de progresso e avaliação postural."
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "br.com.vettafit.app",
@@ -22,10 +23,19 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [{ "scheme": "https", "host": "app.vettafit.com.br" }],
+          "data": [
+            {
+              "scheme": "https",
+              "host": "app.vettafit.com.br"
+            }
+          ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#101418"
+      }
     },
     "plugins": [
       "expo-router",
@@ -35,17 +45,46 @@
       "expo-video",
       [
         "expo-camera",
-        { "cameraPermission": "A câmera é usada para fotos de progresso e avaliação postural." }
+        {
+          "cameraPermission": "A câmera é usada para fotos de progresso e avaliação postural."
+        }
       ],
       [
         "expo-local-authentication",
-        { "faceIDPermission": "Use o Face ID para entrar na Vetta com segurança." }
+        {
+          "faceIDPermission": "Use o Face ID para entrar na Vetta com segurança."
+        }
       ],
-      ["expo-notifications", { "color": "#101418" }]
+      [
+        "expo-notifications",
+        {
+          "color": "#101418",
+          "icon": "./assets/notification-icon.png"
+        }
+      ],
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#101418",
+          "dark": {
+            "backgroundColor": "#101418"
+          }
+        }
+      ],
+      "expo-apple-authentication"
     ],
-    "experiments": { "typedRoutes": true },
+    "experiments": {
+      "typedRoutes": true
+    },
     "extra": {
       "apiUrl": "http://localhost:4000"
+    },
+    "icon": "./assets/icon.png",
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }

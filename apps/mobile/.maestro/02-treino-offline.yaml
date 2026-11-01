@@ -1,0 +1,33 @@
+# Treino sem internet: o app usa o treino salvo, conclui e enfileira a sessão.
+appId: br.com.vettafit.app
+---
+- runFlow: 01-login-aluno.yaml
+- assertVisible:
+    id: start-A
+- setAirplaneMode: enabled
+- tapOn:
+    id: start-A
+- repeat:
+    while:
+      visible:
+        id: done-set
+    commands:
+      - tapOn:
+          id: done-set
+      - runFlow:
+          when:
+            visible:
+              id: skip-rest
+          commands:
+            - tapOn:
+                id: skip-rest
+- tapOn:
+    id: rating-5
+- tapOn:
+    id: finish
+- assertVisible:
+    id: workout-done
+- assertVisible: .*internet voltar.*
+- tapOn: Voltar
+- assertVisible:
+    id: pending-sync

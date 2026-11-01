@@ -1,0 +1,11 @@
+# Com a internet de volta, a fila envia a sessão (idempotente por clientSessionId).
+appId: br.com.vettafit.app
+---
+- runFlow: 02-treino-offline.yaml
+- setAirplaneMode: disabled
+- swipe:
+    direction: DOWN
+- extendedWaitUntil:
+    notVisible:
+      id: pending-sync
+    timeout: 30000
