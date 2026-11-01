@@ -71,6 +71,8 @@ export const MagicLinkVerifySchema = DeviceInfoSchema.extend({ token: z.string()
 export const OAuthLoginSchema = DeviceInfoSchema.extend({
   provider: z.enum(['GOOGLE', 'APPLE']),
   idToken: z.string().min(20),
+  /** Necessário quando o login social cria uma conta nova de personal. */
+  acceptTerms: z.boolean().optional(),
   /** A Apple só envia o nome no primeiro login, pelo cliente. */
   name: z.string().trim().max(120).optional(),
 });
@@ -99,6 +101,8 @@ export const InvitePreviewSchema = z.object({
 });
 
 export const AcceptInviteSchema = DeviceInfoSchema.extend({
+  /** Obrigatório quando o convite foi gerado por link (sem e-mail). */
+  email: EmailSchema.optional(),
   token: z.string().min(20),
   password: PasswordSchema.optional(),
   name: z.string().trim().min(2).max(120).optional(),
@@ -173,4 +177,37 @@ export const SubscriptionSummarySchema = z.object({
   status: z.enum(SubscriptionStatus),
   trialEndsAt: z.iso.datetime().nullable(),
   currentPeriodEnd: z.iso.datetime().nullable(),
+});
+
+export const UpdateMeSchema = z.object({
+  name: z.string().trim().min(2).max(120).optional(),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?\d{10,15}$/, 'Use o formato +5511999999999.')
+    .nullable()
+    .optional(),
+  locale: z.enum(Locale).optional(),
+  timezone: TimezoneSchema.optional(),
+  avatarMediaId: z.uuid().nullable().optional(),
+});
+
+export const UpdateTenantSchema = z.object({
+  name: z.string().trim().min(2).max(120).optional(),
+  cref: z.string().trim().max(30).nullable().optional(),
+  crefState: z.string().length(2).nullable().optional(),
+  legalName: z.string().trim().max(160).nullable().optional(),
+  documentType: z.enum(['CPF', 'CNPJ']).nullable().optional(),
+  documentNumber: z
+    .string()
+    .regex(/^\d{11}$|^\d{14}$/, 'Somente números (CPF ou CNPJ).')
+    .nullable()
+    .optional(),
+  billingEmail: EmailSchema.nullable().optional(),
+  phone: z.string().trim().max(20).nullable().optional(),
+  timezone: TimezoneSchema.optional(),
+});
+
+export const UpdatePlanFeaturesSchema = z.object({
+  values: z.record(z.string(), z.union([z.boolean(), z.number().int().min(-1)])),
 });

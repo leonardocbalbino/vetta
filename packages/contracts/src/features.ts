@@ -15,22 +15,22 @@ export interface FeatureDefinition {
   unit?: string;
 }
 
-const bool = (
-  key: string,
+const bool = <K extends string>(
+  key: K,
   module: string,
   name: string,
   description: string,
   defaultValue = false,
-): FeatureDefinition => ({ key, type: 'BOOLEAN', module, name, description, defaultValue });
+) => ({ key, type: 'BOOLEAN' as const, module, name, description, defaultValue });
 
-const limit = (
-  key: string,
+const limit = <K extends string>(
+  key: K,
   module: string,
   name: string,
   description: string,
   defaultValue: number,
   unit: string,
-): FeatureDefinition => ({ key, type: 'LIMIT', module, name, description, defaultValue, unit });
+) => ({ key, type: 'LIMIT' as const, module, name, description, defaultValue, unit });
 
 /**
  * Catálogo de features. Cada módulo registra aqui suas chaves; o seed

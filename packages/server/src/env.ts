@@ -9,7 +9,11 @@ export function parseEnv<S extends z.ZodType>(
   source: Record<string, string | undefined> = process.env,
   appName = 'app',
 ): z.infer<S> {
-  const result = schema.safeParse(source);
+  // Variáveis vazias (FOO=) contam como ausentes.
+  const cleaned = Object.fromEntries(
+    Object.entries(source).filter(([, v]) => v !== undefined && v !== ''),
+  );
+  const result = schema.safeParse(cleaned);
   if (result.success) return result.data;
   const lines = result.error.issues.map((i) => {
     const key = i.path.join('.') || '(raiz)';
@@ -42,7 +46,7 @@ export const envList = z
 /** Blocos de variáveis reutilizados por api e worker. */
 export const SharedEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  LOG_LEVEL: z.enum(['silent', 'fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
   SENTRY_DSN: z.url().optional(),
