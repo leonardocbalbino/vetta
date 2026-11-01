@@ -20,6 +20,12 @@ export const ErrorCode = [
   'TENANT_REQUIRED',
   'UPLOAD_INVALID',
   'INTERNAL_ERROR',
+  'PAYMENT_NOT_CONFIGURED',
+  'PAYMENT_FAILED',
+  'PAYMENT_ACCOUNT_REQUIRED',
+  'PAYMENT_OVERDUE',
+  'WEBHOOK_INVALID',
+  'SLOT_UNAVAILABLE',
 ] as const;
 export type ErrorCode = (typeof ErrorCode)[number];
 

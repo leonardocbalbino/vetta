@@ -73,5 +73,14 @@ export const SharedEnvSchema = z.object({
   SMTP_URL: z.string().default('smtp://localhost:1025'),
   RESEND_API_KEY: z.string().optional(),
   EXPO_ACCESS_TOKEN: z.string().optional(),
+
+  /** Gateway: sempre o sandbox fora de produção (a URL de produção é recusada). */
+  ASAAS_BASE_URL: z.url().default('https://api-sandbox.asaas.com/v3'),
+  ASAAS_API_KEY: z.string().optional(),
+  ASAAS_WEBHOOK_TOKEN: z.string().min(16).optional(),
+  ASAAS_PLATFORM_WALLET_ID: z.string().optional(),
+  NFEIO_API_KEY: z.string().optional(),
+  NFEIO_COMPANY_ID: z.string().optional(),
+  NFEIO_CITY_SERVICE_CODE: z.string().default('0107'),
 });
 export type SharedEnv = z.infer<typeof SharedEnvSchema>;

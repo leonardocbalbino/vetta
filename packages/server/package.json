@@ -39,7 +39,8 @@
     "bullmq": "^5.61.0",
     "@react-pdf/renderer": "^4.3.1",
     "@vetta/tokens": "workspace:*",
-    "react": "^19.2.0"
+    "react": "^19.2.0",
+    "@vetta/fitness": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.18.0",

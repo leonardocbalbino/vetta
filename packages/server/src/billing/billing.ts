@@ -1,4 +1,5 @@
 import type { BillingCycle, PlanCode } from '@vetta/contracts';
+export { localDate } from '../jobs/engagement';
 
 /**
  * Regras de cobrança puras (sem I/O): ciclos, pró-rata, cupons, carência e
@@ -36,16 +37,6 @@ export function addMonths(date: Date, months: number): Date {
 
 export const addCycle = (date: Date, cycle: BillingCycle, times = 1) =>
   addMonths(date, CYCLE_MONTHS[cycle] * times);
-
-/** Data civil no fuso informado (ex.: hoje em America/Sao_Paulo). */
-export function localDate(at: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(at);
-}
 
 export const toDateOnly = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -198,3 +189,7 @@ export const graceEndsOn = (dueDate: string, graceDays = PLATFORM_GRACE_DAYS) =>
 /** Aluno inadimplente deve ser bloqueado hoje? (dias de atraso > tolerância). */
 export const shouldBlockStudent = (dueDate: string, today: string, toleranceDays: number) =>
   daysBetween(dueDate, today) > toleranceDays;
+
+/** Data civil + N dias. */
+export const addDaysToDate = (date: string, days: number) =>
+  toDateOnly(new Date(Date.parse(`${date}T00:00:00Z`) + days * DAY));
