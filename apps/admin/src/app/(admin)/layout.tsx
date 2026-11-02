@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Button, Logo, Skeleton, cn } from '@vetta/ui';
-import { BookOpen, Gauge, Layers, ScrollText, Users } from 'lucide-react';
+import { BookOpen, Gauge, Layers, ScrollText, Wallet, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
@@ -12,6 +12,7 @@ const NAV = [
   { href: '/painel', label: 'Painel', icon: Gauge },
   { href: '/personais', label: 'Personais', icon: Users },
   { href: '/planos', label: 'Planos', icon: Layers },
+  { href: '/financeiro', label: 'Financeiro', icon: Wallet },
   { href: '/biblioteca', label: 'Biblioteca global', icon: BookOpen },
   { href: '/auditoria', label: 'Auditoria', icon: ScrollText },
 ];

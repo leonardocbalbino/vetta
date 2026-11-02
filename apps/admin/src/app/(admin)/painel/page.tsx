@@ -28,7 +28,6 @@ export default function Painel() {
             <StatTile
               label="Conversão de trial"
               value={`${d.data.trialConversion.toLocaleString('pt-BR')}%`}
-              hint="Cobrança real entra na Fase 2"
             />
             <StatTile label="Alunos ativos" value={d.data.activeStudents} />
           </div>
