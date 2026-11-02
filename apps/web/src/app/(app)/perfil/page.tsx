@@ -1,6 +1,7 @@
 'use client';
 
 import { useMe, useVettaClient } from '@vetta/sdk/react';
+import Link from 'next/link';
 import {
   Button,
   Card,
@@ -37,6 +38,9 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="font-display text-3xl">Perfil</h1>
+      <Button variant="secondary" asChild className="self-start">
+        <Link href="/perfil/autorizacoes">Autorizações de fotos e depoimento</Link>
+      </Button>
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <Field label="Nome">

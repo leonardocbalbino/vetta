@@ -12,7 +12,10 @@ import {
   Textarea,
 } from '@vetta/ui';
 import { useEffect, useState } from 'react';
+import { UNLIMITED } from '@vetta/contracts';
+import { useEntitlements } from '@vetta/sdk/react';
 import { useApi, useApiMutation } from '@/lib/api';
+import { useActiveTenant } from '@/lib/session';
 
 interface Tenant {
   id: string;
@@ -25,7 +28,14 @@ interface Tenant {
 export default function SettingsPage() {
   const t = useApi<Tenant>('/v1/tenants/current');
   const d = useApi<{ alerts: { inactivityDays: number } }>('/v1/dashboard');
-  const [form, setForm] = useState({ name: '', cref: '', crefState: '', bio: '', days: '5' });
+  const [form, setForm] = useState({
+    name: '',
+    cref: '',
+    crefState: '',
+    bio: '',
+    days: '5',
+    reassess: '',
+  });
   useEffect(() => {
     if (t.data)
       setForm((f) => ({
@@ -66,6 +76,7 @@ export default function SettingsPage() {
               saveSettings.mutate({
                 bio: form.bio || null,
                 inactivityAlertDays: Number(form.days),
+                reassessmentDays: form.reassess ? Number(form.reassess) : null,
               });
             }}
           >
@@ -109,6 +120,18 @@ export default function SettingsPage() {
                 onChange={(e) => setForm({ ...form, days: e.target.value })}
               />
             </Field>
+            <Field
+              label="Lembrete de reavaliação a cada (dias)"
+              hint="Vazio desliga. Vale para as próximas avaliações."
+            >
+              <Input
+                type="number"
+                min={15}
+                max={365}
+                value={form.reassess}
+                onChange={(e) => setForm({ ...form, reassess: e.target.value })}
+              />
+            </Field>
             <Button
               type="submit"
               className="self-end"
@@ -119,6 +142,59 @@ export default function SettingsPage() {
           </form>
         </CardContent>
       </Card>
+      <StorageCard />
     </div>
+  );
+}
+
+/** Uso do armazenamento de mídias próprias (aviso em 80%, bloqueio em 100%). */
+function StorageCard() {
+  const { tenantId } = useActiveTenant();
+  const ent = useEntitlements(tenantId);
+  const l = ent.data?.limits['storage.quota_mb'];
+  if (!l) return null;
+  const unlimited = l.max === UNLIMITED;
+  const pct = unlimited || !l.max ? 0 : Math.min(100, Math.round((l.used / l.max) * 100));
+  const gb = (mb: number) =>
+    mb >= 1024 ? `${(mb / 1024).toFixed(1).replace('.', ',')} GB` : `${mb} MB`;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Armazenamento</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2">
+        <p className="text-sm">
+          {gb(l.used)} de {unlimited ? 'ilimitado' : gb(l.max)} usados (vídeos, fotos e documentos)
+        </p>
+        {!unlimited ? (
+          <div
+            role="progressbar"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Uso do armazenamento"
+            className="h-3 w-full overflow-hidden rounded-full bg-muted"
+          >
+            <div
+              className={
+                pct >= 100
+                  ? 'h-full bg-danger'
+                  : pct >= 80
+                    ? 'h-full bg-warning'
+                    : 'h-full bg-action'
+              }
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        ) : null}
+        {pct >= 100 ? (
+          <p className="text-sm text-danger">
+            Espaço esgotado: novos envios estão bloqueados. Libere espaço ou faça upgrade.
+          </p>
+        ) : pct >= 80 ? (
+          <p className="text-sm text-warning">Você já usou {pct}% do espaço do seu plano.</p>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }

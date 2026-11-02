@@ -1,115 +1,109 @@
 'use client';
 
-import { Button, Card, CardContent, Checkbox, Field, Input, Skeleton, Textarea } from '@vetta/ui';
+import { validateAnswers, visibleQuestions, type AnamnesisQuestion } from '@vetta/contracts';
+import { ApiRequestError } from '@vetta/sdk';
+import { useVettaClient } from '@vetta/sdk/react';
+import { Button, Card, CardContent, Checkbox, Skeleton, toast } from '@vetta/ui';
+import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useApi, useApiMutation } from '@/lib/api';
+import { AnamnesisField } from '@/components/pro/anamnesis-fields';
+import { errorMessage, useApi } from '@/lib/api';
 
-type Question = {
-  id: string;
-  type: string;
-  label: string;
-  options?: string[];
-  min?: number;
-  max?: number;
-};
+type Value = string | number | boolean | string[] | null | undefined;
 interface Response {
   id: string;
   status: string;
-  answers: Record<string, unknown>;
-  template: { name: string; kind: string; schema: { questions: Question[] } };
+  answers: Record<string, Value>;
+  template: { name: string; kind: string; schema: { questions: AnamnesisQuestion[] } };
 }
 
-/** O aluno responde a anamnese e autoriza o uso dos dados de saúde (LGPD). */
+/** O aluno responde a anamnese (com perguntas condicionais) e autoriza o uso dos dados de saúde (LGPD). */
 export default function AnswerAnamnesis() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const client = useVettaClient();
+  const qc = useQueryClient();
   const r = useApi<Response>(`/v1/anamnesis/responses/${id}`);
-  const [answers, setAnswers] = useState<Record<string, unknown>>({});
+  const [answers, setAnswers] = useState<Record<string, Value>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
-  const send = useApiMutation<object, { hasRisk: boolean }>(
-    'POST',
-    `/v1/anamnesis/responses/${id}/answer`,
-    {
-      invalidate: ['/v1/anamnesis'],
-      success: 'Respostas enviadas ao seu personal.',
-      onSuccess: () => router.push('/anamnese'),
-    },
-  );
+  const [busy, setBusy] = useState(false);
   if (!r.data) return <Skeleton className="h-64" />;
-  const set = (k: string, v: unknown) => setAnswers((a) => ({ ...a, [k]: v }));
   const answered = r.data.status !== 'PENDING';
   const values = answered ? r.data.answers : answers;
+  const all = r.data.template.schema.questions.map((q) =>
+    r.data!.template.kind === 'PARQ' ? { ...q, required: q.required !== false } : q,
+  );
+  const visible = visibleQuestions(all, values);
+
+  const submit = async () => {
+    // Só envia as respostas das perguntas visíveis (condicionais escondidas são descartadas).
+    const payload = Object.fromEntries(visible.map((q) => [q.id, answers[q.id] ?? null]));
+    const local = validateAnswers(all, payload);
+    setErrors(local);
+    if (Object.keys(local).length) return toast.error('Revise as respostas destacadas.');
+    setBusy(true);
+    try {
+      await client.request('POST', `/v1/anamnesis/responses/${id}/answer`, {
+        answers: payload,
+        acceptHealthDataConsent: consent,
+      });
+      toast.success('Respostas enviadas ao seu personal.');
+      await qc.invalidateQueries();
+      router.push('/anamnese');
+    } catch (err) {
+      if (
+        err instanceof ApiRequestError &&
+        (err.body.details as { errors?: Record<string, string> } | undefined)?.errors
+      )
+        setErrors((err.body.details as { errors: Record<string, string> }).errors);
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <form
       className="flex flex-col gap-4"
       onSubmit={(e) => {
         e.preventDefault();
-        send.mutate({ answers, acceptHealthDataConsent: consent });
+        void submit();
       }}
     >
       <h1 className="font-display text-3xl">{r.data.template.name}</h1>
       <Card>
         <CardContent className="flex flex-col gap-5 pt-6">
-          {r.data.template.schema.questions.map((q) => (
-            <fieldset key={q.id} disabled={answered} className="flex flex-col gap-2">
-              <legend className="mb-1 font-medium">{q.label}</legend>
-              {q.type === 'yes_no' ? (
-                <div className="flex gap-2" role="radiogroup">
-                  {[true, false].map((v) => (
-                    <Button
-                      key={String(v)}
-                      type="button"
-                      role="radio"
-                      aria-checked={values[q.id] === v}
-                      variant={values[q.id] === v ? 'primary' : 'secondary'}
-                      onClick={() => set(q.id, v)}
-                    >
-                      {v ? 'Sim' : 'Não'}
-                    </Button>
-                  ))}
-                </div>
-              ) : q.type === 'multi_choice' || q.type === 'single_choice' ? (
-                <div className="flex flex-wrap gap-2">
-                  {(q.options ?? []).map((o) => {
-                    const cur = values[q.id];
-                    const on = Array.isArray(cur) ? cur.includes(o) : cur === o;
-                    return (
-                      <Button
-                        key={o}
-                        type="button"
-                        aria-pressed={on}
-                        variant={on ? 'primary' : 'secondary'}
-                        size="sm"
-                        onClick={() => {
-                          if (q.type === 'single_choice') return set(q.id, o);
-                          const arr = Array.isArray(cur) ? (cur as string[]) : [];
-                          set(q.id, on ? arr.filter((x) => x !== o) : [...arr, o]);
-                        }}
-                      >
-                        {o}
-                      </Button>
-                    );
-                  })}
-                </div>
-              ) : q.type === 'number' || q.type === 'scale' ? (
-                <Input
-                  type="number"
-                  min={q.min}
-                  max={q.max}
-                  value={(values[q.id] as number | undefined) ?? ''}
-                  onChange={(e) => set(q.id, e.target.value === '' ? null : Number(e.target.value))}
-                  aria-label={q.label}
-                  className="max-w-32"
-                />
-              ) : (
-                <Textarea
-                  value={(values[q.id] as string | undefined) ?? ''}
-                  onChange={(e) => set(q.id, e.target.value)}
-                  aria-label={q.label}
-                />
-              )}
+          {visible.map((q) => (
+            <fieldset
+              key={q.id}
+              className="flex flex-col gap-2"
+              aria-invalid={!!errors[q.id]}
+              aria-describedby={errors[q.id] ? `err-${q.id}` : undefined}
+            >
+              <legend className="mb-1 font-medium">
+                {q.label}
+                {q.required ? (
+                  <span className="text-danger" aria-hidden>
+                    {' '}
+                    *
+                  </span>
+                ) : null}
+              </legend>
+              {q.help ? <p className="text-sm text-muted-foreground">{q.help}</p> : null}
+              <AnamnesisField
+                q={q}
+                value={values[q.id]}
+                disabled={answered}
+                onChange={(v) => setAnswers((a) => ({ ...a, [q.id]: v }))}
+              />
+              {errors[q.id] ? (
+                <p id={`err-${q.id}`} className="text-sm text-danger">
+                  {errors[q.id]}
+                </p>
+              ) : null}
             </fieldset>
           ))}
         </CardContent>
@@ -136,14 +130,11 @@ export default function AnswerAnamnesis() {
               .
             </span>
           </label>
-          <Field label="" className="hidden">
-            <span />
-          </Field>
           <Button
             type="submit"
             variant="accent"
             disabled={!consent}
-            loading={send.isPending}
+            loading={busy}
             className="self-start"
           >
             Enviar respostas

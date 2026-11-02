@@ -38,6 +38,8 @@ import {
   Users,
   Wallet,
   History,
+  Megaphone,
+  FileText,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -51,6 +53,8 @@ interface NavItem {
   icon: typeof Home;
   feature?: string;
   soon?: boolean;
+  /** Assistente não vê (financeiro, marca, configurações). */
+  ownerOnly?: boolean;
 }
 
 const PERSONAL_NAV: NavItem[] = [
@@ -59,36 +63,36 @@ const PERSONAL_NAV: NavItem[] = [
   { href: '/treinos', label: 'Treinos', icon: Dumbbell },
   { href: '/biblioteca', label: 'Biblioteca', icon: BookOpen },
   { href: '/avaliacoes', label: 'Avaliações', icon: Stethoscope },
+  { href: '/modelos-anamnese', label: 'Anamneses', icon: ClipboardList },
   { href: '/feedbacks', label: 'Feedbacks', icon: MessageSquareHeart },
-  { href: '/mensagens', label: 'Mensagens', icon: MessageCircle, soon: true },
+  { href: '/mensagens', label: 'Mensagens', icon: MessageCircle },
+  { href: '/comunicados', label: 'Comunicados', icon: Megaphone, feature: 'comms.broadcast' },
+  { href: '/agenda', label: 'Agenda', icon: CalendarDays, feature: 'schedule.calendar' },
   {
     href: '/financeiro',
     label: 'Financeiro',
     icon: Wallet,
     feature: 'finance.student_billing',
-    soon: true,
-  },
-  {
-    href: '/agenda',
-    label: 'Agenda',
-    icon: CalendarDays,
-    feature: 'schedule.calendar',
-    soon: true,
+    ownerOnly: true,
   },
   {
     href: '/minha-pagina',
     label: 'Minha página',
     icon: Globe,
     feature: 'brand.sales_page',
-    soon: true,
+    ownerOnly: true,
   },
-  { href: '/configuracoes', label: 'Configurações', icon: Settings },
+  { href: '/configuracoes', label: 'Configurações', icon: Settings, ownerOnly: true },
 ];
 
 const STUDENT_NAV: NavItem[] = [
   { href: '/treino', label: 'Treino do dia', icon: Dumbbell },
   { href: '/historico', label: 'Histórico', icon: History },
   { href: '/evolucao', label: 'Evolução', icon: LineChart },
+  { href: '/mensagens', label: 'Mensagens', icon: MessageCircle },
+  { href: '/agenda', label: 'Agenda', icon: CalendarDays, feature: 'schedule.calendar' },
+  { href: '/pagamentos', label: 'Pagamentos', icon: Wallet },
+  { href: '/documentos', label: 'Documentos', icon: FileText, feature: 'docs.student_folder' },
   { href: '/anamnese', label: 'Anamnese', icon: ClipboardList },
   { href: '/perfil', label: 'Perfil', icon: User },
 ];
@@ -205,7 +209,9 @@ export function AppShell({ me, children }: { me: MeResponse; children: ReactNode
   const [open, setOpen] = useState(false);
   const active = me.memberships.find((m) => m.tenantId === tenantId);
   const staff = active && active.role !== 'ALUNO';
-  const items = staff ? PERSONAL_NAV : STUDENT_NAV;
+  const items = staff
+    ? PERSONAL_NAV.filter((i) => !i.ownerOnly || active?.role === 'PERSONAL')
+    : STUDENT_NAV;
 
   const sidebar = (
     <div className="flex h-full flex-col gap-6">
@@ -311,8 +317,39 @@ export function AppShell({ me, children }: { me: MeResponse; children: ReactNode
             </Sheet>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 p-4 md:p-6">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 p-4 md:p-6">
+          {active?.role === 'ALUNO' ? <StudentGate>{children}</StudentGate> : children}
+        </main>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Aluno com acesso pausado por inadimplência: a API responde 402 PAYMENT_OVERDUE em tudo,
+ * exceto pagamentos. Mostra a explicação com o botão de pagar em vez da tela pedida.
+ */
+function StudentGate({ children }: { children: ReactNode }) {
+  const path = usePathname();
+  const fin = useApi<{ blocked: boolean }>('/v1/me/finance');
+  if (!fin.data?.blocked || path.startsWith('/pagamentos') || path.startsWith('/mensagens'))
+    return <>{children}</>;
+  return (
+    <div
+      role="alert"
+      className="mx-auto flex max-w-lg flex-col items-start gap-4 rounded-card border border-danger p-6"
+    >
+      <h1 className="font-display text-2xl">Seu acesso está pausado</h1>
+      <p>
+        Existe uma cobrança em aberto com seu personal. Assim que o pagamento for confirmado, seus
+        treinos voltam na hora.
+      </p>
+      <Button variant="accent" asChild>
+        <Link href="/pagamentos">Ver e pagar</Link>
+      </Button>
+      <Button variant="link" asChild>
+        <Link href="/mensagens">Falar com o personal</Link>
+      </Button>
     </div>
   );
 }
