@@ -76,7 +76,7 @@ export default function PersonalHome() {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
-        <p className="text-sm capitalize text-muted-foreground">{today()}</p>
+        <p className="text-sm text-muted-foreground first-letter:uppercase">{today()}</p>
         <h1 className="font-display text-2xl">{firstName ? `Olá, ${firstName}` : 'Olá!'}</h1>
       </header>
 
