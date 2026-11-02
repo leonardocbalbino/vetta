@@ -69,3 +69,10 @@ export const fmtDateTime = (d: string | Date | null | undefined) =>
     : '—';
 export const daysAgo = (d: string | Date | null | undefined) =>
   d ? Math.floor((Date.now() - new Date(d).getTime()) / 86_400_000) : null;
+
+export const brl = (cents: number | null | undefined) =>
+  ((cents ?? 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+/** Data civil (YYYY-MM-DD) no fuso de São Paulo. */
+export const localDay = (d: Date = new Date()) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(d);

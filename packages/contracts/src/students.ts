@@ -87,6 +87,8 @@ export const STUDENT_TABS = [
   { key: 'anamnesis', label: 'Anamnese', feature: 'assessment.anamnesis' },
   { key: 'progress', label: 'Evolução', feature: 'progress.charts' },
   { key: 'photos', label: 'Fotos', feature: 'progress.photos' },
+  { key: 'posture', label: 'Postural', feature: 'assessment.posture' },
+  { key: 'periodization', label: 'Periodização', feature: 'workouts.periodization' },
   { key: 'documents', label: 'Documentos', feature: 'docs.student_folder' },
   { key: 'finance', label: 'Financeiro', feature: 'finance.student_billing' },
   { key: 'chat', label: 'Chat', feature: 'comms.chat' },

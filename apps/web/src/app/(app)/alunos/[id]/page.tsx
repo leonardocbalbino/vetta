@@ -34,6 +34,14 @@ import { AssessmentForm } from '@/components/assessment-form';
 import { ProgressView } from '@/components/progress-view';
 import { fmtDate, fmtDateTime, useApi, useApiMutation } from '@/lib/api';
 import { useActiveTenant } from '@/lib/session';
+import { useActiveRole } from '@/lib/role';
+import {
+  DocumentsPanel,
+  PeriodizationPanel,
+  PosturePanel,
+  StudentChatTab,
+  StudentFinancePanel,
+} from '@/components/pro/student-tabs';
 
 interface Detail {
   id: string;
@@ -456,6 +464,7 @@ function StudentDetail() {
   const { tenantId } = useActiveTenant();
   const ent = useEntitlements(tenantId);
   const s = useApi<Detail>(`/v1/students/${id}`);
+  const role = useActiveRole();
   if (!s.data) return <Skeleton className="h-96" />;
   const tab = params.get('aba') ?? 'summary';
   const has = (f: string | null) => !f || ent.data?.features[f] !== false;
@@ -501,28 +510,47 @@ function StudentDetail() {
             <Photos id={id} />
           </LockedFeature>
         </TabsContent>
+        <TabsContent value="posture">
+          <LockedFeature
+            locked={!has('assessment.posture')}
+            title="Avaliação postural"
+            requiredPlan="PRO"
+          >
+            <PosturePanel studentLinkId={id} staff />
+          </LockedFeature>
+        </TabsContent>
+        <TabsContent value="periodization">
+          <LockedFeature
+            locked={!has('workouts.periodization')}
+            title="Periodização"
+            requiredPlan="PRO"
+          >
+            <PeriodizationPanel studentLinkId={id} staff />
+          </LockedFeature>
+        </TabsContent>
         <TabsContent value="documents">
           <LockedFeature
-            locked
+            locked={!has('docs.student_folder')}
             title="Documentos do aluno"
             requiredPlan="PRO"
-            description="Pasta de exames, planos alimentares e contratos chega numa próxima fase."
-          />
+          >
+            <DocumentsPanel studentLinkId={id} staff />
+          </LockedFeature>
         </TabsContent>
         <TabsContent value="finance">
           <LockedFeature
-            locked
+            locked={!has('finance.student_billing') || role !== 'PERSONAL'}
             title="Financeiro do aluno"
             requiredPlan="PRO"
-            description="Cobrança por Pix, boleto e cartão chega na fase de financeiro."
-          />
+            description={
+              role !== 'PERSONAL' ? 'Disponível só para o personal responsável.' : undefined
+            }
+          >
+            <StudentFinancePanel studentLinkId={id} />
+          </LockedFeature>
         </TabsContent>
         <TabsContent value="chat">
-          <LockedFeature
-            locked
-            title="Chat"
-            description="O chat 1:1 chega na próxima fase. As respostas aos feedbacks já ficam guardadas na conversa."
-          />
+          <StudentChatTab studentLinkId={id} name={s.data.displayName} />
         </TabsContent>
         <TabsContent value="timeline">
           <Timeline id={id} />
