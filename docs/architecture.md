@@ -173,3 +173,36 @@ O admin cria a sessão em `POST /v1/admin/impersonations` (motivo obrigatório, 
 - **API:** devolve o calendário semana a semana.
 - **Treino do dia:** já vem ajustado (séries, reps e carga) pela semana atual.
 - **Troca de fase:** o worker publica o programa da nova fase na data. É idempotente: publica o aviso antes de marcar a fase ativa.
+
+## Pro Plus (Fase 3)
+
+- **IA de treino:** ver ADR-011.
+  - `AiProvider` com implementação Anthropic.
+  - Ferramenta de busca restrita à biblioteca.
+  - Saída validada por Zod e pelo banco.
+  - Resultado sempre em rascunho; custo registrado em `ai_generations`.
+- **Equipe:**
+  - Permissões por assistente (`prescribe`, `assess`, `chat`) em `tenant_members.permissions`.
+  - O `AccessGuard` aplica as permissões depois de `can()`; o mapa recurso → permissão fica em `@vetta/contracts`.
+  - Toda escrita de personal ou assistente em alunos, treinos, avaliações, agenda e documentos gera uma linha `change.*` em `audit_logs` (`ChangeLogInterceptor`), lida em `/v1/team/activity`.
+- **White label e domínio:** ver ADR-012.
+- **Notificações:**
+  - WhatsApp só envia com template aprovado mapeado por evento (`WHATSAPP_TEMPLATES`) e opt-in registrado em `consents` (tipo `WHATSAPP`).
+  - Respeita o horário de silêncio mesmo em eventos marcados como imediatos.
+  - SMS continua restrito à categoria segurança.
+- **Google Calendar:**
+  - OAuth com tokens cifrados.
+  - Canal `events.watch` renovado pelo worker.
+  - Webhook autenticado pelo token do canal.
+  - Aulas da Vetta viram eventos marcados com o id da aula; mudanças no Google atualizam a aula (o `updated` evita eco); eventos externos viram bloqueios da agenda.
+- **Saúde:**
+  - App: HealthKit (`@kingstinct/react-native-healthkit`) e Health Connect (`react-native-health-connect`).
+  - Importa passos e FC por dia, peso e treinos dos últimos 30 dias (idempotente por id de origem) e exporta os treinos concluídos.
+  - O personal só vê os dados com o consentimento de dados de saúde.
+- **Relatórios:**
+  - Métricas puras em `packages/fitness/src/reports.ts`: coorte, aderência, risco de cancelar, inadimplência.
+  - Exportações CSV (`;`, BOM) e PDF com o nome do personal.
+- **Academy, comunicados da plataforma e suporte:**
+  - Conteúdo com plano mínimo e progresso por aula.
+  - Comunicados segmentados por plano, status e cadastro, com entrega e abertura por destinatário.
+  - Chamados com prioridade e SLA pelo plano (`SUPPORT_SLA_HOURS`), estouro marcado pelo worker e central de ajuda em MDX no site.

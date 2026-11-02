@@ -89,7 +89,7 @@ As features novas entram no catálogo com o valor por plano no seed, e o admin p
 
 - **IA:**
   - O modelo vem de `AI_MODEL`.
-  - A IA só escolhe exercícios por uma ferramenta de busca na biblioteca do tenant. A saída é validada por Zod, e cada exercício é conferido contra o banco. Um id desconhecido derruba a geração inteira, nada é inventado.
+  - A IA só escolhe exercícios por uma ferramenta de busca na biblioteca do tenant. A saída é validada por Zod, e cada exercício é conferido contra o banco. O erro volta ao modelo para correção; se persistir após 2 tentativas, a geração inteira falha e nada é criado.
   - O resultado vira um programa `DRAFT` com `aiGenerated = true`, aberto no construtor. Publicar continua sendo uma ação explícita do personal.
   - Dados minimizados: sem nome, e-mail, telefone ou documentos. A idade vai em faixa, e as lesões e a anamnese vão como texto com padrões de contato removidos.
   - O custo de cada chamada é estimado pela tabela de preços configurável e gravado em `ai_usages`, visível no admin.
@@ -103,7 +103,7 @@ As features novas entram no catálogo com o valor por plano no seed, e o admin p
 - **Domínio próprio:**
   - O personal informa o domínio, e o sistema mostra o CNAME para `custom.vettafit.com.br`.
   - O provider cria o custom hostname; o worker consulta até ficar `active`, com certificado emitido pelo provider.
-  - O middleware do Next resolve o host para o slug do personal.
+  - O app web resolve o tema pelo host no cliente (`GET /v1/public/brand?host=`) e a API libera CORS para domínios ativos (ver ADR-012).
 - **WhatsApp:**
   - Só envia com opt-in registrado (em `consents`, tipo `WHATSAPP`).
   - Só com templates aprovados, mapeados por evento.
@@ -122,3 +122,25 @@ As features novas entram no catálogo com o valor por plano no seed, e o admin p
 
 - **Credenciais:** sem chaves reais (Anthropic, Meta/BSP, Cloudflare, Google), a validação usa dublês com o contrato documentado de cada API.
 - **Apple Health:** só roda em dispositivo iOS com build de desenvolvimento, e o Health Connect só no Android. Não dá para validar sem aparelho.
+
+## Status de execução
+
+Tudo do plano foi implementado. Desvios em relação ao planejado:
+
+- **Exportações:** ficaram sob `finance.advanced_reports`, sem uma feature `reports.exports` separada.
+- **Domínio próprio:** resolvido no cliente (sem middleware do Next).
+- **IA:** a correção do modelo é tentada até 2 vezes antes de falhar.
+
+### Entregas
+
+| Item                      | Entrega                                                                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 3.1 IA                    | `AiProvider`/Anthropic, rascunho com justificativas, ajuste de carga, resumo semanal, cota `workouts.ai_monthly`, custo no admin (ADR-011) |
+| 3.2 Equipe                | Convite e aceite, permissões por assistente no guard, atribuição, log de alterações                                                        |
+| 3.3 White label           | Cores com AA e sugestão, logo, nome, remetente, tema em web, mobile, e-mail e vendas; domínio via Cloudflare for SaaS (ADR-012)            |
+| 3.4 WhatsApp e SMS        | Meta Cloud API/BSP com templates por evento, opt-in em `consents`, silêncio mesmo em imediatos; Twilio só para segurança                   |
+| 3.5 Integrações           | Google Calendar bidirecional; HealthKit e Health Connect no app; exportações CSV/PDF                                                       |
+| 3.6 Relatórios            | Coorte, aderência, receita por plano, inadimplência, risco de cancelar, exercícios mais prescritos                                         |
+| 3.7 Academy e comunicados | Conteúdo por plano com progresso; comunicados da plataforma segmentados com entrega e abertura                                             |
+| 3.8 Suporte               | Central de ajuda MDX com busca, widget na web, fila no admin com prioridade e SLA                                                          |
+| 3.9 Testes                | IA por respostas gravadas, isolamento do assistente, white label sem vazamento, matriz de permissões completa                              |

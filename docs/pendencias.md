@@ -13,15 +13,21 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
   - Caminho: BFF no Next com cookie `Secure; SameSite=Lax`.
 - [ ] **Credenciais de produção, cada uma com o que destrava**
 
-| Credencial                                                        | Destrava |
-| ----------------------------------------------------------------- | -------- |
-| Asaas (chave da conta-mãe, `walletId` da Vetta, token de webhook) | Fase 2   |
-| NFE.io (empresa e chave)                                          | Fase 2   |
-| Resend com domínio verificado                                     | Fase 0   |
-| Expo Push token                                                   | Fase 0   |
-| Sentry DSN                                                        | Fase 0   |
-| Cloudflare R2 e Stream (ou Mux)                                   | Fase 0   |
-| Google e Apple OAuth                                              | Fase 1   |
+| Credencial                                                            | Destrava |
+| --------------------------------------------------------------------- | -------- |
+| Asaas (chave da conta-mãe, `walletId` da Vetta, token de webhook)     | Fase 2   |
+| NFE.io (empresa e chave)                                              | Fase 2   |
+| Resend com domínio verificado                                         | Fase 0   |
+| Expo Push token                                                       | Fase 0   |
+| Sentry DSN                                                            | Fase 0   |
+| Cloudflare R2 e Stream (ou Mux)                                       | Fase 0   |
+| Google e Apple OAuth                                                  | Fase 1   |
+| Anthropic (`ANTHROPIC_API_KEY`)                                       | Fase 3   |
+| Meta WhatsApp Business ou BSP (token, número, templates aprovados)    | Fase 3   |
+| Twilio (SMS de segurança)                                             | Fase 3   |
+| Cloudflare for SaaS (zona e token de custom hostnames)                | Fase 3   |
+| Google Cloud: OAuth do Calendar (cliente web e tela de consentimento) | Fase 3   |
+| Apple: entitlement de HealthKit; Google: declaração do Health Connect | Fase 3   |
 
 - [ ] **Regra das lojas para link externo** (Fase 2, ADR-010)
   - Confirmar a elegibilidade antes de ligar as flags `EXPO_PUBLIC_EXTERNAL_CHECKOUT_*`.
@@ -30,8 +36,8 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
 
 ## Infra e entrega
 
-- [ ] **PRs e merges em ordem** (Fases 0–2): cada branch nasce da anterior.
-  - Abrir e mergear `feat/fase-0-fundacao` → `feat/fase-1-mvp` → `feat/fase-2-pro`.
+- [ ] **PRs e merges em ordem** (Fases 0–3): cada branch nasce da anterior.
+  - Abrir e mergear `feat/fase-0-fundacao` → `feat/fase-1-mvp` → `feat/fase-2-pro` → `feat/fase-3-pro-plus`.
   - O `gh` não está instalado nesta máquina.
 - [ ] **CI do GitHub Actions:** ainda não rodou no GitHub (Fases 0–2).
 - [ ] **EAS** (Fase 1):
@@ -48,13 +54,9 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
 - [ ] **Fonte Archivo Expanded no mobile** (Fase 1)
   - Não há pacote Expo com a fonte; usamos Archivo.
   - Caminho: embutir o `.ttf` licenciado.
-- [ ] **Pro Plus** (Fase 3):
-  - Google Calendar, WhatsApp oficial, white label;
-  - domínio próprio, IA de treino;
-  - relatórios avançados completos, assistentes.
 - [ ] **Pagar.me** como segunda implementação de `PaymentProvider`.
-- [ ] **SMS de segurança** (provider real) (Fase 0).
-- [ ] **Academy** (M14): telas do personal e do admin.
+- [x] **SMS de segurança** (provider real) (Fase 0): Twilio implementado na Fase 3; falta a credencial.
+- [x] **Academy** (M14): telas do personal e do admin (Fase 3).
 
 ## Riscos acompanhados
 
@@ -74,3 +76,29 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
 - [ ] **Cartão do aluno com confirmação tardia:** a tela trata o pagamento aprovado na hora; quando o gateway confirma depois, o status chega por webhook e aparece ao recarregar.
 - [ ] **Tempo real em várias instâncias da API:** o Socket.IO usa o adapter Redis (já configurado). Validar com mais de uma instância.
 - [ ] **Login do aluno:** depois de entrar, o aluno passa por `/inicio` antes de ir para `/treino`, o que gera dois 403 no console (vem da Fase 1).
+
+## Fase 3 – itens abertos
+
+- [ ] **Validar a IA com a chave real.** Os testes usam respostas gravadas. Com a chave:
+  - rodar algumas gerações reais e conferir qualidade, tempo e custo;
+  - regravar as respostas se o formato mudar;
+  - ajustar `AI_EFFORT` se o custo pedir.
+- [ ] **Templates do WhatsApp aprovados na Meta**, com os nomes de `WHATSAPP_TEMPLATES`:
+  - `vetta_cobranca_nova`, `vetta_cobranca_lembrete`, `vetta_cobranca_atraso`;
+  - `vetta_lembrete_treino`, `vetta_lembrete_aula`.
+  - As variáveis seguem a ordem do código.
+- [ ] **Cloudflare for SaaS:**
+  - criar o registro `custom.vettafit.com.br` (fallback origin) apontando para o app web;
+  - testar um domínio real de ponta a ponta.
+- [ ] **Google Calendar:**
+  - verificar o app OAuth (o escopo `calendar.events` é sensível);
+  - registrar o domínio do webhook no Google;
+  - testar com uma conta real.
+- [ ] **HealthKit e Health Connect:**
+  - gerar build de desenvolvimento (EAS) e testar em iPhone e Android reais;
+  - publicar a política de privacidade de dados de saúde exigida pelas lojas.
+- [ ] **Socket.IO no domínio próprio:** liberar as origens dinâmicas também no adapter do Socket.IO. Hoje, no domínio próprio, chat e sino não atualizam em tempo real.
+- [ ] **Remetente com domínio do personal** (DKIM próprio). Hoje só o nome do remetente muda.
+- [ ] **PDFs de treino e avaliação com as cores do personal.** Hoje levam a logo; as cores do white label ainda não.
+- [ ] **Maestro e Playwright:** fluxos novos (IA, equipe, marca, saúde) ainda não escritos.
+- [ ] **Central de ajuda:** revisar os textos com o time de produto e incluir capturas de tela.
