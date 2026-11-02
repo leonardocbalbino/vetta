@@ -64,4 +64,13 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
 
 ## Fase 2 – itens abertos
 
-(preenchido ao fim da fase)
+- [ ] **Validar com o sandbox real do Asaas.** Os testes usam um dublê com o contrato do sandbox. Com a chave, rodar o fluxo: checkout, webhooks, subconta e KYC, split, saque.
+- [ ] **Webhook da conta-mãe no painel do Asaas** apontando para `https://api.vettafit.com.br/v1/webhooks/asaas` com o `ASAAS_WEBHOOK_TOKEN`. As subcontas já nascem configuradas.
+- [ ] **Sitemap com as páginas de vendas publicadas.** Exige rota pública que liste os slugs.
+- [ ] **Marcação de pontos e linhas na foto postural** só existe na web; no app há captura com guia, grade e checklist.
+- [ ] **Vídeo de exercício pelo app:** o PUT reaproveita os dados atuais do exercício. Validar com exercícios que tenham todos os campos preenchidos.
+- [ ] **Maestro:** fluxos novos (chat, agenda, pagamento do aluno) ainda não escritos nem executados.
+- [ ] **Playwright web:** cobrir checkout e agenda. Hoje há só a fumaça manual, feita com navegador headless.
+- [ ] **Cartão do aluno com confirmação tardia:** a tela trata o pagamento aprovado na hora; quando o gateway confirma depois, o status chega por webhook e aparece ao recarregar.
+- [ ] **Tempo real em várias instâncias da API:** o Socket.IO usa o adapter Redis (já configurado). Validar com mais de uma instância.
+- [ ] **Login do aluno:** depois de entrar, o aluno passa por `/inicio` antes de ir para `/treino`, o que gera dois 403 no console (vem da Fase 1).

@@ -19,6 +19,17 @@ Cada app tem um `.env.example`. Na inicialização, o app valida as variáveis c
 | `EXPO_ACCESS_TOKEN`                                                                             | não               | Expo Push                                              |
 | `SENTRY_DSN`                                                                                    | não               |                                                        |
 
+### Pagamentos e NFS-e (Fase 2)
+
+| Variável                             | Padrão                             | Uso                                                                                   |
+| ------------------------------------ | ---------------------------------- | ------------------------------------------------------------------------------------- |
+| `ASAAS_BASE_URL`                     | `https://api-sandbox.asaas.com/v3` | Gateway. A URL de produção só é aceita com `NODE_ENV=production`.                     |
+| `ASAAS_API_KEY`                      | —                                  | Chave da conta Vetta (sandbox no desenvolvimento). Sem ela, pagamentos respondem 503. |
+| `ASAAS_WEBHOOK_TOKEN`                | —                                  | Token dos webhooks (mín. 16 caracteres), também gravado nas subcontas.                |
+| `ASAAS_PLATFORM_WALLET_ID`           | —                                  | Carteira da Vetta que recebe a taxa no split.                                         |
+| `NFEIO_API_KEY` · `NFEIO_COMPANY_ID` | —                                  | Emissão de NFS-e. Sem elas, as notas ficam `PENDING_CONFIG`.                          |
+| `NFEIO_CITY_SERVICE_CODE`            | `0107`                             | Código do serviço na prefeitura (confirmar com a contabilidade).                      |
+
 ## API (`apps/api/src/config/env.ts`)
 
 | Variável                                                       | Padrão                      | Descrição                             |
@@ -54,6 +65,11 @@ Cada app tem um `.env.example`. Na inicialização, o app valida as variáveis c
 | admin  | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WEB_URL` (destino da impersonação)                                                                                                                                                                                                  |
 | site   | `NEXT_PUBLIC_APP_URL`, `API_URL` (preços e documentos legais no build/ISR; sem API usa o seed), `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_META_PIXEL_ID` (só carregam após consentimento), `NEXT_PUBLIC_SHOW_PLACEHOLDERS` (depoimentos ilustrativos; nunca `true` em produção) |
 | mobile | `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_WEB_URL`, `EXPO_PUBLIC_GOOGLE_CLIENT_ID` (login Google), `EAS_PROJECT_ID` (push e EAS Update, lido em `app.config.ts`)                                                                                                              |
+
+### Novas na Fase 2
+
+- **Site:** `NEXT_PUBLIC_API_URL`, a URL da API vista pelo navegador no checkout da página de vendas.
+- **Mobile:** `EXPO_PUBLIC_EXTERNAL_CHECKOUT_IOS` e `EXPO_PUBLIC_EXTERNAL_CHECKOUT_ANDROID` (padrão `false`; ver ADR-010).
 
 ## Testes
 

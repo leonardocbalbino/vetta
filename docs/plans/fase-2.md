@@ -144,3 +144,14 @@ O relatório mensal em CSV fica disponível a todo personal com `finance.student
 - **Sandbox:** sem credencial de sandbox nesta máquina; a integração real só será validada com uma chave.
 - **PCI:** o cartão passa pela API para tokenização (escopo SAQ D). Alternativa futura: checkout hospedado do Asaas.
 - **NFS-e:** regras municipais (ISS, código de serviço) dependem da prefeitura do CNPJ da Vetta.
+
+## Status da execução
+
+Concluída: backend, web, admin, site e mobile.
+
+Desvios do plano:
+
+- **Datas em Brasília:** vencimentos, liberação de crédito, conciliação e reaplicação de anamnese usam dias civis de Brasília. A data UTC deslocava um dia depois das 21h.
+- **Ids de job sem dois-pontos:** o BullMQ recusa `:` nos ids; o publicador troca por `__` só no id do job.
+- **Rotas compartilhadas na web:** `/mensagens` e `/agenda` servem ao personal e ao aluno, com telas por papel.
+- **Decisões das lojas:** registradas no ADR-010.

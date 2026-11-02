@@ -26,6 +26,13 @@ export default function Perfil() {
       <ScrollView contentContainerStyle={{ padding: t.spacing[5], gap: t.spacing[4] }}>
         <Text variant="display">{me?.name ?? 'Perfil'}</Text>
         <Text muted>{active?.tenantName}</Text>
+        <Button title="Pagamentos" variant="secondary" onPress={() => router.push('/pagamentos')} />
+        <Button title="Documentos" variant="secondary" onPress={() => router.push('/documentos')} />
+        <Button
+          title="Autorizações e depoimento"
+          variant="secondary"
+          onPress={() => router.push('/autorizacoes')}
+        />
         <Card>
           <Text variant="title">Anamnese</Text>
           {(anamneses.data ?? []).map((a) => (

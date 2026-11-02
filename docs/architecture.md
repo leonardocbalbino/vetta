@@ -113,3 +113,63 @@ SSG com ISR de 1 h: preços (`GET /v1/plans`) e documentos legais (`GET /v1/lega
 ## Impersonação (admin → web)
 
 O admin cria a sessão em `POST /v1/admin/impersonations` (motivo obrigatório, auditado) e abre `app…/impersonar#<tokens>`. Os tokens vão no fragmento, que o navegador não envia a servidores; a página grava a sessão e apaga o fragmento. A web mostra o banner de impersonação a partir de `impersonatedBy` em `/me`.
+
+## Pagamentos e assinatura (Fase 2)
+
+- **`PaymentProvider`** (`packages/server/src/payments`):
+  - A implementação Asaas é um cliente HTTP real.
+  - Sempre aponta para o sandbox fora de produção: a URL de produção é recusada se `NODE_ENV` não for `production`.
+  - Sem chave, as rotas de pagamento respondem 503 `PAYMENT_NOT_CONFIGURED`.
+- **Assinatura da plataforma** (personal → Vetta):
+  - O checkout cria uma fatura com a primeira cobrança: Pix, boleto ou cartão tokenizado.
+  - A recorrência no gateway nasce só depois do primeiro pagamento.
+  - Upgrade abate o crédito pró-rata; downgrade vale no fim do período.
+  - Cupom pode durar N ciclos.
+  - **Inadimplência:** carência de 7 dias com avisos D-7, D-1, no dia e na falha do cartão; depois, volta ao FREE com os alunos excedentes arquivados (nada é apagado).
+- **NFS-e:** abstração `InvoiceIssuer`, implementação NFE.io. O worker emite as notas das faturas pagas; sem configuração, ficam `PENDING_CONFIG`.
+- **Personal → aluno:**
+  - Cada personal tem uma subconta no gateway, criada pelo KYC.
+  - A cobrança sai pela subconta, com split para a carteira da Vetta (`finance.split_fee_bps`, configurável por plano no admin).
+  - O livro-razão `wallet_entries` registra créditos (com data de liberação), estornos e saques.
+- **Webhooks** (`POST /v1/webhooks/asaas`):
+  - Token `asaas-access-token` comparado em tempo constante.
+  - `webhook_events` com chave única por id do evento.
+  - O processamento acontece na hora; falhas ficam `FAILED` e o worker reprocessa.
+  - O status de uma fatura só avança (eventos fora de ordem não regridem).
+  - Datas do Asaas são dias civis de Brasília.
+- **Conciliação diária:** cobranças de ontem no gateway (conta da Vetta e subcontas) comparadas com as nossas faturas. As divergências confirmadas são corrigidas pelo mesmo caminho dos webhooks.
+- **Regras das lojas:** ver ADR-010.
+
+## Página de vendas (Fase 2)
+
+- **Rota pública:** `vettafit.com.br/p/[slug]` (site, ISR de 5 min, Open Graph gerado com a foto e a chamada do personal).
+- **API pública:** `GET /v1/public/pages/:slug`.
+  - Sai do ar se o plano perde `brand.sales_page`.
+  - As imagens passam por um proxy que só serve a foto, a logo e os antes/depois autorizados pelo aluno.
+- **Checkout:** `POST /v1/public/pages/:slug/checkout`. Com o pagamento confirmado, o webhook cria o usuário, o vínculo, a assinatura e a fatura paga, envia o convite e avisa o personal.
+- **Sem vaga no plano do personal:** a página não vende (409).
+
+## Agenda, chat e comunicados (Fase 2)
+
+- **Agenda:**
+  - Disponibilidade semanal, bloqueios e aulas individuais ou turmas.
+  - Recorrência RRULE semanal, materializada em até 26 semanas.
+  - Política de antecedência para agendar e cancelar.
+  - Lembretes de 24 h e 1 h no worker.
+- **Chat:**
+  - Mesmo Socket.IO das notificações (`chat:message`, `chat:read`, `chat:typing`).
+  - Mensagens idempotentes por `clientId`.
+  - Mídia via upload `chat_media` (`comms.chat_media`; o FREE só envia texto).
+  - Responder um feedback envia a mensagem com a citação do treino.
+- **Comunicados:**
+  - Público: todos, grupo ou filtro.
+  - Envio imediato ou agendado.
+  - Os canais escolhidos viram filtro na regra de notificação.
+  - Taxa de abertura = notificações in-app lidas sobre destinatários.
+
+## Periodização (Fase 2)
+
+- **Regras:** `packages/fitness/periodization.ts` (linear, ondulatória, blocos, deload).
+- **API:** devolve o calendário semana a semana.
+- **Treino do dia:** já vem ajustado (séries, reps e carga) pela semana atual.
+- **Troca de fase:** o worker publica o programa da nova fase na data. É idempotente: publica o aviso antes de marcar a fase ativa.

@@ -104,6 +104,24 @@ export default function AlunoFicha() {
               }
             />
           </Card>
+          <Button
+            title="Avaliação postural (fotos)"
+            variant="secondary"
+            onPress={() =>
+              router.push({
+                pathname: '/postural/[studentId]',
+                params: { studentId: d.id, name: d.displayName },
+              })
+            }
+          />
+          <Button
+            title="Abrir chat"
+            variant="secondary"
+            onPress={async () => {
+              const c = await client.request<{ id: string }>('POST', `/v1/chat/students/${d.id}`);
+              router.push({ pathname: '/chat/[id]', params: { id: c.id, name: d.displayName } });
+            }}
+          />
           {d.whatsapp ? (
             <Button
               title="Chamar no WhatsApp"

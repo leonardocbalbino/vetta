@@ -14,6 +14,24 @@ export default function Mais() {
       <ScrollView contentContainerStyle={{ padding: t.spacing[5], gap: t.spacing[4] }}>
         <Text variant="display">{me?.name}</Text>
         <Text muted>{active?.tenantName}</Text>
+        <Button title="Mensagens" variant="secondary" onPress={() => router.push('/conversas')} />
+        <Button
+          title="Agenda"
+          variant="secondary"
+          onPress={() => router.push('/agenda-personal')}
+        />
+        <Button
+          title="Gravar vídeo de exercício"
+          variant="secondary"
+          onPress={() => router.push('/video-exercicio')}
+        />
+        {active?.role === 'PERSONAL' ? (
+          <Button
+            title="Assinatura"
+            variant="secondary"
+            onPress={() => router.push('/assinatura')}
+          />
+        ) : null}
         <Card>
           <Text variant="title">No computador</Text>
           <Text muted>
