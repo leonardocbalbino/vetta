@@ -179,6 +179,7 @@ export class AuthService {
       TERMS: this.env.TERMS_VERSION,
       PRIVACY: this.env.PRIVACY_VERSION,
       HEALTH_DATA: this.env.HEALTH_CONSENT_VERSION,
+      WHATSAPP: this.env.PRIVACY_VERSION,
       MARKETING: this.env.PRIVACY_VERSION,
     };
     return types.map((type) => ({

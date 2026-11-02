@@ -146,7 +146,7 @@ describe('horário de silêncio (22h–7h no fuso do usuário)', () => {
 });
 
 describe('plano, agrupamento e entrega', () => {
-  it('WhatsApp só no Pro Plus', async () => {
+  it('WhatsApp só no Pro Plus, com opt-in registrado', async () => {
     const pro = await studentWithDevice('PRO');
     await ctx.db.user.update({ where: { id: pro.userId }, data: { phone: '+5511999990000' } });
     const out = await dispatchEvent(
@@ -163,13 +163,21 @@ describe('plano, agrupamento e entrega', () => {
 
     const plus = await studentWithDevice('PRO_PLUS');
     await ctx.db.user.update({ where: { id: plus.userId }, data: { phone: '+5511999990001' } });
-    const out2 = await dispatchEvent(
-      deps(spTime(12)),
+    const event = (id: string) =>
       createDomainEvent('invoice.created', {
         tenantId: plus.w.tenantId,
-        payload: { studentLinkId: plus.linkId, invoiceId: 'i2' },
-      }),
-    );
+        payload: { studentLinkId: plus.linkId, invoiceId: id },
+      });
+    // Sem opt-in de WhatsApp: não envia.
+    const noOptIn = await dispatchEvent(deps(spTime(12)), event('i2'));
+    expect(noOptIn.find((o) => o.channel === 'WHATSAPP')).toMatchObject({
+      status: 'skipped',
+      reason: 'no_opt_in',
+    });
+    await ctx.db.consent.create({
+      data: { userId: plus.userId, type: 'WHATSAPP', version: 't', granted: true },
+    });
+    const out2 = await dispatchEvent(deps(spTime(12)), event('i3'));
     expect(out2.find((o) => o.channel === 'WHATSAPP')?.status).toBe('queued');
   });
 

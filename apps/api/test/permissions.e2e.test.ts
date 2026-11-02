@@ -10,6 +10,7 @@ import {
   type TestContext,
 } from './harness';
 import { PRO_COVERED_ELSEWHERE, proRoutes } from './permissions-pro-routes';
+import { PRO_PLUS_COVERED_ELSEWHERE, proPlusRoutes } from './permissions-pro-plus-routes';
 
 /**
  * Matriz de permissões (CLAUDE.md §12): papel errado = 403, plano errado = 402,
@@ -698,6 +699,7 @@ const ROUTES: Route[] = [
   },
   { method: 'get', path: '/v1/admin/exercises/video-queue', tenant: false, allowed: A('ADMIN') },
   ...proRoutes(() => ({ studentLinkId })),
+  ...proPlusRoutes(() => ({ studentLinkId })),
 ];
 
 /** Rotas públicas, de sessão ou destrutivas cobertas em outros testes. */
@@ -728,6 +730,7 @@ const COVERED_ELSEWHERE = new Set([
   'POST /v1/public/workouts/{token}/sessions',
   'GET /v1/legal/{kind}',
   ...PRO_COVERED_ELSEWHERE,
+  ...PRO_PLUS_COVERED_ELSEWHERE,
 ]);
 
 function call(r: Route, actor: Actor, tenant?: string) {

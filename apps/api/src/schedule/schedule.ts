@@ -1,3 +1,4 @@
+import { CalendarSyncService } from '../integrations/integrations';
 import {
   Body,
   Controller,
@@ -68,6 +69,7 @@ export class ScheduleService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(EVENTS) private readonly events: EventPublisher,
+    private readonly calendar: CalendarSyncService,
   ) {}
 
   private async tenantInfo(tenantId: string) {
@@ -321,6 +323,7 @@ export class ScheduleService {
         ids.length,
       );
     }
+    this.calendar.queuePush(ids);
     return { ...(await this.get(t, parent.id)), occurrences: ids.length };
   }
 
@@ -380,6 +383,7 @@ export class ScheduleService {
         reminder1hSentAt: null,
       },
     });
+    this.calendar.queuePush([id]);
     return this.get(t, id);
   }
 
@@ -398,6 +402,7 @@ export class ScheduleService {
         : { id };
     const affected = await db.appointment.findMany({ where, include: this.include });
     await db.appointment.updateMany({ where, data: { status: 'CANCELED' } });
+    this.calendar.queuePush(affected.map((x) => x.id));
     const userIds = [
       ...new Set(
         affected
@@ -546,6 +551,7 @@ export class ScheduleService {
         update: { status: 'BOOKED', canceledAt: null, deletedAt: null },
       });
       await this.notifyStaff(t.tenantId, a.id, linkId, 'agendou');
+      this.calendar.queuePush([a.id]);
       return this.get(t, a.id);
     }
     const startsAt = new Date(dto.startsAt);
@@ -654,8 +660,10 @@ export class ScheduleService {
       where: { id: att.id },
       data: { status: 'CANCELED', canceledAt: new Date() },
     });
-    if (a.capacity === 1)
+    if (a.capacity === 1) {
       await db.appointment.update({ where: { id }, data: { status: 'CANCELED' } });
+      this.calendar.queuePush([id]);
+    }
     await this.notifyStaff(t.tenantId, id, linkId, 'cancelou');
     return { ok: true as const };
   }

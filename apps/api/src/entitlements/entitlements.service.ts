@@ -39,6 +39,11 @@ export class EntitlementsService {
       this.prisma.system.tenantMember.count({
         where: { tenantId, role: 'ASSISTANT', deletedAt: null, status: { not: 'REMOVED' } },
       }),
+    // Gerações bem-sucedidas no mês corrente (fuso de São Paulo).
+    'workouts.ai_monthly': (tenantId) =>
+      this.prisma.system.aiGeneration.count({
+        where: { tenantId, status: 'SUCCEEDED', createdAt: { gte: monthStartSaoPaulo() } },
+      }),
     'storage.quota_mb': async (tenantId) => {
       const u = await this.prisma.system.tenantStorageUsage.findUnique({ where: { tenantId } });
       return Math.ceil(Number((u?.bytesUsed ?? 0n) + (u?.bytesReserved ?? 0n)) / MB);
@@ -115,4 +120,16 @@ export class EntitlementsService {
     }
     return { plan: ent.plan, features: ent.features, limits };
   }
+}
+
+/** Primeiro instante do mês corrente em America/Sao_Paulo (UTC-3, sem horário de verão). */
+export function monthStartSaoPaulo(now = new Date()): Date {
+  const [y, m] = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+  })
+    .format(now)
+    .split('-');
+  return new Date(`${y}-${m}-01T00:00:00-03:00`);
 }

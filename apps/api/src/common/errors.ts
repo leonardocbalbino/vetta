@@ -56,3 +56,15 @@ export const paymentOverdue = () =>
     'Seu acesso está pausado por uma cobrança em aberto. Regularize para voltar a treinar.',
     HttpStatus.PAYMENT_REQUIRED,
   );
+
+/** Integração externa (IA, Google, Cloudflare, WhatsApp) sem credenciais neste ambiente. */
+export const integrationNotConfigured = (
+  message: string,
+  code: 'AI_NOT_CONFIGURED' | 'INTEGRATION_NOT_CONFIGURED' = 'INTEGRATION_NOT_CONFIGURED',
+) => new AppException(code, message, HttpStatus.SERVICE_UNAVAILABLE);
+
+export const integrationFailed = (
+  message: string,
+  code: 'AI_FAILED' | 'INTEGRATION_FAILED' = 'INTEGRATION_FAILED',
+  details?: unknown,
+) => new AppException(code, message, HttpStatus.BAD_GATEWAY, details);

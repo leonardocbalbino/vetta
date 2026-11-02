@@ -28,7 +28,13 @@ export class TenantAccessService {
       if (tenant.status !== 'ACTIVE')
         throw forbidden('Esta conta está suspensa. Fale com o suporte.');
       const role: TenantRole = member.role === 'OWNER' ? 'PERSONAL' : 'PERSONAL_ASSISTENTE';
-      return { tenantId, role, memberId: member.id, studentLinkId: null };
+      return {
+        tenantId,
+        role,
+        memberId: member.id,
+        studentLinkId: null,
+        permissions: member.role === 'OWNER' ? [] : member.permissions,
+      };
     }
 
     const link = await db.studentLink.findUnique({

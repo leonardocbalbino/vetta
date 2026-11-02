@@ -1,6 +1,14 @@
 import { type CanActivate, type ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { can, type Action, type LimitFeatureKey, type Resource, type Role } from '@vetta/contracts';
+import {
+  ASSISTANT_PERMISSION_BY_RESOURCE,
+  ASSISTANT_PERMISSION_LABEL,
+  can,
+  type Action,
+  type LimitFeatureKey,
+  type Resource,
+  type Role,
+} from '@vetta/contracts';
 import { badRequest, forbidden, paymentOverdue, unauthorized } from '../common/errors';
 import type { AppRequest, Principal } from '../common/request';
 import { EntitlementsService } from '../entitlements/entitlements.service';
@@ -82,6 +90,19 @@ export class AccessGuard implements CanActivate {
       const scope = can(role, permission.action, permission.resource);
       if (!scope) throw forbidden();
       if (req.tenantAccess) req.tenantAccess.scope = scope;
+      // Assistente: permissões granulares definidas pelo personal restringem o papel.
+      if (role === 'PERSONAL_ASSISTENTE') {
+        const need = ASSISTANT_PERMISSION_BY_RESOURCE[permission.resource];
+        if (
+          need &&
+          (permission.action !== 'read' || need.reads) &&
+          !(req.tenantAccess?.permissions ?? []).includes(need.permission)
+        ) {
+          throw forbidden(
+            `Seu acesso na equipe não inclui: ${ASSISTANT_PERMISSION_LABEL[need.permission].toLowerCase()}.`,
+          );
+        }
+      }
     }
 
     const tenantId = req.tenantAccess?.tenantId;

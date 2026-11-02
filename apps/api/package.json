@@ -24,7 +24,9 @@
     "@socket.io/redis-adapter": "^8.3.0",
     "@vetta/contracts": "workspace:*",
     "@vetta/db": "workspace:*",
+    "@vetta/fitness": "workspace:*",
     "@vetta/server": "workspace:*",
+    "@vetta/tokens": "workspace:*",
     "argon2": "^0.44.0",
     "bullmq": "^5.61.0",
     "helmet": "^8.1.0",
@@ -39,10 +41,10 @@
     "rxjs": "^7.8.2",
     "socket.io": "^4.8.1",
     "uuidv7": "^1.0.2",
-    "zod": "^4.1.12",
-    "@vetta/fitness": "workspace:*"
+    "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.700.0",
     "@nestjs/cli": "^11.0.10",
     "@nestjs/schematics": "^11.0.8",
     "@nestjs/testing": "^11.1.6",
@@ -53,6 +55,7 @@
     "@types/supertest": "^6.0.3",
     "@vetta/config": "workspace:*",
     "eslint": "^9.39.0",
+    "ffmpeg-static": "^5.2.0",
     "pino-pretty": "^13.1.1",
     "sharp": "^0.34.4",
     "socket.io-client": "^4.8.1",
@@ -60,8 +63,6 @@
     "testcontainers": "^11.7.0",
     "typescript": "~5.9.3",
     "unplugin-swc": "^1.5.7",
-    "vitest": "^3.2.4",
-    "@aws-sdk/client-s3": "^3.700.0",
-    "ffmpeg-static": "^5.2.0"
+    "vitest": "^3.2.4"
   }
 }

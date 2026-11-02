@@ -24,6 +24,7 @@ import ffmpegPath from 'ffmpeg-static';
 import { Redis } from 'ioredis';
 import request from 'supertest';
 import { TokensService } from '../src/auth/tokens.service';
+import type { AppOverrides } from '../src/app.module';
 import { createApp } from '../src/bootstrap';
 import { loadApiEnv, type ApiEnv } from '../src/config/env';
 import { TEST_S3 } from './global-setup';
@@ -45,6 +46,7 @@ export interface TestContext {
 
 export async function createTestContext(
   overrides: Record<string, string> = {},
+  appOverrides: Omit<AppOverrides, 'events'> = {},
 ): Promise<TestContext> {
   const tdb: TestDatabase = await startTestDatabase();
   const env = loadApiEnv({
@@ -67,7 +69,7 @@ export async function createTestContext(
   await syncCatalog(db);
   await syncNotificationTemplates(db);
   const events = new MemoryEventPublisher();
-  const app = await createApp(env, { logs: false, events });
+  const app = await createApp(env, { logs: false, events, ...appOverrides });
   await app.init();
   const redis = new Redis(env.REDIS_URL);
   const storage = new S3StorageProvider({

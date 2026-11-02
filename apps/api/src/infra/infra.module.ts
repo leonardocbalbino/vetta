@@ -1,6 +1,12 @@
 import { Global, Inject, Module, type OnApplicationShutdown, type Provider } from '@nestjs/common';
 import {
+  createAiProvider,
+  createCalendarProvider,
+  createCustomDomainProvider,
   createPaymentProvider,
+  type AiProvider,
+  type CalendarProvider,
+  type CustomDomainProvider,
   EntitlementsCache,
   type BillingDeps,
   type PaymentProvider,
@@ -24,6 +30,10 @@ export const DOCUMENTS_QUEUE = Symbol('DOCUMENTS_QUEUE');
 /** Gateway de pagamento (null sem ASAAS_API_KEY: rotas respondem 503). */
 export const PAYMENTS = Symbol('PAYMENTS');
 export const BILLING = Symbol('BILLING');
+/** Fase 3: IA, domínio próprio e Google Calendar (substituíveis nos testes). */
+export const AI = Symbol('AI');
+export const CUSTOM_DOMAINS = Symbol('CUSTOM_DOMAINS');
+export const CALENDAR = Symbol('CALENDAR');
 
 const providers: Provider[] = [
   PrismaService,
@@ -77,6 +87,17 @@ const providers: Provider[] = [
     provide: PAYMENTS,
     inject: [ENV],
     useFactory: (env: ApiEnv): PaymentProvider | null => createPaymentProvider(env),
+  },
+  { provide: AI, inject: [ENV], useFactory: (env: ApiEnv): AiProvider => createAiProvider(env) },
+  {
+    provide: CUSTOM_DOMAINS,
+    inject: [ENV],
+    useFactory: (env: ApiEnv): CustomDomainProvider => createCustomDomainProvider(env),
+  },
+  {
+    provide: CALENDAR,
+    inject: [ENV],
+    useFactory: (env: ApiEnv): CalendarProvider => createCalendarProvider(env),
   },
 ];
 

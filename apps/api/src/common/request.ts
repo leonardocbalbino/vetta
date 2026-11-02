@@ -29,6 +29,8 @@ export interface TenantAccess {
   blocked?: boolean;
   /** Escopo concedido por can() para a ação da rota. */
   scope: Scope | null;
+  /** Permissões do assistente (prescribe, assess, chat); vazio para dono e aluno. */
+  permissions?: string[];
 }
 
 export interface AppRequest extends Request {

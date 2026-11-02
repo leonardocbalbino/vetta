@@ -29,7 +29,37 @@ import { type ApiEnv, ENV } from './config/env';
 import { AUTH_THROTTLE } from './auth/auth.controller';
 import { EntitlementsService } from './entitlements/entitlements.service';
 import { HealthController } from './health/health.controller';
-import { BILLING_PROVIDER, EVENTS, InfraModule, REDIS } from './infra/infra.module';
+import {
+  AI,
+  BILLING_PROVIDER,
+  CALENDAR,
+  CUSTOM_DOMAINS,
+  EVENTS,
+  InfraModule,
+  REDIS,
+} from './infra/infra.module';
+import type { AiProvider, CalendarProvider, CustomDomainProvider } from '@vetta/server';
+import { AdminAiController, AiController, AiService } from './ai/ai';
+import { ChangeLogInterceptor, TeamController, TeamService } from './team/team';
+import { BrandService, PublicBrandController, WhiteLabelController } from './brand/brand';
+import {
+  CalendarSyncService,
+  ExportsController,
+  IntegrationsController,
+  IntegrationsService,
+} from './integrations/integrations';
+import { ReportsController, ReportsService } from './reports/reports';
+import {
+  AcademyController,
+  AcademyService,
+  AdminAcademyController,
+  AdminBroadcastsController,
+  AdminSupportController,
+  PlatformBroadcastOpenController,
+  PlatformBroadcastsService,
+  SupportController,
+  SupportService,
+} from './platform/platform';
 import { NotificationsController } from './notifications/notifications.controller';
 import { NotificationsGateway } from './notifications/notifications.gateway';
 import { AdminPlansController, PlansController } from './plans/plans.controller';
@@ -82,9 +112,17 @@ import {
   SalesService,
 } from './sales/sales';
 
+/** Substituições para testes (eventos em memória, IA com respostas gravadas, dublês). */
+export interface AppOverrides {
+  events?: EventPublisher;
+  ai?: AiProvider;
+  customDomains?: CustomDomainProvider;
+  calendar?: CalendarProvider;
+}
+
 @Module({})
 export class AppModule {
-  static forRoot(env: ApiEnv, overrides: { events?: EventPublisher } = {}): DynamicModule {
+  static forRoot(env: ApiEnv, overrides: AppOverrides = {}): DynamicModule {
     return {
       module: AppModule,
       imports: [
@@ -179,6 +217,20 @@ export class AppModule {
         PostureController,
         DocumentsController,
         AdminFinanceController,
+        AiController,
+        AdminAiController,
+        TeamController,
+        WhiteLabelController,
+        PublicBrandController,
+        IntegrationsController,
+        ExportsController,
+        ReportsController,
+        AcademyController,
+        AdminAcademyController,
+        AdminBroadcastsController,
+        PlatformBroadcastOpenController,
+        SupportController,
+        AdminSupportController,
       ],
       providers: [
         TokensService,
@@ -211,8 +263,22 @@ export class AppModule {
         PeriodizationService,
         PostureService,
         DocumentsService,
+        AiService,
+        TeamService,
+        BrandService,
+        CalendarSyncService,
+        IntegrationsService,
+        ReportsService,
+        AcademyService,
+        PlatformBroadcastsService,
+        SupportService,
         // Testes podem substituir o publicador de eventos (ex.: MemoryEventPublisher).
         ...(overrides.events ? [{ provide: EVENTS, useValue: overrides.events }] : []),
+        ...(overrides.ai ? [{ provide: AI, useValue: overrides.ai }] : []),
+        ...(overrides.customDomains
+          ? [{ provide: CUSTOM_DOMAINS, useValue: overrides.customDomains }]
+          : []),
+        ...(overrides.calendar ? [{ provide: CALENDAR, useValue: overrides.calendar }] : []),
         BILLING_PROVIDER,
         { provide: APP_PIPE, useClass: ZodValidationPipe },
         { provide: APP_FILTER, useClass: ErrorFilter },
@@ -220,6 +286,7 @@ export class AppModule {
         { provide: APP_GUARD, useClass: AccessGuard },
         { provide: APP_GUARD, useClass: AppThrottlerGuard },
         { provide: APP_INTERCEPTOR, useClass: ImpersonationAuditInterceptor },
+        { provide: APP_INTERCEPTOR, useClass: ChangeLogInterceptor },
       ],
     };
   }

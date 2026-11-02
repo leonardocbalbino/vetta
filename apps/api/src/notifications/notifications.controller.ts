@@ -71,6 +71,14 @@ export class NotificationsController {
           where: { id },
           data: { readAt: new Date() },
         });
+    // Comunicado da plataforma lido = aberto (métrica de abertura no admin).
+    const broadcastId = (n.data as { broadcastId?: unknown } | null)?.broadcastId;
+    if (n.event === 'platform.broadcast' && typeof broadcastId === 'string') {
+      await this.prisma.system.platformBroadcastRecipient.updateMany({
+        where: { broadcastId, userId: u.userId, openedAt: null },
+        data: { openedAt: new Date() },
+      });
+    }
     return toNotificationDto(updated);
   }
 

@@ -4,13 +4,12 @@ import { IoAdapter } from '@nestjs/platform-socket.io';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule, type OpenAPIObject } from '@nestjs/swagger';
 import { createAdapter } from '@socket.io/redis-adapter';
-import type { EventPublisher } from '@vetta/server';
 import helmet from 'helmet';
 import { Redis } from 'ioredis';
 import { Logger } from 'nestjs-pino';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import type { ServerOptions } from 'socket.io';
-import { AppModule } from './app.module';
+import { AppModule, type AppOverrides } from './app.module';
 import type { ApiEnv } from './config/env';
 
 /** Socket.IO com adapter Redis: o worker emite para as salas de qualquer instância. */
@@ -67,15 +66,12 @@ export function buildOpenApi(app: INestApplication): OpenAPIObject {
 /** Cria e configura a aplicação (usado por main.ts e pelos testes e2e). */
 export async function createApp(
   env: ApiEnv,
-  opts: { logs?: boolean; events?: EventPublisher } = {},
+  opts: { logs?: boolean } & AppOverrides = {},
 ): Promise<NestExpressApplication> {
-  const app = await NestFactory.create<NestExpressApplication>(
-    AppModule.forRoot(env, opts.events ? { events: opts.events } : {}),
-    {
-      bufferLogs: true,
-      ...(opts.logs === false ? { logger: false } : {}),
-    },
-  );
+  const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(env, opts), {
+    bufferLogs: true,
+    ...(opts.logs === false ? { logger: false } : {}),
+  });
   if (opts.logs !== false) app.useLogger(app.get(Logger));
   if (env.TRUST_PROXY) app.set('trust proxy', 1);
   app.use(helmet({ contentSecurityPolicy: env.NODE_ENV === 'production' ? undefined : false }));
