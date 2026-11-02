@@ -83,14 +83,14 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
   - rodar algumas gerações reais e conferir qualidade, tempo e custo;
   - regravar as respostas se o formato mudar;
   - ajustar `AI_EFFORT` se o custo pedir.
-- [ ] **Templates do WhatsApp aprovados na Meta**, com os nomes de `WHATSAPP_TEMPLATES`:
+- [ ] **Templates do WhatsApp aprovados na Meta** (em espera: decidido usar a Meta direto, sem BSP; retomar depois), com os nomes de `WHATSAPP_TEMPLATES`:
   - `vetta_cobranca_nova`, `vetta_cobranca_lembrete`, `vetta_cobranca_atraso`;
   - `vetta_lembrete_treino`, `vetta_lembrete_aula`.
   - As variáveis seguem a ordem do código.
 - [ ] **Cloudflare for SaaS:**
   - criar o registro `custom.vettafit.com.br` (fallback origin) apontando para o app web;
   - testar um domínio real de ponta a ponta.
-- [ ] **Google Calendar:**
+- [ ] **Google Calendar** (o projeto OAuth no Google Cloud será criado pelo responsável do produto):
   - verificar o app OAuth (o escopo `calendar.events` é sensível);
   - registrar o domínio do webhook no Google;
   - testar com uma conta real.
