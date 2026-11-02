@@ -87,6 +87,8 @@ export interface BuilderProgram {
   isExtra: boolean;
   status?: string;
   publicToken?: string | null;
+  /** Gerado pela IA: mostra o aviso de revisão enquanto for rascunho. */
+  aiGenerated?: boolean;
   routines: BRoutine[];
 }
 
@@ -115,6 +117,7 @@ export function fromApi(p: {
   isExtra: boolean;
   status: string;
   publicToken: string | null;
+  aiGenerated?: boolean;
   routines: {
     id: string;
     label: string;
@@ -143,6 +146,7 @@ export function fromApi(p: {
     isExtra: p.isExtra,
     status: p.status,
     publicToken: p.publicToken,
+    aiGenerated: p.aiGenerated ?? false,
     routines: p.routines.map((r) => ({
       key: r.id,
       id: r.id,
@@ -565,6 +569,12 @@ export function WorkoutBuilder({ initial }: { initial: BuilderProgram }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {p.aiGenerated && p.status === 'DRAFT' ? (
+        <div role="note" className="rounded-card border border-warning bg-warning/10 p-3 text-sm">
+          <strong>Rascunho gerado pela IA.</strong> As justificativas estão nas observações de cada
+          rotina e exercício. Revise, ajuste o que precisar e só então publique para o aluno.
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-end gap-3">
         <Field label="Nome do treino" className="min-w-64 flex-1">
           <Input value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} />

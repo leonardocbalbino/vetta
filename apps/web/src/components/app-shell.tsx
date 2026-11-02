@@ -1,6 +1,6 @@
 'use client';
 
-import type { MeResponse, NotificationDto } from '@vetta/contracts';
+import type { MeResponse, NotificationDto, PublicBrand } from '@vetta/contracts';
 import { useEntitlements, useVettaClient } from '@vetta/sdk/react';
 import {
   Avatar,
@@ -40,7 +40,14 @@ import {
   History,
   Megaphone,
   FileText,
+  BarChart3,
+  GraduationCap,
+  LifeBuoy,
+  Palette,
+  Plug,
+  UsersRound,
 } from 'lucide-react';
+import { SupportWidget } from './support-widget';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
@@ -82,6 +89,24 @@ const PERSONAL_NAV: NavItem[] = [
     feature: 'brand.sales_page',
     ownerOnly: true,
   },
+  {
+    href: '/relatorios',
+    label: 'Relatórios',
+    icon: BarChart3,
+    feature: 'finance.advanced_reports',
+    ownerOnly: true,
+  },
+  { href: '/equipe', label: 'Equipe', icon: UsersRound, ownerOnly: true },
+  {
+    href: '/marca',
+    label: 'Minha marca',
+    icon: Palette,
+    feature: 'brand.white_label',
+    ownerOnly: true,
+  },
+  { href: '/integracoes', label: 'Integrações', icon: Plug },
+  { href: '/academy', label: 'Academy', icon: GraduationCap },
+  { href: '/suporte', label: 'Suporte', icon: LifeBuoy },
   { href: '/configuracoes', label: 'Configurações', icon: Settings, ownerOnly: true },
 ];
 
@@ -201,6 +226,14 @@ function Nav({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void 
   );
 }
 
+/**
+ * Tema do personal (white label) do vínculo ativo: variáveis CSS injetadas em tempo de
+ * execução. Cada vínculo busca o próprio tema; trocar de vínculo troca o tema.
+ */
+function useBrand(tenantId: string | null) {
+  return useApi<PublicBrand>(tenantId ? '/v1/brand/active' : null);
+}
+
 export function AppShell({ me, children }: { me: MeResponse; children: ReactNode }) {
   const client = useVettaClient();
   const router = useRouter();
@@ -212,11 +245,22 @@ export function AppShell({ me, children }: { me: MeResponse; children: ReactNode
   const items = staff
     ? PERSONAL_NAV.filter((i) => !i.ownerOnly || active?.role === 'PERSONAL')
     : STUDENT_NAV;
+  const brand = useBrand(tenantId);
+  const wl = brand.data?.whiteLabel ? brand.data : null;
 
   const sidebar = (
     <div className="flex h-full flex-col gap-6">
       <Link href={staff ? '/inicio' : '/treino'} className="px-2">
-        <Logo />
+        {wl ? (
+          wl.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={wl.logoUrl} alt={wl.displayName} className="h-8 max-w-48 object-contain" />
+          ) : (
+            <span className="font-display text-xl">{wl.displayName}</span>
+          )
+        ) : (
+          <Logo />
+        )}
       </Link>
       <Nav items={items} onNavigate={() => setOpen(false)} />
     </div>
@@ -224,6 +268,7 @@ export function AppShell({ me, children }: { me: MeResponse; children: ReactNode
 
   return (
     <div className="flex min-h-dvh">
+      {wl?.css ? <style data-brand={wl.tenantId}>{wl.css}</style> : null}
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 border-r border-border bg-surface p-4 lg:block">
         {sidebar}
       </aside>
@@ -320,6 +365,12 @@ export function AppShell({ me, children }: { me: MeResponse; children: ReactNode
         <main className="mx-auto w-full max-w-6xl flex-1 p-4 md:p-6">
           {active?.role === 'ALUNO' ? <StudentGate>{children}</StudentGate> : children}
         </main>
+        {wl ? (
+          <footer className="px-4 pb-4 text-center text-xs text-muted-foreground">
+            feito com Vetta
+          </footer>
+        ) : null}
+        {staff ? <SupportWidget /> : null}
       </div>
     </div>
   );

@@ -17,6 +17,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useApiMutation } from '@/lib/api';
+import { WhatsAppCard } from '@/components/whatsapp-optin';
 
 /** Perfil do aluno: dados, lembrete diário de treino e direitos LGPD. */
 export default function ProfilePage() {
@@ -123,6 +124,7 @@ export default function ProfilePage() {
           </Button>
         </CardContent>
       </Card>
+      <WhatsAppCard />
     </div>
   );
 }

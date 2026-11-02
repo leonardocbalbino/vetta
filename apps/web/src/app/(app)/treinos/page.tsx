@@ -11,7 +11,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@vetta/ui';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { fmtDate, useApi } from '@/lib/api';
@@ -83,9 +83,16 @@ export default function WorkoutsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-display text-3xl">Treinos</h1>
-        <Button asChild>
-          <Link href="/treinos/novo">Novo treino</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" asChild>
+            <Link href="/treinos/ia">
+              <Sparkles aria-hidden /> Gerar com IA
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/treinos/novo">Novo treino</Link>
+          </Button>
+        </div>
       </div>
       <Input
         placeholder="Buscar treino"

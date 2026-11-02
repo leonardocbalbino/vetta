@@ -112,6 +112,35 @@ export class VettaClient {
     return json as T;
   }
 
+  /** GET binário (CSV, PDF) com o mesmo login e vínculo das demais chamadas. */
+  async download(path: string, retry = true): Promise<Blob> {
+    const url = new URL(
+      path.replace(/^\//, ''),
+      this.o.baseUrl.endsWith('/') ? this.o.baseUrl : `${this.o.baseUrl}/`,
+    );
+    const tokens = await this.tokens.get();
+    const tenantId = this.o.getTenantId?.();
+    const res = await this.fetcher(url, {
+      headers: {
+        ...(tokens ? { Authorization: `Bearer ${tokens.accessToken}` } : {}),
+        ...(tenantId ? { 'X-Tenant-Id': tenantId } : {}),
+      },
+    });
+    if (res.status === 401 && retry && tokens?.refreshToken && (await this.refresh()))
+      return this.download(path, false);
+    if (!res.ok) {
+      const text = await res.text();
+      throw new ApiRequestError(
+        res.status,
+        (text ? (JSON.parse(text) as ApiError) : null) ?? {
+          code: 'INTERNAL_ERROR',
+          message: res.statusText,
+        },
+      );
+    }
+    return res.blob();
+  }
+
   /** Um único refresh por vez, mesmo com várias requisições falhando juntas. */
   refresh(): Promise<AuthTokens | null> {
     this.refreshing ??= (async () => {
