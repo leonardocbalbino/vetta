@@ -305,6 +305,9 @@ importers:
       '@vetta/server':
         specifier: workspace:*
         version: link:../../packages/server
+      '@vetta/tokens':
+        specifier: workspace:*
+        version: link:../../packages/tokens
       argon2:
         specifier: ^0.44.0
         version: 0.44.0
