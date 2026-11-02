@@ -430,7 +430,8 @@ export async function reconcileDay(
   day?: string,
 ): Promise<{ id: string; status: string; checked: number; fixed: number } | null> {
   if (!deps.provider) return null;
-  const date = day ?? toDateOnly(new Date(Date.now() - DAY));
+  // O Asaas filtra por data de criação em Brasília.
+  const date = day ?? localDate(new Date(Date.now() - DAY), TZ);
   const existing = await deps.db.reconciliationRun.findUnique({
     where: { date: new Date(`${date}T00:00:00Z`) },
   });

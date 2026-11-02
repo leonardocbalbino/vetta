@@ -14,8 +14,8 @@ import { ApiTags } from '@nestjs/swagger';
 import { CouponInputSchema } from '@vetta/contracts';
 import {
   CYCLE_MONTHS,
+  localDate,
   reconcileDay,
-  toDateOnly,
   type BillingDeps,
   type PaymentProvider,
 } from '@vetta/server';
@@ -268,7 +268,7 @@ export class AdminFinanceController {
   @Can('manage', 'platform.finance')
   async reconcile(@Body() dto: ReconcileDto) {
     if (!this.provider) throw paymentNotConfigured();
-    const date = dto.date ?? toDateOnly(new Date(Date.now() - DAY));
+    const date = dto.date ?? localDate(new Date(Date.now() - DAY), 'America/Sao_Paulo');
     // Rodar de novo o mesmo dia: apaga a execução anterior.
     await this.prisma.platform.reconciliationRun.deleteMany({
       where: { date: new Date(`${date}T00:00:00Z`) },

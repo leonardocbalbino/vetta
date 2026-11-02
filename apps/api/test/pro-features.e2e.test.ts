@@ -680,3 +680,34 @@ describe('anamnese, postural, documentos e PDF', () => {
     );
   });
 });
+
+describe('plano errado = 402 com o plano mínimo', () => {
+  it.each([
+    ['get', '/v1/finance/summary', 'finance.student_billing'],
+    ['get', '/v1/sales-page', 'brand.sales_page'],
+    ['get', '/v1/schedule/settings', 'schedule.calendar'],
+    ['get', '/v1/broadcasts', 'comms.broadcast'],
+    ['get', '/v1/periodizations', 'workouts.periodization'],
+    ['put', '/v1/brand/logo', 'assessment.pdf_branding'],
+  ] as const)('%s %s → %s', async (method, url, feature) => {
+    const free = await seedWorld(ctx, 'FREE');
+    const c = as(ctx, await login(ctx, free.ownerEmail), free.tenantId);
+    const res = method === 'get' ? await c.get(url) : await c.put(url, { mediaId: null });
+    expect(res.status).toBe(402);
+    expect(res.body).toMatchObject({
+      code: 'FEATURE_LOCKED',
+      details: { feature, requiredPlan: 'PRO' },
+    });
+  });
+
+  it('posture e documentos no FREE', async () => {
+    const free = await seedWorld(ctx, 'FREE');
+    const c = as(ctx, await login(ctx, free.ownerEmail), free.tenantId);
+    expect(
+      (await c.get(`/v1/students/${free.studentLinkIds[0]}/posture`)).body.details.feature,
+    ).toBe('assessment.posture');
+    expect(
+      (await c.get(`/v1/students/${free.studentLinkIds[0]}/documents`)).body.details.feature,
+    ).toBe('docs.student_folder');
+  });
+});

@@ -195,8 +195,9 @@ export async function switchPeriodizationPhases(deps: ProJobDeps, now = new Date
     }
     const phase = p.phases[loc.phaseIndex]!;
     if (phase.id === p.activePhaseId) continue;
+    // Idempotente: troca o programa, publica (id do evento fixo) e só então marca a fase.
+    // Se o publish falhar, a próxima execução refaz tudo sem duplicar a notificação.
     await deps.db.$transaction(async (tx) => {
-      await tx.periodization.update({ where: { id: p.id }, data: { activePhaseId: phase.id } });
       if (phase.programId) {
         await tx.workoutProgram.updateMany({
           where: {
@@ -231,6 +232,7 @@ export async function switchPeriodizationPhases(deps: ProJobDeps, now = new Date
         tenantName: p.tenant.name,
       },
     });
+    await deps.db.periodization.update({ where: { id: p.id }, data: { activePhaseId: phase.id } });
     switched++;
   }
   return switched;

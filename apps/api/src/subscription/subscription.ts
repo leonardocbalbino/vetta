@@ -24,6 +24,7 @@ import {
   couponDiscount,
   couponProblem,
   decryptCard,
+  localDate,
   encryptCard,
   monthlyEquivalent,
   PaymentProviderError,
@@ -336,7 +337,12 @@ export class SubscriptionService {
       });
 
       const creditUsed = Math.min(q.creditCents, q.amountCents - q.discountCents);
-      const due = new Date(now.getTime() + (dto.method === 'BOLETO' ? 3 * DAY : 0));
+      // Vencimento é dia civil no fuso do personal (não a data UTC).
+      const dueDay = localDate(
+        new Date(now.getTime() + (dto.method === 'BOLETO' ? 3 * DAY : 0)),
+        tenant.timezone,
+      );
+      const due = new Date(`${dueDay}T12:00:00Z`);
       const inv = await db.platformInvoice.create({
         data: {
           tenantId,
@@ -380,7 +386,7 @@ export class SubscriptionService {
           customerId,
           method: dto.method,
           amountCents: q.chargeNowCents,
-          dueDate: toDateOnly(due),
+          dueDate: dueDay,
           description: inv.description!,
           externalReference: `pinv:${inv.id}`,
           cardToken,

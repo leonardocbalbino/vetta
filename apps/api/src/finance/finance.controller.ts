@@ -63,6 +63,8 @@ class SubsQueryDto extends createZodDto(
 /** Financeiro do personal (M11): carteira, planos de consultoria, cobranças e painel. */
 @ApiTags('finance')
 @Controller('finance')
+// O aluno tem finance:read own (as próprias cobranças em /me/finance); aqui é só a equipe.
+@Roles('PERSONAL')
 export class FinanceController {
   constructor(private readonly finance: FinanceService) {}
 

@@ -286,7 +286,8 @@ async function applyStudentCharge(
     const bps = inv.subscription?.platformFeeBps ?? 0;
     const platformFee = platformFeeCents(charge.netCents, bps);
     const net = charge.netCents - platformFee;
-    const creditAt = charge.creditDate ? new Date(`${charge.creditDate}T12:00:00Z`) : null;
+    // Datas do Asaas são dias civis de Brasília: o crédito libera às 00h BRT.
+    const creditAt = charge.creditDate ? new Date(`${charge.creditDate}T00:00:00-03:00`) : null;
     const paidAt = charge.paidAt ?? e.occurredAt;
     await db.$transaction(async (tx) => {
       await tx.invoice.update({

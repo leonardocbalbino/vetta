@@ -26,6 +26,12 @@ export interface EventPublisher {
   publish(name: DomainEventName, input?: PublishInput): Promise<DomainEvent>;
 }
 
+/**
+ * O BullMQ recusa ':' em ids customizados. O id do evento continua o mesmo (idempotência
+ * nas notificações); só o id do job na fila troca ':' por '__', de forma determinística.
+ */
+export const queueJobId = (eventId: string) => eventId.replaceAll(':', '__');
+
 /** Publica eventos de domínio na fila consumida pelo worker (NotificationService). */
 export class QueueEventPublisher implements EventPublisher {
   constructor(
@@ -35,7 +41,7 @@ export class QueueEventPublisher implements EventPublisher {
 
   async publish(name: DomainEventName, input: PublishInput = {}) {
     const event = createDomainEvent(name, input);
-    await this.queue.add(name, event, { ...DEFAULT_JOB_OPTIONS, jobId: event.id });
+    await this.queue.add(name, event, { ...DEFAULT_JOB_OPTIONS, jobId: queueJobId(event.id) });
     this.onPublish?.(event);
     return event;
   }

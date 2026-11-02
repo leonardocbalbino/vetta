@@ -90,7 +90,7 @@ export async function createTenantWorld(
       },
     }),
   );
-  track(
+  const pinv = track(
     'PlatformInvoice',
     await db.platformInvoice.create({
       data: {
@@ -370,7 +370,7 @@ export async function createTenantWorld(
       data: { tenantId, postureAssessmentId: posture.id, mediaId: media.id, view: 'FRONT' },
     }),
   );
-  track(
+  const photo = track(
     'ProgressPhoto',
     await db.progressPhoto.create({
       data: {
@@ -426,7 +426,7 @@ export async function createTenantWorld(
       },
     }),
   );
-  track(
+  const appt = track(
     'Appointment',
     await db.appointment.create({
       data: {
@@ -488,7 +488,7 @@ export async function createTenantWorld(
       },
     }),
   );
-  track(
+  const pacc = track(
     'PaymentAccount',
     await db.paymentAccount.create({ data: { tenantId, status: 'APPROVED' } }),
   );
@@ -563,6 +563,115 @@ export async function createTenantWorld(
         uploadedByUserId: owner.id,
         title: 'Exame de sangue',
         category: 'EXAM',
+      },
+    }),
+  );
+
+  // Fase 2
+  track(
+    'AppointmentAttendee',
+    await db.appointmentAttendee.create({
+      data: { tenantId, appointmentId: appt.id, studentLinkId: firstStudent },
+    }),
+  );
+  track(
+    'AvailabilityRule',
+    await db.availabilityRule.create({
+      data: { tenantId, memberId: owner_m.id, weekday: 1, startMinute: 420, endMinute: 660 },
+    }),
+  );
+  track(
+    'ScheduleBlock',
+    await db.scheduleBlock.create({
+      data: {
+        tenantId,
+        memberId: owner_m.id,
+        startsAt: days(20),
+        endsAt: days(21),
+        reason: 'Férias',
+      },
+    }),
+  );
+  track(
+    'KycDocument',
+    await db.kycDocument.create({
+      data: {
+        tenantId,
+        paymentAccountId: pacc.id,
+        mediaId: media.id,
+        type: 'IDENTIFICATION',
+        status: 'APPROVED',
+      },
+    }),
+  );
+  track(
+    'Checkout',
+    await db.checkout.create({
+      data: {
+        tenantId,
+        consultingPlanId: cplan.id,
+        status: 'PAID',
+        buyerName: 'Comprador',
+        buyerEmail: `comprador@${o.slug}.dev`,
+        buyerDocument: '52998224725',
+        method: 'PIX',
+        amountCents: 19900,
+        expiresAt: days(1),
+        paidAt: new Date(),
+        studentLinkId: firstStudent,
+        studentSubscriptionId: ssub.id,
+      },
+    }),
+  );
+  track(
+    'Testimonial',
+    await db.testimonial.create({
+      data: {
+        tenantId,
+        studentLinkId: firstStudent,
+        authorName: 'Aluno',
+        text: 'Melhor decisão do ano!',
+        rating: 5,
+        status: 'APPROVED',
+        approvedAt: new Date(),
+      },
+    }),
+  );
+  track(
+    'SalesPageResult',
+    await db.salesPageResult.create({
+      data: {
+        tenantId,
+        studentLinkId: firstStudent,
+        beforePhotoId: photo.id,
+        afterPhotoId: photo.id,
+        consentStatus: 'GRANTED',
+        consentAt: new Date(),
+      },
+    }),
+  );
+  track(
+    'AnamnesisAssignment',
+    await db.anamnesisAssignment.create({
+      data: {
+        tenantId,
+        studentLinkId: firstStudent,
+        templateId: template.id,
+        repeatEveryDays: 90,
+        nextDueOn: days(90),
+      },
+    }),
+  );
+  track(
+    'FiscalInvoice',
+    await db.fiscalInvoice.create({
+      data: {
+        tenantId,
+        platformInvoiceId: pinv.id,
+        amountCents: pinv.amountCents,
+        status: 'ISSUED',
+        number: '1',
+        issuedAt: new Date(),
       },
     }),
   );

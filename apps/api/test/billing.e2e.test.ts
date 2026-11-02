@@ -1,5 +1,6 @@
 import {
   issueFiscalInvoices,
+  localDate,
   platformGraceExpired,
   platformInvoiceReminders,
   platformPeriodEnd,
@@ -44,7 +45,7 @@ const holder = {
   phone: '11999990000',
 };
 
-const hook = (body: unknown, token = WEBHOOK_TOKEN) =>
+const hook = (body: object, token = WEBHOOK_TOKEN) =>
   ctx.http.post('/v1/webhooks/asaas').set('asaas-access-token', token).send(body);
 
 async function freeTenant() {
@@ -288,7 +289,7 @@ describe('inadimplência e downgrade sem perda de dados', () => {
       where: { tenantId: w.tenantId },
     });
     // O gateway gera a cobrança de renovação; chega o PAYMENT_CREATED.
-    const due = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
+    const due = localDate(new Date(Date.now() + 7 * 86_400_000), 'America/Sao_Paulo');
     const next = fake.nextCharge(sub.gatewaySubscriptionId!, due);
     expect((await hook(fake.webhook('PAYMENT_CREATED', next.id))).body.status).toBe('PROCESSED');
     const renewal = await ctx.db.platformInvoice.findUniqueOrThrow({
@@ -390,6 +391,7 @@ describe('webhooks, NFS-e, conciliação e admin', () => {
     expect(
       await ctx.db.fiscalInvoice.count({ where: { status: 'PENDING_CONFIG' } }),
     ).toBeGreaterThan(0);
+    const issuedBefore = await ctx.db.fiscalInvoice.count({ where: { status: 'ISSUED' } });
     const issued: string[] = [];
     const issuer: InvoiceIssuer = {
       configured: true,
@@ -410,7 +412,9 @@ describe('webhooks, NFS-e, conciliação e admin', () => {
     };
     await issueFiscalInvoices({ ...billing, issuer });
     expect(issued.length).toBeGreaterThan(0);
-    expect(await ctx.db.fiscalInvoice.count({ where: { status: 'ISSUED' } })).toBe(issued.length);
+    expect((await ctx.db.fiscalInvoice.count({ where: { status: 'ISSUED' } })) - issuedBefore).toBe(
+      issued.length,
+    );
     expect(ctx.events.of('fiscal_invoice.issued').length).toBe(issued.length);
   });
 
@@ -427,7 +431,7 @@ describe('webhooks, NFS-e, conciliação e admin', () => {
       where: { id: res.body.invoice.id },
     });
     fake.pay(inv.gatewayInvoiceId!); // pago no gateway, webhook perdido
-    const run = await reconcileDay(billing, new Date().toISOString().slice(0, 10));
+    const run = await reconcileDay(billing, localDate(new Date(), 'America/Sao_Paulo'));
     expect(run).toMatchObject({ status: 'DONE' });
     expect(run!.fixed).toBeGreaterThanOrEqual(1);
     expect((await api.get('/v1/me/entitlements')).body.plan.code).toBe('PRO');

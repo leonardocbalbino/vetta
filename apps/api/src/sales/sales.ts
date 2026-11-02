@@ -24,11 +24,11 @@ import {
 } from '@vetta/contracts';
 import {
   completeCheckout,
+  localDate,
   PaymentProviderError,
   platformFeeBpsOf,
   platformSplit,
   tenantApiKey,
-  toDateOnly,
   type BillingDeps,
   type EventPublisher,
   type PaymentProvider,
@@ -430,7 +430,10 @@ export class SalesService {
 
     const ctx = { apiKey, ...(meta.ip ? { remoteIp: meta.ip } : {}) };
     const now = new Date();
-    const due = toDateOnly(new Date(now.getTime() + (dto.method === 'BOLETO' ? 3 * DAY : 0)));
+    const due = localDate(
+      new Date(now.getTime() + (dto.method === 'BOLETO' ? 3 * DAY : 0)),
+      tenant.timezone,
+    );
     const bps = await platformFeeBpsOf(db, tenant.id);
     try {
       const customer = await gateway.createCustomer(

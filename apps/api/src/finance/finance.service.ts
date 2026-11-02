@@ -764,7 +764,8 @@ export class FinanceService {
       ),
     ];
     // BOM para o Excel abrir com acentos.
-    return { filename: `vetta-financeiro-${r.month}.csv`, csv: `﻿${lines.join('\r\n')}\r\n` };
+    const BOM = String.fromCharCode(0xfeff);
+    return { filename: `vetta-financeiro-${r.month}.csv`, csv: `${BOM}${lines.join('\r\n')}\r\n` };
   }
 
   async withdraw(tenantId: string, amountCents: number) {

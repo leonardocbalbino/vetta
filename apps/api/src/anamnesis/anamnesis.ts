@@ -359,6 +359,7 @@ export class AnamnesisController {
   }
 
   @Put('templates/:id')
+  @Roles('PERSONAL', 'PERSONAL_ASSISTENTE')
   @Can('update', 'anamnesis')
   @RequireFeature('assessment.anamnesis_custom')
   updateTemplate(

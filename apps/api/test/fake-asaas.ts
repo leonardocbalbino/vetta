@@ -52,7 +52,9 @@ interface FakeSubscription {
   apiKey: string;
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
+/** O Asaas trabalha com datas de Brasília. */
+const today = () =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
 /** Taxa do gateway no dublê: 2,49% (Pix/boleto R$ 0,99 fixo). */
 const fee = (value: number, type: string) =>
   Number((type === 'CREDIT_CARD' ? value * 0.0249 : 0.99).toFixed(2));

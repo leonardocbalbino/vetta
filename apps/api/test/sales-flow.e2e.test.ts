@@ -1,6 +1,7 @@
 import { seedDevExercises } from '@vetta/db/testing';
 import {
   blockOverdueStudents,
+  localDate,
   sendKycDocuments,
   studentInvoiceReminders,
   studentPlanEndings,
@@ -34,7 +35,7 @@ let planId: string;
 let installmentPlanId: string;
 let subaccountKey: string;
 
-const hook = (body: unknown) =>
+const hook = (body: object) =>
   ctx.http.post('/v1/webhooks/asaas').set('asaas-access-token', WEBHOOK_TOKEN).send(body);
 const card = {
   holderName: 'MARIA SILVA',
@@ -303,7 +304,7 @@ describe('página de vendas → aluno → treino → renovação', () => {
   it('renovação: o gateway gera a próxima cobrança; lembretes; atraso bloqueia; pagamento com cartão libera', async () => {
     const student = as(ctx, studentToken, tenantId);
     const ss = await ctx.db.studentSubscription.findFirstOrThrow({ where: { studentLinkId } });
-    const due = addDays(new Date().toISOString().slice(0, 10), 3);
+    const due = addDays(localDate(new Date(), 'America/Sao_Paulo'), 3);
     const next = fake.nextCharge(ss.gatewaySubscriptionId!, due);
     expect((await hook(fake.webhook('PAYMENT_CREATED', next.id))).body.status).toBe('PROCESSED');
     const renewal = await ctx.db.invoice.findUniqueOrThrow({ where: { gatewayChargeId: next.id } });
@@ -325,7 +326,7 @@ describe('página de vendas → aluno → treino → renovação', () => {
       blockOverdueStudents: true,
       blockOverdueAfterDays: 1,
     });
-    const pastDue = addDays(new Date().toISOString().slice(0, 10), -2);
+    const pastDue = addDays(localDate(new Date(), 'America/Sao_Paulo'), -2);
     await hook(fake.webhook('PAYMENT_OVERDUE', next.id, { status: 'OVERDUE', dueDate: pastDue }));
     await ctx.db.invoice.update({
       where: { id: renewal.id },
@@ -397,14 +398,14 @@ describe('página de vendas → aluno → treino → renovação', () => {
       description: 'Aluguel do estúdio',
       category: 'Estrutura',
       amountCents: 50000,
-      paidOn: new Date().toISOString().slice(0, 10),
+      paidOn: localDate(new Date(), 'America/Sao_Paulo'),
     });
     await personal.post('/v1/finance/entries', {
       kind: 'INCOME',
       description: 'Aula avulsa',
       category: 'Aulas',
       amountCents: 8000,
-      paidOn: new Date().toISOString().slice(0, 10),
+      paidOn: localDate(new Date(), 'America/Sao_Paulo'),
     });
     fake.balances.set(subaccountKey, 300);
     const s = await personal.get('/v1/finance/summary');
