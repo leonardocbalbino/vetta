@@ -82,7 +82,16 @@ export const ExerciseInputSchema = z.object({
   videoMediaId: z.uuid().nullable().optional(),
   imageMediaId: z.uuid().nullable().optional(),
   gifMediaId: z.uuid().nullable().optional(),
-  externalVideoUrl: z.url().nullable().optional(),
+  /** Vídeo no YouTube (não ocupa espaço da cota; a miniatura vira a foto do exercício). */
+  externalVideoUrl: z
+    .string()
+    .trim()
+    .nullable()
+    .optional()
+    .refine(
+      (v) => !v || youtubeId(v) !== null,
+      'Use um link do YouTube (youtube.com ou youtu.be).',
+    ),
   folderId: z.uuid().nullable().optional(),
 });
 export type ExerciseInput = z.infer<typeof ExerciseInputSchema>;
@@ -119,4 +128,26 @@ export const EXERCISE_CSV_COLUMNS = [
   'dicas',
   'erros_comuns',
   'video',
+  'youtube',
 ] as const;
+
+/** Id do vídeo a partir dos formatos de link do YouTube (watch, youtu.be, shorts, embed). */
+export function youtubeId(url: string): string | null {
+  const m =
+    /(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/.exec(
+      url.trim(),
+    );
+  return m ? m[1]! : null;
+}
+
+/** Mídia derivada do YouTube: embed sem cookies, link e miniatura. */
+export function youtubeMedia(url: string | null | undefined) {
+  const id = url ? youtubeId(url) : null;
+  if (!id) return null;
+  return {
+    id,
+    embedUrl: `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1`,
+    watchUrl: `https://www.youtube.com/watch?v=${id}`,
+    thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+  };
+}

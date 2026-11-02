@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { client } from '../../src/lib/client';
 import { cacheGet, cacheSet, enqueueSession } from '../../src/lib/offline';
 import { useSession } from '../../src/lib/session';
+import * as WebBrowser from 'expo-web-browser';
 import { todayKey, type Today } from '../(aluno)/treino';
 
 const RECORD = { MAX_LOAD: 'Carga máxima', ONE_RM: '1RM estimado', MAX_VOLUME: 'Volume' } as const;
@@ -304,6 +305,27 @@ export default function PlayerScreen() {
           <Card>
             {item.media?.video && !item.media.video.endsWith('.m3u8x') ? (
               <Video uri={item.media.video} />
+            ) : item.media?.youtube ? (
+              <Pressable
+                onPress={() => void WebBrowser.openBrowserAsync(item.media!.youtube!.watchUrl)}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver vídeo de ${item.name} no YouTube`}
+              >
+                <Image
+                  source={{ uri: item.media.youtube.thumbnail }}
+                  style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 16 }}
+                />
+                <View
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ color: '#fff', fontSize: 40 }}>▶</Text>
+                </View>
+              </Pressable>
             ) : item.media?.gif ? (
               <Image
                 source={{ uri: item.media.gif }}

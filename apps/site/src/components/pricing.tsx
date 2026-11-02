@@ -38,30 +38,33 @@ const HIGHLIGHT_KEYS = [
   'support.priority',
 ];
 
-function bullets(p: PublicPlan) {
+/** Rótulo da feature com o valor do plano (limites viram texto). */
+function label(key: string, v: number | boolean): string {
+  const def = FEATURE_CATALOG.find((f) => f.key === key);
+  if (key === 'students.max')
+    return v === UNLIMITED ? 'Alunos ilimitados' : `Até ${String(v)} alunos`;
+  if (key === 'assessment.physical_per_student')
+    return v === UNLIMITED
+      ? 'Avaliações físicas ilimitadas'
+      : `${String(v)} avaliação física por aluno`;
+  if (key === 'storage.quota_mb' && typeof v === 'number')
+    return v === UNLIMITED
+      ? 'Vídeos próprios ilimitados'
+      : `${v >= 1024 ? `${v / 1024} GB` : `${v} MB`} para vídeos próprios`;
+  if (key === 'team.assistants' && typeof v === 'number') return `Até ${v} assistentes`;
+  return def?.name ?? key;
+}
+
+/** O que o plano tem de diferente do anterior (no máximo 8 itens no cartão). */
+function increments(p: PublicPlan, prev: PublicPlan | undefined) {
   const out: string[] = [];
-  const students = p.features['students.max'];
-  out.push(students === UNLIMITED ? 'Alunos ilimitados' : `Até ${String(students ?? 0)} alunos`);
-  for (const key of HIGHLIGHT_KEYS) {
-    const def = FEATURE_CATALOG.find((f) => f.key === key);
+  for (const key of ['students.max', ...HIGHLIGHT_KEYS]) {
     const v = p.features[key];
-    if (!def || v === undefined || v === false || v === 0) continue;
-    if (key === 'assessment.physical_per_student')
-      out.push(
-        v === UNLIMITED
-          ? 'Avaliações físicas ilimitadas'
-          : `${String(v)} avaliação física por aluno`,
-      );
-    else if (key === 'storage.quota_mb' && typeof v === 'number')
-      out.push(
-        v === UNLIMITED
-          ? 'Vídeos próprios ilimitados'
-          : `${v >= 1024 ? `${v / 1024} GB` : `${v} MB`} para vídeos próprios`,
-      );
-    else if (key === 'team.assistants' && typeof v === 'number') out.push(`Até ${v} assistentes`);
-    else out.push(def.name);
+    if (v === undefined || v === false || v === 0) continue;
+    if (prev && prev.features[key] === v) continue;
+    out.push(label(key, v));
   }
-  return out;
+  return out.slice(0, 8);
 }
 
 export function Pricing({ plans }: { plans: PublicPlan[] }) {
@@ -96,7 +99,8 @@ export function Pricing({ plans }: { plans: PublicPlan[] }) {
         </div>
       ) : null}
       <div className="grid w-full gap-4 md:grid-cols-3">
-        {plans.map((p) => {
+        {plans.map((p, idx) => {
+          const prev = plans[idx - 1];
           const monthly = p.prices.MONTHLY ?? 0;
           const yearly = p.prices.ANNUAL;
           const showAnnual = annual && yearly !== undefined;
@@ -132,8 +136,9 @@ export function Pricing({ plans }: { plans: PublicPlan[] }) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col gap-4">
+                {prev ? <p className="text-sm font-semibold">Tudo do {prev.name}, mais:</p> : null}
                 <ul className="flex flex-col gap-2 text-sm">
-                  {bullets(p).map((b) => (
+                  {increments(p, prev).map((b) => (
                     <li key={b} className="flex gap-2">
                       <Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
                       {b}
@@ -154,6 +159,12 @@ export function Pricing({ plans }: { plans: PublicPlan[] }) {
           );
         })}
       </div>
+      <a
+        href="#comparar"
+        className="text-sm font-semibold text-action underline underline-offset-4"
+      >
+        Comparar todos os recursos
+      </a>
       <p className="text-sm text-muted-foreground">
         Teste de 14 dias do Pro Plus sem cartão. Ao fim, você escolhe um plano ou segue no Free sem
         perder dados.

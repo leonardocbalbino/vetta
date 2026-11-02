@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Footer, Header } from '@/components/chrome';
+import { ComparePlans } from '@/components/compare-plans';
 import { Pricing } from '@/components/pricing';
 import { getPlans } from '@/lib/data';
 
@@ -25,6 +26,7 @@ export default async function Precos() {
           Comece grátis e mude de plano quando quiser.
         </p>
         <Pricing plans={plans} />
+        <ComparePlans plans={plans} />
       </main>
       <Footer />
     </>

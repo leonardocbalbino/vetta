@@ -25,6 +25,7 @@ import {
   Textarea,
 } from '@vetta/ui';
 import { Pause, Play, Repeat, SkipForward, Timer } from 'lucide-react';
+import { YouTubeEmbed } from './youtube';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface RecordHit {
@@ -372,6 +373,8 @@ export function Player({
                   aria-label={`Vídeo: ${item.name}`}
                 />
               )
+            ) : item.media?.youtube ? (
+              <YouTubeEmbed embedUrl={item.media.youtube.embedUrl} title={item.name} />
             ) : null}
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-display text-xl">{item.name}</h3>

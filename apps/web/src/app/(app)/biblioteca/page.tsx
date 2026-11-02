@@ -27,6 +27,7 @@ import {
 import { BookOpen, Heart, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useApi, useApiMutation } from '@/lib/api';
+import { YouTubeField } from '@/components/youtube';
 import { useActiveTenant } from '@/lib/session';
 
 interface Exercise {
@@ -63,6 +64,7 @@ function NewExercise({
     commonMistakes: '',
   });
   const [videoId, setVideoId] = useState<string | null>(null);
+  const [youtube, setYoutube] = useState('');
   const create = useApiMutation<object>('POST', '/v1/exercises', {
     invalidate: ['/v1/exercises'],
     success: 'Exercício criado.',
@@ -93,6 +95,7 @@ function NewExercise({
               tips: f.tips || null,
               commonMistakes: f.commonMistakes || null,
               ...(videoId ? { videoMediaId: videoId } : {}),
+              ...(youtube.trim() ? { externalVideoUrl: youtube.trim() } : {}),
             });
           }}
         >
@@ -140,6 +143,7 @@ function NewExercise({
               onChange={(e) => setF({ ...f, commonMistakes: e.target.value })}
             />
           </Field>
+          <YouTubeField value={youtube} onChange={setYoutube} />
           <LockedFeature locked={videos.locked} title="Vídeo próprio" requiredPlan="PRO">
             <Uploader
               accept="video/mp4,video/quicktime"
