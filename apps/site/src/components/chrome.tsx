@@ -60,6 +60,9 @@ export function Footer() {
           <Link href="/blog" className="flex min-h-11 items-center hover:underline">
             Blog
           </Link>
+          <Link href="/ajuda" className="flex min-h-11 items-center hover:underline">
+            Central de ajuda
+          </Link>
         </div>
         <div className="flex flex-col items-start">
           <strong className="mb-1">Legal</strong>

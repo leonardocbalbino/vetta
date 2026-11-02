@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { HELP_ARTICLES } from '@/content/help';
 import { POSTS } from '@/content/posts';
 import { SITE_URL } from '@/lib/data';
 
@@ -13,6 +14,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(p.date),
       changeFrequency: 'monthly' as const,
       priority: 0.5,
+    })),
+    { url: `${SITE_URL}/ajuda`, lastModified: now, changeFrequency: 'weekly', priority: 0.5 },
+    ...HELP_ARTICLES.map((a) => ({
+      url: `${SITE_URL}/ajuda/${a.slug}`,
+      changeFrequency: 'monthly' as const,
+      priority: 0.4,
     })),
     { url: `${SITE_URL}/termos`, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${SITE_URL}/privacidade`, changeFrequency: 'yearly', priority: 0.2 },

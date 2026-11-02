@@ -9,6 +9,7 @@ import { Redis } from 'ioredis';
 import { Logger } from 'nestjs-pino';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import type { ServerOptions } from 'socket.io';
+import { PrismaService } from './infra/prisma.service';
 import { AppModule, type AppOverrides } from './app.module';
 import type { ApiEnv } from './config/env';
 
@@ -76,8 +77,34 @@ export async function createApp(
   if (env.TRUST_PROXY) app.set('trust proxy', 1);
   app.use(helmet({ contentSecurityPolicy: env.NODE_ENV === 'production' ? undefined : false }));
   const origins = corsOrigins(env);
+  // Domínios próprios ativos (white label) também podem chamar a API; cache de 1 min.
+  const prisma = app.get(PrismaService);
+  let custom = { at: 0, hosts: new Set<string>() };
+  const customHosts = async () => {
+    if (Date.now() - custom.at > 60_000) {
+      const rows = await prisma.system.tenantBrand.findMany({
+        where: { customDomainStatus: 'ACTIVE', customDomain: { not: null } },
+        select: { customDomain: true },
+      });
+      custom = { at: Date.now(), hosts: new Set(rows.map((r) => r.customDomain!)) };
+    }
+    return custom.hosts;
+  };
   app.enableCors({
-    origin: origins,
+    origin: (origin, cb) => {
+      if (!origin || origins.includes(origin)) return cb(null, true);
+      let host: string;
+      try {
+        const u = new URL(origin);
+        if (u.protocol !== 'https:') return cb(null, false);
+        host = u.hostname;
+      } catch {
+        return cb(null, false);
+      }
+      customHosts()
+        .then((hosts) => cb(null, hosts.has(host)))
+        .catch(() => cb(null, false));
+    },
     credentials: true,
     allowedHeaders: ['Authorization', 'Content-Type', 'X-Tenant-Id', 'X-Request-Id'],
     exposedHeaders: ['X-Request-Id'],

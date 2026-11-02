@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { archivo, inter } from '@/lib/fonts';
+import { HostBrand } from '@/components/host-brand';
 import { Providers } from '@/lib/session';
 import './globals.css';
 
@@ -36,6 +37,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body className="min-h-dvh">
         <NextIntlClientProvider>
+          <HostBrand />
           <Providers>{children}</Providers>
           <Toaster />
         </NextIntlClientProvider>

@@ -4,7 +4,7 @@ import { Check, Star } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Checkout } from '@/components/sales-checkout';
-import { brl, getSalesPage, SITE_URL } from '@/lib/data';
+import { brl, getPublicBrand, getSalesPage, SITE_URL } from '@/lib/data';
 
 export const revalidate = 300;
 
@@ -43,7 +43,7 @@ const SOCIAL: Record<string, (v: string) => string> = {
 /** Página de vendas pública do personal: bio, resultados autorizados, planos, depoimentos, FAQ e checkout. */
 export default async function SalesPage({ params }: Props) {
   const { slug } = await params;
-  const p = await getSalesPage(slug);
+  const [p, brand] = await Promise.all([getSalesPage(slug), getPublicBrand(slug)]);
   if (!p) notFound();
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -61,6 +61,8 @@ export default async function SalesPage({ params }: Props) {
   };
   return (
     <main id="conteudo" className="flex flex-col">
+      {/* White label: cores do personal (já validadas para contraste AA na API). */}
+      {brand?.css ? <style>{brand.css}</style> : null}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}

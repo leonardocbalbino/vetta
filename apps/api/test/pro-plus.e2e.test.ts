@@ -430,6 +430,16 @@ describe('white label', () => {
     const pub = await ctx.http.get(`/v1/public/brand?host=${host}`);
     expect(pub.body).toMatchObject({ tenantId: w.tenantId, displayName: 'Studio Host' });
 
+    // O app servido no domínio do personal pode chamar a API (CORS); outro host, não.
+    const cors = await ctx.http
+      .get(`/v1/public/brand?host=${host}`)
+      .set('Origin', `https://${host}`);
+    expect(cors.headers['access-control-allow-origin']).toBe(`https://${host}`);
+    const evil = await ctx.http
+      .get(`/v1/public/brand?host=${host}`)
+      .set('Origin', 'https://evil.test');
+    expect(evil.headers['access-control-allow-origin']).toBeUndefined();
+
     // Outro personal não pode usar o mesmo domínio.
     const other = await seedWorld(ctx, 'PRO_PLUS');
     const taken = await as(ctx, await login(ctx, other.ownerEmail), other.tenantId).put(

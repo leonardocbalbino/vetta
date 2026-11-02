@@ -110,3 +110,20 @@ export async function getSalesPage(slug: string): Promise<SalesPage | null> {
     return null;
   }
 }
+
+/** Tema do personal (white label) para a página de vendas; null = tema Vetta. */
+export async function getPublicBrand(
+  slug: string,
+): Promise<{ css: string; displayName: string } | null> {
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return null;
+  try {
+    const res = await fetch(`${API_URL}/v1/public/brand?slug=${slug}`, {
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return null;
+    const b = (await res.json()) as { css: string; displayName: string; whiteLabel: boolean };
+    return b.whiteLabel ? { css: b.css, displayName: b.displayName } : null;
+  } catch {
+    return null;
+  }
+}

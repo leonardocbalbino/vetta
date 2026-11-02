@@ -35,7 +35,10 @@ export const useActiveTenant = () => useContext(TenantContext);
 
 export function Providers({ children }: { children: ReactNode }) {
   const [tenantId, setTenant] = useState<string | null>(() =>
-    typeof window === 'undefined' ? null : localStorage.getItem(TENANT_KEY),
+    typeof window === 'undefined'
+      ? null
+      : // No domínio próprio do personal, o vínculo dele vem primeiro.
+        (localStorage.getItem('vetta.hostTenant') ?? localStorage.getItem(TENANT_KEY)),
   );
   const tenantRef = useMemo(() => ({ current: tenantId }), [tenantId]);
   const client: VettaClient = useMemo(
