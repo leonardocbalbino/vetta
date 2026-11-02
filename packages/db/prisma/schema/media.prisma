@@ -1,0 +1,205 @@
+// ─── Mídia e notificações ───────────────────────────────────────────────────
+
+enum UploadPurpose {
+  exercise_video
+  exercise_image
+  progress_photo
+  posture_photo
+  document
+  chat_media
+  avatar
+  brand_logo
+  kyc_document
+  academy_content
+}
+
+enum MediaStatus {
+  PENDING
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
+  DELETED
+}
+
+enum NotificationChannel {
+  IN_APP
+  PUSH
+  EMAIL
+  WHATSAPP
+  SMS
+}
+
+enum NotificationCategory {
+  TRAINING
+  CHAT
+  FINANCE
+  MARKETING
+  SECURITY
+  SYSTEM
+}
+
+enum DeliveryStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  FAILED
+  SKIPPED
+}
+
+/// Arquivo no storage. tenant_id nulo = mídia da plataforma ou do usuário (avatar).
+model Media {
+  id                String        @id @default(uuid(7)) @db.Uuid
+  tenantId          String?       @map("tenant_id") @db.Uuid
+  ownerUserId       String?       @map("owner_user_id") @db.Uuid
+  ownerAdminId      String?       @map("owner_admin_id") @db.Uuid
+  studentLinkId     String?       @map("student_link_id") @db.Uuid
+  purpose           UploadPurpose
+  status            MediaStatus   @default(PENDING)
+  bucket            String
+  storageKey        String        @unique @map("storage_key")
+  fileName          String        @map("file_name")
+  mimeType          String        @map("mime_type")
+  detectedMimeType  String?       @map("detected_mime_type")
+  size              BigInt
+  multipartUploadId String?       @map("multipart_upload_id")
+  /// Variantes geradas: { webp, thumbnail, hls, preview_gif, ... } com chave e metadados.
+  variants          Json          @default("{}")
+  width             Int?
+  height            Int?
+  durationSeconds   Float?        @map("duration_seconds")
+  providerAssetId   String?       @map("provider_asset_id")
+  failureReason     String?       @map("failure_reason")
+  uploadExpiresAt   DateTime      @map("upload_expires_at") @db.Timestamptz(3)
+  uploadedAt        DateTime?     @map("uploaded_at") @db.Timestamptz(3)
+  processedAt       DateTime?     @map("processed_at") @db.Timestamptz(3)
+  purgedAt          DateTime?     @map("purged_at") @db.Timestamptz(3)
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt         DateTime?     @map("deleted_at") @db.Timestamptz(3)
+
+  tenant      Tenant?      @relation(fields: [tenantId], references: [id])
+  ownerUser   User?        @relation("MediaOwnerUser", fields: [ownerUserId], references: [id])
+  ownerAdmin  AdminUser?   @relation("MediaOwnerAdmin", fields: [ownerAdminId], references: [id])
+  studentLink StudentLink? @relation(fields: [studentLinkId], references: [id])
+
+  @@index([tenantId, purpose])
+  @@index([status, uploadExpiresAt])
+  @@index([deletedAt])
+  @@index([ownerUserId])
+  @@map("media")
+}
+
+model TenantStorageUsage {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  tenantId      String    @unique @map("tenant_id") @db.Uuid
+  bytesUsed     BigInt    @default(0) @map("bytes_used")
+  /// Reservado por uploads pendentes (evita estourar a cota com uploads paralelos).
+  bytesReserved BigInt    @default(0) @map("bytes_reserved")
+  warnedAt      DateTime? @map("warned_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("tenant_storage_usage")
+}
+
+/// Notificação in-app (sino). Pertence ao usuário; tenant_id indica a origem.
+model Notification {
+  id         String               @id @default(uuid(7)) @db.Uuid
+  userId     String               @map("user_id") @db.Uuid
+  tenantId   String?              @map("tenant_id") @db.Uuid
+  eventId    String               @map("event_id")
+  event      String
+  category   NotificationCategory
+  title      String
+  body       String
+  deepLink   String?              @map("deep_link")
+  data       Json                 @default("{}")
+  groupKey   String?              @map("group_key")
+  groupCount Int                  @default(1) @map("group_count")
+  readAt     DateTime?            @map("read_at") @db.Timestamptz(3)
+  createdAt  DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt  DateTime?            @map("deleted_at") @db.Timestamptz(3)
+
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries DeliveryLog[]
+
+  @@unique([userId, eventId])
+  @@index([userId, readAt, createdAt])
+  @@index([userId, groupKey])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id        String               @id @default(uuid(7)) @db.Uuid
+  userId    String               @map("user_id") @db.Uuid
+  category  NotificationCategory
+  channel   NotificationChannel
+  enabled   Boolean
+  createdAt DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category, channel])
+  @@map("notification_preferences")
+}
+
+/// Template versionado por evento, canal e idioma. tenant_id preenchido = white label.
+model NotificationTemplate {
+  id        String              @id @default(uuid(7)) @db.Uuid
+  tenantId  String?             @map("tenant_id") @db.Uuid
+  event     String
+  channel   NotificationChannel
+  locale    String
+  version   Int
+  subject   String?
+  title     String
+  body      String
+  ctaLabel  String?             @map("cta_label")
+  isActive  Boolean             @default(true) @map("is_active")
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([event, channel, locale, version, tenantId])
+  @@index([event, channel, locale, isActive])
+  @@map("notification_templates")
+}
+
+model DeliveryLog {
+  id                String              @id @default(uuid(7)) @db.Uuid
+  notificationId    String?             @map("notification_id") @db.Uuid
+  userId            String              @map("user_id") @db.Uuid
+  tenantId          String?             @map("tenant_id") @db.Uuid
+  eventId           String              @map("event_id")
+  event             String
+  channel           NotificationChannel
+  status            DeliveryStatus      @default(QUEUED)
+  provider          String?
+  providerMessageId String?             @map("provider_message_id")
+  recipient         String?
+  templateVersion   Int?                @map("template_version")
+  attempts          Int                 @default(0)
+  error             String?
+  scheduledFor      DateTime?           @map("scheduled_for") @db.Timestamptz(3)
+  sentAt            DateTime?           @map("sent_at") @db.Timestamptz(3)
+  deliveredAt       DateTime?           @map("delivered_at") @db.Timestamptz(3)
+  openedAt          DateTime?           @map("opened_at") @db.Timestamptz(3)
+  clickedAt         DateTime?           @map("clicked_at") @db.Timestamptz(3)
+  failedAt          DateTime?           @map("failed_at") @db.Timestamptz(3)
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  notification Notification? @relation(fields: [notificationId], references: [id], onDelete: SetNull)
+
+  @@unique([eventId, userId, channel])
+  @@index([providerMessageId])
+  @@index([status, createdAt])
+  @@map("delivery_logs")
+}

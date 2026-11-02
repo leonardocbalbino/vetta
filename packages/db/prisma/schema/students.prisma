@@ -1,0 +1,56 @@
+// ─── M2 Alunos: grupos e linha do tempo ─────────────────────────────────────
+
+model StudentGroup {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  name        String
+  description String?
+  color       String?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant  Tenant               @relation(fields: [tenantId], references: [id])
+  members StudentGroupMember[]
+
+  @@index([tenantId])
+  @@map("student_groups")
+}
+
+model StudentGroupMember {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  groupId       String    @map("group_id") @db.Uuid
+  studentLinkId String    @map("student_link_id") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  group       StudentGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  studentLink StudentLink  @relation(fields: [studentLinkId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, studentLinkId])
+  @@index([tenantId])
+  @@map("student_group_members")
+}
+
+/// Linha do tempo do aluno (treinos, avaliações, pagamentos, mensagens...).
+model StudentActivity {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  studentLinkId String    @map("student_link_id") @db.Uuid
+  type          String
+  title         String
+  data          Json      @default("{}")
+  occurredAt    DateTime  @map("occurred_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  studentLink StudentLink @relation(fields: [studentLinkId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, studentLinkId, occurredAt])
+  @@map("student_activities")
+}

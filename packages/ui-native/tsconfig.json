@@ -1,0 +1,4 @@
+{
+  "extends": "@vetta/config/tsconfig/expo.json",
+  "include": ["src"]
+}

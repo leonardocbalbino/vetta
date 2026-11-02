@@ -1,0 +1,17 @@
+// Vetta – schema Prisma (multi-arquivo, um por domínio).
+// Convenções:
+// - id UUID v7; tabelas e colunas em snake_case via @@map/@map.
+// - Toda tabela de negócio tem tenant_id + created_at/updated_at/deleted_at e RLS
+//   (migration 0002_rls). Tabelas globais estão listadas no ADR-001.
+// - Ao criar uma tabela com tenant_id, rode `pnpm --filter @vetta/db rls:generate`.
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../../generated/client"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

@@ -1,0 +1,25 @@
+{
+  "app": { "slogan": "Your method. Your client. Your progress." },
+  "auth": {
+    "title": "Sign in to your account",
+    "subtitle": "Track your clients and workouts in one place.",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "magicLink": "Email me a sign-in link",
+    "forgot": "Forgot my password",
+    "invalid": "Wrong email or password.",
+    "twoFactor": "Verification code",
+    "twoFactorHint": "Enter the 6-digit code from your authenticator app."
+  },
+  "home": {
+    "hello": "Hi, {name}!",
+    "profile": "Active profile",
+    "plan": "Your plan",
+    "uploadTitle": "Upload an exercise image",
+    "uploadHint": "JPG, PNG, WEBP or GIF up to 10 MB.",
+    "videosTitle": "Custom videos",
+    "logout": "Sign out",
+    "verifyEmail": "Confirm your email to protect your account."
+  }
+}

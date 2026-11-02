@@ -1,0 +1,12 @@
+{
+  "id": "evt_9f1e2d3c4b5a69788776655443322110&368605111",
+  "event": "ACCOUNT_STATUS_GENERAL_APPROVAL_APPROVED",
+  "dateCreated": "2026-03-02 09:15:00",
+  "accountStatus": {
+    "id": "a3f0c7e1-55b2-4d1f-9a7e-0c2b1d4e5f60",
+    "commercialInfo": "APPROVED",
+    "bankAccountInfo": "APPROVED",
+    "documentation": "APPROVED",
+    "general": "APPROVED"
+  }
+}

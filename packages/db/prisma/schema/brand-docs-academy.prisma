@@ -1,0 +1,233 @@
+// ─── M12 Marca, M13 Documentos, M14 Academy ─────────────────────────────────
+
+enum StudentDocumentCategory {
+  EXAM
+  MEAL_PLAN
+  CONTRACT
+  PRESCRIPTION
+  OTHER
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AcademyContentType {
+  COURSE
+  EBOOK
+  POST
+}
+
+/// White label: logo, cores, domínio e remetente de e-mail.
+model TenantBrand {
+  id                     String              @id @default(uuid(7)) @db.Uuid
+  tenantId               String              @unique @map("tenant_id") @db.Uuid
+  logoMediaId            String?             @map("logo_media_id") @db.Uuid
+  primaryColor           String?             @map("primary_color")
+  accentColor            String?             @map("accent_color")
+  customDomain           String?             @unique @map("custom_domain")
+  customDomainVerifiedAt DateTime?           @map("custom_domain_verified_at") @db.Timestamptz(3)
+  customDomainStatus     CustomDomainStatus? @map("custom_domain_status")
+  /// Id do custom hostname no provider (Cloudflare for SaaS).
+  customDomainProviderId String?             @map("custom_domain_provider_id")
+  customDomainError      String?             @map("custom_domain_error")
+  customDomainCheckedAt  DateTime?           @map("custom_domain_checked_at") @db.Timestamptz(3)
+  /// Nome exibido no app do aluno, e-mails e PDFs.
+  displayName            String?             @map("display_name")
+  emailFromName          String?             @map("email_from_name")
+  emailFromAddress       String?             @map("email_from_address")
+  emailDomainVerifiedAt  DateTime?           @map("email_domain_verified_at") @db.Timestamptz(3)
+  createdAt              DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt              DateTime?           @map("deleted_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("tenant_brands")
+}
+
+/// Página de vendas pública (vettafit.com.br/p/[slug]).
+model SalesPage {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  tenantId       String    @unique @map("tenant_id") @db.Uuid
+  headline       String?
+  bio            String?
+  photoMediaId   String?   @map("photo_media_id") @db.Uuid
+  /// Blocos configuráveis (depoimentos, FAQ, resultados).
+  sections       Json      @default("[]")
+  specialties    String[]
+  /// [{ question, answer }]
+  faq            Json      @default("[]")
+  /// { instagram, youtube, tiktok, site, whatsapp }
+  socialLinks    Json      @default("{}") @map("social_links")
+  seoTitle       String?   @map("seo_title")
+  seoDescription String?   @map("seo_description")
+  isPublished    Boolean   @default(false) @map("is_published")
+  publishedAt    DateTime? @map("published_at") @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("sales_pages")
+}
+
+enum TestimonialStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+}
+
+/// Depoimento enviado pelo aluno; só aparece na página depois da aprovação do personal.
+model Testimonial {
+  id            String            @id @default(uuid(7)) @db.Uuid
+  tenantId      String            @map("tenant_id") @db.Uuid
+  studentLinkId String?           @map("student_link_id") @db.Uuid
+  authorName    String            @map("author_name")
+  text          String
+  rating        Int?
+  status        TestimonialStatus @default(PENDING)
+  approvedAt    DateTime?         @map("approved_at") @db.Timestamptz(3)
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime?         @map("deleted_at") @db.Timestamptz(3)
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  studentLink StudentLink? @relation(fields: [studentLinkId], references: [id])
+
+  @@index([tenantId, status])
+  @@map("testimonials")
+}
+
+enum ResultConsentStatus {
+  REQUESTED
+  GRANTED
+  DENIED
+  REVOKED
+}
+
+/// Foto de resultado (antes/depois) na página de vendas: só com consentimento do aluno.
+model SalesPageResult {
+  id            String              @id @default(uuid(7)) @db.Uuid
+  tenantId      String              @map("tenant_id") @db.Uuid
+  studentLinkId String              @map("student_link_id") @db.Uuid
+  beforePhotoId String              @map("before_photo_id") @db.Uuid
+  afterPhotoId  String              @map("after_photo_id") @db.Uuid
+  caption       String?
+  consentStatus ResultConsentStatus @default(REQUESTED) @map("consent_status")
+  consentAt     DateTime?           @map("consent_at") @db.Timestamptz(3)
+  sortOrder     Int                 @default(0) @map("sort_order")
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime?           @map("deleted_at") @db.Timestamptz(3)
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  studentLink StudentLink @relation(fields: [studentLinkId], references: [id])
+
+  @@index([tenantId, consentStatus])
+  @@map("sales_page_results")
+}
+
+model StudentDocument {
+  id               String                  @id @default(uuid(7)) @db.Uuid
+  tenantId         String                  @map("tenant_id") @db.Uuid
+  studentLinkId    String                  @map("student_link_id") @db.Uuid
+  mediaId          String                  @map("media_id") @db.Uuid
+  uploadedByUserId String                  @map("uploaded_by_user_id") @db.Uuid
+  title            String
+  category         StudentDocumentCategory @default(OTHER)
+  visibleToStudent Boolean                 @default(true) @map("visible_to_student")
+  createdAt        DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime                @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime?               @map("deleted_at") @db.Timestamptz(3)
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  studentLink StudentLink @relation(fields: [studentLinkId], references: [id])
+
+  @@index([tenantId, studentLinkId])
+  @@map("student_documents")
+}
+
+/// Conteúdo da plataforma (global, sem tenant).
+model AcademyContent {
+  id               String             @id @default(uuid(7)) @db.Uuid
+  type             AcademyContentType
+  slug             String             @unique
+  title            String
+  summary          String?
+  body             String?
+  coverMediaId     String?            @map("cover_media_id") @db.Uuid
+  fileMediaId      String?            @map("file_media_id") @db.Uuid
+  status           ContentStatus      @default(DRAFT)
+  requiredPlan     PlanCode?          @map("required_plan")
+  tags             String[]
+  publishedAt      DateTime?          @map("published_at") @db.Timestamptz(3)
+  createdByAdminId String?            @map("created_by_admin_id") @db.Uuid
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime?          @map("deleted_at") @db.Timestamptz(3)
+
+  lessons AcademyLesson[]
+
+  @@index([type, status, publishedAt])
+  @@map("academy_contents")
+}
+
+model AcademyLesson {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  contentId       String    @map("content_id") @db.Uuid
+  title           String
+  body            String?
+  videoMediaId    String?   @map("video_media_id") @db.Uuid
+  durationSeconds Int?      @map("duration_seconds")
+  sortOrder       Int       @default(0) @map("sort_order")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  content  AcademyContent    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  progress AcademyProgress[]
+
+  @@index([contentId, sortOrder])
+  @@map("academy_lessons")
+}
+
+model AcademyProgress {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  lessonId    String    @map("lesson_id") @db.Uuid
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(3)
+  positionSec Int       @default(0) @map("position_sec")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson AcademyLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("academy_progress")
+}
+
+enum LegalDocumentKind {
+  TERMS
+  PRIVACY
+}
+
+/// Termos de uso e política de privacidade versionados (exibidos no site e aceitos em consents).
+model LegalDocument {
+  id          String            @id @default(uuid(7)) @db.Uuid
+  kind        LegalDocumentKind
+  version     String
+  title       String
+  /// Markdown.
+  content     String
+  publishedAt DateTime?         @map("published_at") @db.Timestamptz(3)
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([kind, version])
+  @@map("legal_documents")
+}

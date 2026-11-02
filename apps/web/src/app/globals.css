@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@import '@vetta/tokens/tailwind.css';
+@import '@vetta/config/tailwind/preset.css';
+@import '@vetta/ui/styles.css';
+
+@source "../";

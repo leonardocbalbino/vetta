@@ -1,0 +1,56 @@
+{
+  "name": "@vetta/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "default": "./dist/testing/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "generated",
+    "prisma"
+  ],
+  "scripts": {
+    "generate": "prisma generate",
+    "postinstall": "prisma generate",
+    "build": "prisma generate && tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:status": "prisma migrate status",
+    "reset": "prisma migrate reset --force",
+    "seed": "prisma db seed",
+    "seed:catalog": "tsx src/seed/catalog.ts",
+    "rls:generate": "tsx scripts/generate-rls.ts",
+    "studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "~6.19.0",
+    "@vetta/contracts": "workspace:*",
+    "argon2": "^0.44.0"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "^11.7.0",
+    "@types/node": "^22.18.0",
+    "@vetta/config": "workspace:*",
+    "dotenv": "^17.2.3",
+    "eslint": "^9.39.0",
+    "prisma": "~6.19.0",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "evt_6dbb4b8f1a6c2d5e3f9a0b7c8d1e2f30&368604999",
+  "event": "PAYMENT_CREDIT_CARD_CAPTURE_REFUSED",
+  "dateCreated": "2026-04-10 07:02:44",
+  "payment": {
+    "object": "payment",
+    "id": "pay_7741902233",
+    "customer": "cus_G7Dvo4iphUNk",
+    "subscription": "sub_VXJBYgP2u0eO",
+    "dueDate": "2026-04-10",
+    "value": 39.9,
+    "netValue": 38.41,
+    "billingType": "CREDIT_CARD",
+    "status": "PENDING",
+    "description": "Vetta Pro (mensal)",
+    "externalReference": null,
+    "invoiceUrl": "https://sandbox.asaas.com/i/7741902233",
+    "bankSlipUrl": null,
+    "deleted": false
+  }
+}

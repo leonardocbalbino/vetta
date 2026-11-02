@@ -1,0 +1,121 @@
+{
+  "expo": {
+    "name": "Vetta",
+    "slug": "vetta",
+    "scheme": "vetta",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "br.com.vettafit.app",
+      "supportsTablet": true,
+      "associatedDomains": ["applinks:app.vettafit.com.br"],
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use o Face ID para entrar na Vetta com segurança.",
+        "NSCameraUsageDescription": "A câmera é usada para fotos de progresso e avaliação postural.",
+        "NSHealthShareUsageDescription": "A Vetta lê passos, frequência cardíaca, peso e treinos que você autorizar, para o seu personal acompanhar sua evolução.",
+        "NSHealthUpdateUsageDescription": "A Vetta grava no Apple Saúde os treinos que você concluir no app."
+      },
+      "usesAppleSignIn": true,
+      "entitlements": {
+        "com.apple.developer.healthkit": true
+      }
+    },
+    "android": {
+      "package": "br.com.vettafit.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "app.vettafit.com.br"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#101418"
+      },
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.READ_EXERCISE",
+        "android.permission.health.WRITE_EXERCISE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-video",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "A câmera é usada para fotos de progresso e avaliação postural."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Use o Face ID para entrar na Vetta com segurança."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#101418",
+          "icon": "./assets/notification-icon.png"
+        }
+      ],
+      "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#101418",
+          "dark": {
+            "backgroundColor": "#101418"
+          }
+        }
+      ],
+      "expo-apple-authentication",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "A Vetta lê passos, frequência cardíaca, peso e treinos que você autorizar, para o seu personal acompanhar sua evolução.",
+          "NSHealthUpdateUsageDescription": "A Vetta grava no Apple Saúde os treinos que você concluir no app.",
+          "background": false
+        }
+      ],
+      "expo-health-connect",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiUrl": "http://localhost:4000"
+    },
+    "icon": "./assets/icon.png",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
+  }
+}

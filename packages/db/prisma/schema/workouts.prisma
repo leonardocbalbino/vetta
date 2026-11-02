@@ -1,0 +1,287 @@
+// ─── M6 Treinos e M7 Player ─────────────────────────────────────────────────
+
+enum PeriodizationModel {
+  LINEAR
+  UNDULATING
+  BLOCK
+}
+
+enum ProgramStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum TrainingMethod {
+  STANDARD
+  BI_SET
+  TRI_SET
+  CIRCUIT
+  DROP_SET
+  REST_PAUSE
+  PYRAMID
+  AMRAP
+  EMOM
+  CARDIO
+}
+
+enum SetType {
+  WARMUP
+  WORK
+  DROP
+  FAILURE
+  CARDIO
+}
+
+enum RecordType {
+  ONE_RM
+  MAX_LOAD
+  MAX_REPS
+  MAX_VOLUME
+}
+
+/// Programa > rotina (A, B, C) > exercícios > séries. Sem aluno = modelo.
+model WorkoutProgram {
+  id                String        @id @default(uuid(7)) @db.Uuid
+  tenantId          String        @map("tenant_id") @db.Uuid
+  studentLinkId     String?       @map("student_link_id") @db.Uuid
+  createdByMemberId String?       @map("created_by_member_id") @db.Uuid
+  sourceProgramId   String?       @map("source_program_id") @db.Uuid
+  name              String
+  goal              String?
+  description       String?
+  status            ProgramStatus @default(DRAFT)
+  isTemplate        Boolean       @default(false) @map("is_template")
+  isExtra           Boolean       @default(false) @map("is_extra")
+  startsOn          DateTime?     @map("starts_on") @db.Date
+  endsOn            DateTime?     @map("ends_on") @db.Date
+  publicToken       String?       @unique @map("public_token")
+  publishedAt       DateTime?     @map("published_at") @db.Timestamptz(3)
+  version           Int           @default(1)
+  aiGenerated       Boolean       @default(false) @map("ai_generated")
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt         DateTime?     @map("deleted_at") @db.Timestamptz(3)
+
+  tenant      Tenant               @relation(fields: [tenantId], references: [id])
+  studentLink StudentLink?         @relation(fields: [studentLinkId], references: [id])
+  createdBy   TenantMember?        @relation(fields: [createdByMemberId], references: [id])
+  routines    WorkoutRoutine[]
+  phases      PeriodizationPhase[]
+  sessions    WorkoutSession[]
+
+  @@index([tenantId, studentLinkId, status])
+  @@index([tenantId, isTemplate])
+  @@map("workout_programs")
+}
+
+model WorkoutRoutine {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  programId String    @map("program_id") @db.Uuid
+  label     String
+  name      String?
+  notes     String?
+  sortOrder Int       @default(0) @map("sort_order")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant    Tenant            @relation(fields: [tenantId], references: [id])
+  program   WorkoutProgram    @relation(fields: [programId], references: [id], onDelete: Cascade)
+  exercises RoutineExercise[]
+  sessions  WorkoutSession[]
+
+  @@index([tenantId, programId])
+  @@map("workout_routines")
+}
+
+model RoutineExercise {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  tenantId    String         @map("tenant_id") @db.Uuid
+  routineId   String         @map("routine_id") @db.Uuid
+  exerciseId  String         @map("exercise_id") @db.Uuid
+  method      TrainingMethod @default(STANDARD)
+  /// Exercícios com o mesmo group_key formam bi-set, tri-set ou circuito.
+  groupKey    String?        @map("group_key")
+  sortOrder   Int            @default(0) @map("sort_order")
+  restSeconds Int?           @map("rest_seconds")
+  notes       String?
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime?      @map("deleted_at") @db.Timestamptz(3)
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id])
+  routine  WorkoutRoutine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exercise Exercise        @relation(fields: [exerciseId], references: [id])
+  sets     ExerciseSet[]
+  setLogs  SessionSetLog[]
+
+  @@index([tenantId, routineId])
+  @@map("routine_exercises")
+}
+
+model ExerciseSet {
+  id                String    @id @default(uuid(7)) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  routineExerciseId String    @map("routine_exercise_id") @db.Uuid
+  sortOrder         Int       @default(0) @map("sort_order")
+  type              SetType   @default(WORK)
+  /// Texto livre para faixas ("8-12", "até a falha").
+  reps              String?
+  targetLoadKg      Decimal?  @map("target_load_kg") @db.Decimal(7, 2)
+  durationSeconds   Int?      @map("duration_seconds")
+  distanceMeters    Int?      @map("distance_meters")
+  restSeconds       Int?      @map("rest_seconds")
+  rpe               Decimal?  @db.Decimal(3, 1)
+  rir               Int?
+  cadence           String?
+  notes             String?
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant          Tenant          @relation(fields: [tenantId], references: [id])
+  routineExercise RoutineExercise @relation(fields: [routineExerciseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, routineExerciseId])
+  @@map("exercise_sets")
+}
+
+model Periodization {
+  id            String             @id @default(uuid(7)) @db.Uuid
+  tenantId      String             @map("tenant_id") @db.Uuid
+  studentLinkId String             @map("student_link_id") @db.Uuid
+  name          String
+  goal          String?
+  startsOn      DateTime           @map("starts_on") @db.Date
+  endsOn        DateTime?          @map("ends_on") @db.Date
+  model         PeriodizationModel @default(LINEAR)
+  isActive      Boolean            @default(true) @map("is_active")
+  /// Fase cuja rotina está publicada para o aluno (troca automática).
+  activePhaseId String?            @map("active_phase_id") @db.Uuid
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime?          @map("deleted_at") @db.Timestamptz(3)
+
+  tenant      Tenant               @relation(fields: [tenantId], references: [id])
+  studentLink StudentLink          @relation(fields: [studentLinkId], references: [id])
+  phases      PeriodizationPhase[]
+
+  @@index([tenantId, studentLinkId])
+  @@map("periodizations")
+}
+
+model PeriodizationPhase {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  periodizationId String    @map("periodization_id") @db.Uuid
+  programId       String?   @map("program_id") @db.Uuid
+  name            String
+  focus           String?
+  weeks           Int
+  sortOrder       Int       @default(0) @map("sort_order")
+  /// Parâmetros de progressão (volume, intensidade, deload).
+  progression     Json      @default("{}")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant        Tenant          @relation(fields: [tenantId], references: [id])
+  periodization Periodization   @relation(fields: [periodizationId], references: [id], onDelete: Cascade)
+  program       WorkoutProgram? @relation(fields: [programId], references: [id])
+
+  @@index([tenantId, periodizationId])
+  @@map("periodization_phases")
+}
+
+/// Execução de treino pelo aluno (player, offline-first).
+model WorkoutSession {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  studentLinkId   String    @map("student_link_id") @db.Uuid
+  programId       String?   @map("program_id") @db.Uuid
+  routineId       String?   @map("routine_id") @db.Uuid
+  /// Id gerado no dispositivo (idempotência da sincronização offline).
+  clientId        String    @map("client_id")
+  startedAt       DateTime  @map("started_at") @db.Timestamptz(3)
+  finishedAt      DateTime? @map("finished_at") @db.Timestamptz(3)
+  durationSeconds Int?      @map("duration_seconds")
+  perceivedEffort Int?      @map("perceived_effort")
+  /// Nota do treino (1 a 5).
+  rating          Int?
+  hasPain         Boolean?  @map("has_pain")
+  painLocation    String?   @map("pain_location")
+  mood            String?
+  feedback        String?
+  totalVolumeKg   Decimal?  @map("total_volume_kg") @db.Decimal(10, 1)
+  feedbackReadAt  DateTime? @map("feedback_read_at") @db.Timestamptz(3)
+  critical        Boolean   @default(false)
+  isExtra         Boolean   @default(false) @map("is_extra")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
+  studentLink StudentLink      @relation(fields: [studentLinkId], references: [id])
+  program     WorkoutProgram?  @relation(fields: [programId], references: [id])
+  routine     WorkoutRoutine?  @relation(fields: [routineId], references: [id])
+  setLogs     SessionSetLog[]
+  records     PersonalRecord[]
+
+  @@unique([tenantId, clientId])
+  @@index([tenantId, studentLinkId, startedAt])
+  @@index([tenantId, finishedAt])
+  @@map("workout_sessions")
+}
+
+model SessionSetLog {
+  id                String    @id @default(uuid(7)) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  sessionId         String    @map("session_id") @db.Uuid
+  routineExerciseId String?   @map("routine_exercise_id") @db.Uuid
+  exerciseId        String    @map("exercise_id") @db.Uuid
+  setOrder          Int       @map("set_order")
+  reps              Int?
+  loadKg            Decimal?  @map("load_kg") @db.Decimal(7, 2)
+  durationSeconds   Int?      @map("duration_seconds")
+  distanceMeters    Int?      @map("distance_meters")
+  completed         Boolean   @default(true)
+  skipped           Boolean   @default(false)
+  rpe               Decimal?  @db.Decimal(3, 1)
+  notes             String?
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  session         WorkoutSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  routineExercise RoutineExercise? @relation(fields: [routineExerciseId], references: [id])
+  exercise        Exercise         @relation(fields: [exerciseId], references: [id])
+
+  @@index([tenantId, sessionId])
+  @@index([tenantId, exerciseId])
+  @@map("session_set_logs")
+}
+
+model PersonalRecord {
+  id            String     @id @default(uuid(7)) @db.Uuid
+  tenantId      String     @map("tenant_id") @db.Uuid
+  studentLinkId String     @map("student_link_id") @db.Uuid
+  exerciseId    String     @map("exercise_id") @db.Uuid
+  sessionId     String?    @map("session_id") @db.Uuid
+  type          RecordType
+  value         Decimal    @db.Decimal(9, 2)
+  achievedAt    DateTime   @map("achieved_at") @db.Timestamptz(3)
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime?  @map("deleted_at") @db.Timestamptz(3)
+
+  tenant      Tenant          @relation(fields: [tenantId], references: [id])
+  studentLink StudentLink     @relation(fields: [studentLinkId], references: [id])
+  exercise    Exercise        @relation(fields: [exerciseId], references: [id])
+  session     WorkoutSession? @relation(fields: [sessionId], references: [id])
+
+  @@index([tenantId, studentLinkId, exerciseId, type])
+  @@map("personal_records")
+}

@@ -1,0 +1,25 @@
+{
+  "app": { "slogan": "Tu método. Tu alumno. Tu evolución." },
+  "auth": {
+    "title": "Inicia sesión",
+    "subtitle": "Sigue a tus alumnos y entrenamientos en un solo lugar.",
+    "email": "Correo",
+    "password": "Contraseña",
+    "submit": "Entrar",
+    "magicLink": "Recibir enlace de acceso por correo",
+    "forgot": "Olvidé mi contraseña",
+    "invalid": "Correo o contraseña incorrectos.",
+    "twoFactor": "Código de verificación",
+    "twoFactorHint": "Ingresa el código de 6 dígitos de tu app de autenticación."
+  },
+  "home": {
+    "hello": "¡Hola, {name}!",
+    "profile": "Vínculo activo",
+    "plan": "Tu plan",
+    "uploadTitle": "Sube una imagen de ejercicio",
+    "uploadHint": "JPG, PNG, WEBP o GIF hasta 10 MB.",
+    "videosTitle": "Videos propios",
+    "logout": "Salir",
+    "verifyEmail": "Confirma tu correo para proteger tu cuenta."
+  }
+}
