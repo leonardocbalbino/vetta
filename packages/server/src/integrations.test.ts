@@ -1,11 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
+import { encryptSecrets, FailoverSmsProvider, providerFromRow } from './messaging/sms-settings';
 import { GoogleCalendarProvider, parseGoogleEvent, SyncTokenExpiredError } from './calendar/google';
 import {
   CloudflareCustomDomainProvider,
   MemoryCustomDomainProvider,
   toState,
 } from './domains/custom-domain';
-import { MetaWhatsAppProvider, TwilioSmsProvider, WHATSAPP_TEMPLATES } from './messaging/messaging';
+import {
+  createSmsProvider,
+  MetaWhatsAppProvider,
+  TextbeeSmsProvider,
+  TwilioSmsProvider,
+  WHATSAPP_TEMPLATES,
+} from './messaging/messaging';
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -76,6 +83,46 @@ describe('WhatsApp (Cloud API)', () => {
         dueDate: null,
       }),
     ).toEqual(['Ana', 'R$ 1', '-']);
+  });
+});
+
+describe('SMS (textbee)', () => {
+  it('envia pelo gateway com a chave e o aparelho', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(
+        json(200, { data: { success: true, smsBatchId: 'b1', recipientCount: 1 } }),
+      );
+    const sms = new TextbeeSmsProvider({ apiKey: 'k', deviceId: 'd1', fetch });
+    expect((await sms.send({ to: '+5511999990000', body: 'Código 123456' })).id).toBe('b1');
+    const [url, init] = call(fetch);
+    expect(url).toBe('https://api.textbee.dev/api/v1/gateway/send-sms');
+    expect((init as unknown as { headers: Record<string, string> }).headers['x-api-key']).toBe('k');
+    expect(JSON.parse(init.body)).toEqual({
+      recipients: ['+5511999990000'],
+      message: 'Código 123456',
+      deviceId: 'd1',
+    });
+  });
+
+  it('erro do gateway (sem aparelho, limite) vira exceção para o retry', async () => {
+    const fetch = vi.fn().mockResolvedValue(json(429, { message: 'Daily limit reached' }));
+    const sms = new TextbeeSmsProvider({ apiKey: 'k', fetch });
+    await expect(sms.send({ to: '+55', body: 'x' })).rejects.toThrow('Daily limit reached');
+  });
+
+  it('escolhe o textbee quando há chave; Twilio só se pedido', () => {
+    expect(createSmsProvider({ TEXTBEE_API_KEY: 'k' }).name).toBe('textbee');
+    expect(
+      createSmsProvider({
+        SMS_PROVIDER: 'twilio',
+        TEXTBEE_API_KEY: 'k',
+        TWILIO_ACCOUNT_SID: 'a',
+        TWILIO_AUTH_TOKEN: 'b',
+        TWILIO_FROM: 'c',
+      }).name,
+    ).toBe('twilio');
+    expect(createSmsProvider({}).name).toBe('unconfigured');
   });
 });
 
@@ -193,5 +240,37 @@ describe('Google Calendar', () => {
     expect(url.searchParams.get('access_type')).toBe('offline');
     expect(url.searchParams.get('scope')).toContain('calendar.events');
     expect(url.searchParams.get('state')).toBe('st');
+  });
+});
+
+describe('SMS configurado no admin', () => {
+  it('tenta o principal e cai para a reserva se ele falhar', async () => {
+    const down = { name: 'textbee', send: vi.fn().mockRejectedValue(new Error('sem aparelho')) };
+    const ok = { name: 'twilio', send: vi.fn().mockResolvedValue({ id: 'SM9' }) };
+    const r = await new FailoverSmsProvider([down, ok]).send({ to: '+55', body: 'x' });
+    expect(r.id).toBe('twilio:SM9');
+    await expect(new FailoverSmsProvider([down]).send({ to: '+55', body: 'x' })).rejects.toThrow(
+      'textbee: sem aparelho',
+    );
+  });
+
+  it('monta o provedor só com as credenciais completas (segredos cifrados)', async () => {
+    const key = Buffer.alloc(32, 7).toString('base64');
+    const row = (provider: string, config: object, secrets: Record<string, string> | null) => ({
+      provider,
+      enabled: true,
+      priority: 1,
+      config,
+      secretsEncrypted: secrets ? encryptSecrets(secrets, key) : null,
+    });
+    expect(providerFromRow(row('textbee', {}, { apiKey: 'k' }), key)?.name).toBe('textbee');
+    expect(providerFromRow(row('textbee', {}, null), key)).toBeNull();
+    expect(
+      providerFromRow(row('twilio', { accountSid: 'AC', from: '+1' }, { authToken: 't' }), key)
+        ?.name,
+    ).toBe('twilio');
+    expect(
+      providerFromRow(row('twilio', { accountSid: 'AC' }, { authToken: 't' }), key),
+    ).toBeNull();
   });
 });

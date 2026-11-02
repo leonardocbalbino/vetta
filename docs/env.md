@@ -34,19 +34,21 @@ Cada app tem um `.env.example`. Na inicialização, o app valida as variáveis c
 
 Sem credenciais, cada integração responde 503 com código próprio, e o resto do app funciona.
 
-| Variável                                                   | Padrão                             | Uso                                                                                                                     |
-| ---------------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY`                                        | —                                  | IA de treino. Sem ela: `AI_NOT_CONFIGURED`.                                                                             |
-| `AI_MODEL`                                                 | `claude-opus-5-5`                  | Modelo usado nas gerações.                                                                                              |
-| `AI_EFFORT`                                                | `medium`                           | `low` … `max`. Equilibra qualidade e custo.                                                                             |
-| `AI_REFUSAL_FALLBACK`                                      | `true`                             | Se o modelo recusar, o servidor da Anthropic repete em outro modelo (só nos modelos que aceitam o recurso).             |
-| `AI_PRICE_INPUT_PER_MTOK` · `AI_PRICE_OUTPUT_PER_MTOK`     | tabela interna                     | Sobrescrevem o preço (US$ por milhão de tokens) usado na estimativa de custo.                                           |
-| `WHATSAPP_BASE_URL`                                        | `https://graph.facebook.com/v21.0` | Cloud API da Meta ou endpoint compatível do BSP.                                                                        |
-| `WHATSAPP_TOKEN` · `WHATSAPP_PHONE_NUMBER_ID`              | —                                  | Envio de templates aprovados (worker).                                                                                  |
-| `TWILIO_ACCOUNT_SID` · `TWILIO_AUTH_TOKEN` · `TWILIO_FROM` | —                                  | SMS só para segurança. `TWILIO_FROM` aceita número ou Messaging Service (`MG…`).                                        |
-| `CLOUDFLARE_ZONE_ID` · `CLOUDFLARE_SAAS_TOKEN`             | —                                  | Cloudflare for SaaS: custom hostnames e certificados. Sem eles: `INTEGRATION_NOT_CONFIGURED`.                           |
-| `CUSTOM_DOMAIN_TARGET`                                     | `custom.vettafit.com.br`           | Destino do CNAME mostrado ao personal.                                                                                  |
-| `GOOGLE_OAUTH_CLIENT_ID` · `GOOGLE_OAUTH_CLIENT_SECRET`    | —                                  | Google Calendar. Redirect: `{APP_API_URL}/v1/integrations/google/callback`. Webhook: `/v1/integrations/google/webhook`. |
+| Variável                                                     | Padrão                                   | Uso                                                                                                                     |
+| ------------------------------------------------------------ | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`                                          | —                                        | IA de treino. Sem ela: `AI_NOT_CONFIGURED`.                                                                             |
+| `AI_MODEL`                                                   | `claude-opus-5-5`                        | Modelo usado nas gerações.                                                                                              |
+| `AI_EFFORT`                                                  | `medium`                                 | `low` … `max`. Equilibra qualidade e custo.                                                                             |
+| `AI_REFUSAL_FALLBACK`                                        | `true`                                   | Se o modelo recusar, o servidor da Anthropic repete em outro modelo (só nos modelos que aceitam o recurso).             |
+| `AI_PRICE_INPUT_PER_MTOK` · `AI_PRICE_OUTPUT_PER_MTOK`       | tabela interna                           | Sobrescrevem o preço (US$ por milhão de tokens) usado na estimativa de custo.                                           |
+| `WHATSAPP_BASE_URL`                                          | `https://graph.facebook.com/v21.0`       | Cloud API da Meta ou endpoint compatível do BSP.                                                                        |
+| `WHATSAPP_TOKEN` · `WHATSAPP_PHONE_NUMBER_ID`                | —                                        | Envio de templates aprovados (worker).                                                                                  |
+| `SMS_PROVIDER`                                               | `textbee`                                | Reserva quando o admin não tem provedor de SMS ligado (Integrações). `textbee` ou `twilio`.                             |
+| `TEXTBEE_API_KEY` · `TEXTBEE_DEVICE_ID` · `TEXTBEE_BASE_URL` | — · — · `https://api.textbee.dev/api/v1` | SMS via textbee (chip de um Android). Sem `DEVICE_ID`, usa o aparelho padrão da conta.                                  |
+| `TWILIO_ACCOUNT_SID` · `TWILIO_AUTH_TOKEN` · `TWILIO_FROM`   | —                                        | SMS só para segurança. `TWILIO_FROM` aceita número ou Messaging Service (`MG…`).                                        |
+| `CLOUDFLARE_ZONE_ID` · `CLOUDFLARE_SAAS_TOKEN`               | —                                        | Cloudflare for SaaS: custom hostnames e certificados. Sem eles: `INTEGRATION_NOT_CONFIGURED`.                           |
+| `CUSTOM_DOMAIN_TARGET`                                       | `custom.vettafit.com.br`                 | Destino do CNAME mostrado ao personal.                                                                                  |
+| `GOOGLE_OAUTH_CLIENT_ID` · `GOOGLE_OAUTH_CLIENT_SECRET`      | —                                        | Google Calendar. Redirect: `{APP_API_URL}/v1/integrations/google/callback`. Webhook: `/v1/integrations/google/webhook`. |
 
 ## API (`apps/api/src/config/env.ts`)
 

@@ -48,3 +48,4 @@ export * from './calendar/google';
 export * from './calendar/sync';
 export * from './jobs/pro-plus';
 export * from './documents/table-export';
+export * from './messaging/sms-settings';

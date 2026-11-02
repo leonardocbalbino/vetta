@@ -185,11 +185,64 @@ export function createWhatsAppProvider(env: {
   });
 }
 
+export interface TextbeeSmsConfig {
+  apiKey: string;
+  /** Aparelho Android que envia (sem ele, o textbee usa o padrão da conta). */
+  deviceId?: string | undefined;
+  baseUrl?: string | undefined;
+  fetch?: typeof fetch;
+}
+
+/**
+ * SMS via textbee.dev: gateway que envia pelo chip de um Android com o app do textbee.
+ * POST {base}/gateway/send-sms com x-api-key. 200 = aceito na fila (não é entrega);
+ * o id retornado é o do lote (smsBatchId).
+ */
+export class TextbeeSmsProvider implements SmsProvider {
+  readonly name = 'textbee';
+  constructor(private readonly config: TextbeeSmsConfig) {}
+
+  async send(m: SmsMessage): Promise<{ id: string }> {
+    const f = this.config.fetch ?? fetch;
+    const base = (this.config.baseUrl ?? 'https://api.textbee.dev/api/v1').replace(/\/$/, '');
+    const res = await f(`${base}/gateway/send-sms`, {
+      method: 'POST',
+      headers: { 'x-api-key': this.config.apiKey, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        recipients: [m.to],
+        message: m.body.slice(0, 600),
+        ...(this.config.deviceId ? { deviceId: this.config.deviceId } : {}),
+      }),
+    });
+    const body = (await res.json().catch(() => ({}))) as {
+      data?: { success?: boolean; smsBatchId?: string; failureCount?: number };
+      message?: string;
+      error?: string;
+    };
+    if (!res.ok || body.data?.success === false || (body.data?.failureCount ?? 0) > 0) {
+      throw new Error(`SMS ${res.status}: ${body.error ?? body.message ?? 'falha no textbee'}`);
+    }
+    return { id: body.data?.smsBatchId ?? 'textbee' };
+  }
+}
+
+/** SMS de segurança: textbee (padrão) ou Twilio, conforme SMS_PROVIDER e as credenciais. */
 export function createSmsProvider(env: {
+  SMS_PROVIDER?: 'textbee' | 'twilio';
+  TEXTBEE_API_KEY?: string;
+  TEXTBEE_DEVICE_ID?: string;
+  TEXTBEE_BASE_URL?: string;
   TWILIO_ACCOUNT_SID?: string;
   TWILIO_AUTH_TOKEN?: string;
   TWILIO_FROM?: string;
 }): SmsProvider {
+  if (env.SMS_PROVIDER !== 'twilio' && env.TEXTBEE_API_KEY) {
+    return new TextbeeSmsProvider({
+      apiKey: env.TEXTBEE_API_KEY,
+      deviceId: env.TEXTBEE_DEVICE_ID,
+      baseUrl: env.TEXTBEE_BASE_URL,
+    });
+  }
   if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN || !env.TWILIO_FROM)
     return new UnconfiguredSmsProvider();
   return new TwilioSmsProvider({

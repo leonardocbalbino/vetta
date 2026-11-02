@@ -199,3 +199,28 @@ model PlatformBroadcastRecipient {
   @@index([userId])
   @@map("platform_broadcast_recipients")
 }
+
+/// Integrações da plataforma configuradas no admin (ex.: SMS via textbee ou Twilio).
+/// Segredos (chaves, tokens) ficam cifrados com APP_ENCRYPTION_KEY.
+model PlatformIntegration {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  /// Tipo de canal: "sms".
+  kind             String
+  /// Provedor: "textbee" | "twilio".
+  provider         String
+  enabled          Boolean   @default(false)
+  /// Menor = tentado primeiro; os demais habilitados servem de reserva.
+  priority         Int       @default(10)
+  /// Configuração não secreta (deviceId, remetente, URL base).
+  config           Json      @default("{}")
+  secretsEncrypted String?   @map("secrets_encrypted")
+  lastTestAt       DateTime? @map("last_test_at") @db.Timestamptz(3)
+  lastTestOk       Boolean?  @map("last_test_ok")
+  lastTestError    String?   @map("last_test_error")
+  updatedByAdminId String?   @map("updated_by_admin_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([kind, provider])
+  @@map("platform_integrations")
+}

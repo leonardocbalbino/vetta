@@ -95,7 +95,11 @@ export const SharedEnvSchema = z.object({
   WHATSAPP_BASE_URL: z.url().default('https://graph.facebook.com/v21.0'),
   WHATSAPP_TOKEN: z.string().optional(),
   WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
-  /** SMS (só segurança). */
+  /** SMS (só segurança): textbee.dev (padrão) ou Twilio. */
+  SMS_PROVIDER: z.enum(['textbee', 'twilio']).default('textbee'),
+  TEXTBEE_API_KEY: z.string().optional(),
+  TEXTBEE_DEVICE_ID: z.string().optional(),
+  TEXTBEE_BASE_URL: z.url().default('https://api.textbee.dev/api/v1'),
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_FROM: z.string().optional(),

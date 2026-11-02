@@ -32,6 +32,7 @@ import {
   createCalendarProvider,
   createCustomDomainProvider,
   createSmsProvider,
+  AdminConfiguredSmsProvider,
   createWhatsAppProvider,
   maintainCalendarSync,
   markSupportSlaBreaches,
@@ -136,7 +137,8 @@ const deliveryDeps = {
   email: createEmailProvider(env),
   push: new ExpoPushProvider(env.EXPO_ACCESS_TOKEN),
   whatsapp: createWhatsAppProvider(env),
-  sms: createSmsProvider(env),
+  // SMS configurado no admin (textbee/Twilio com prioridade); variáveis de ambiente como reserva.
+  sms: new AdminConfiguredSmsProvider(db, env.APP_ENCRYPTION_KEY, createSmsProvider(env)),
   webUrl: env.APP_WEB_URL,
   emailFrom: env.EMAIL_FROM,
   apiUrl: env.APP_API_URL,
