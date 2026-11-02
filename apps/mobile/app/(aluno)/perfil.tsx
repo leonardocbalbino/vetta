@@ -29,6 +29,11 @@ export default function Perfil() {
         <Button title="Pagamentos" variant="secondary" onPress={() => router.push('/pagamentos')} />
         <Button title="Documentos" variant="secondary" onPress={() => router.push('/documentos')} />
         <Button
+          title="Saúde (Apple Saúde / Health Connect)"
+          variant="secondary"
+          onPress={() => router.push('/saude')}
+        />
+        <Button
           title="Autorizações e depoimento"
           variant="secondary"
           onPress={() => router.push('/autorizacoes')}

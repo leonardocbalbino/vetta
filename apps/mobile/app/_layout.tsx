@@ -13,7 +13,9 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import type { PublicBrand } from '@vetta/contracts';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { client } from '../src/lib/client';
 import { listenNotificationTaps, registerForPush } from '../src/lib/notifications';
 import { startAutoSync } from '../src/lib/offline';
@@ -31,6 +33,19 @@ function Effects() {
     if (me) void registerForPush();
   }, [me]);
   return null;
+}
+
+/** Tema do personal do vínculo ativo (white label); sem white label, o tema Vetta. */
+function BrandTheme({ children }: { children: ReactNode }) {
+  const { active } = useSession();
+  const brand = useQuery({
+    queryKey: ['brand-active', active?.tenantId],
+    queryFn: () => client.request<PublicBrand>('GET', '/v1/brand/active'),
+    enabled: !!active,
+    staleTime: 10 * 60_000,
+  });
+  const b = brand.data?.whiteLabel ? brand.data : null;
+  return <ThemeProvider brand={b}>{children}</ThemeProvider>;
 }
 
 function Shell() {
@@ -71,9 +86,9 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <VettaProvider client={client}>
         <SessionProvider>
-          <ThemeProvider>
+          <BrandTheme>
             <Shell />
-          </ThemeProvider>
+          </BrandTheme>
         </SessionProvider>
       </VettaProvider>
     </QueryClientProvider>

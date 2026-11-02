@@ -20,6 +20,7 @@ export default function Mais() {
           variant="secondary"
           onPress={() => router.push('/agenda-personal')}
         />
+        <Button title="Academy" variant="secondary" onPress={() => router.push('/academy')} />
         <Button
           title="Gravar vídeo de exercício"
           variant="secondary"

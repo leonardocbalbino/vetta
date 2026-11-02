@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Linking, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AiSummaryCard } from '../../src/components/ai-summary';
 import { client } from '../../src/lib/client';
 
 interface Detail {
@@ -114,6 +115,7 @@ export default function AlunoFicha() {
               })
             }
           />
+          <AiSummaryCard studentLinkId={d.id} />
           <Button
             title="Abrir chat"
             variant="secondary"

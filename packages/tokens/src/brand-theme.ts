@@ -1,5 +1,6 @@
 import { contrastRatio } from './contrast.js';
 import { palette } from './palette.js';
+import type { SemanticColors } from './themes.js';
 
 /**
  * White label: cores do personal aplicadas sobre os tokens da Vetta.
@@ -190,4 +191,27 @@ export function brandThemeCss(colors: {
     return lines.length ? [`${sel} {`, ...lines, '}'].join('\n') : '';
   };
   return [block(':root', light), block('.dark', dark)].filter(Boolean).join('\n');
+}
+
+const VAR_TO_KEY: Record<string, keyof SemanticColors> = {
+  '--vt-action': 'action',
+  '--vt-action-foreground': 'actionForeground',
+  '--vt-link': 'link',
+  '--vt-ring': 'ring',
+  '--vt-chart': 'chart',
+  '--vt-accent': 'accent',
+  '--vt-accent-foreground': 'accentForeground',
+};
+
+/** Mesmas regras do tema web, para o React Native (cores semânticas sobrescritas). */
+export function brandNativeColors(
+  colors: { primaryColor?: string | null; accentColor?: string | null },
+  mode: 'light' | 'dark',
+): Partial<SemanticColors> {
+  const vars = brandThemeVars(colors)[mode];
+  return Object.fromEntries(
+    Object.entries(vars)
+      .filter(([k]) => VAR_TO_KEY[k])
+      .map(([k, v]) => [VAR_TO_KEY[k], v]),
+  ) as Partial<SemanticColors>;
 }

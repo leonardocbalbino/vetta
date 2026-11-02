@@ -76,3 +76,14 @@ describe('white label: variáveis do tema', () => {
     expect(css).toContain('--vt-action: #7A1FA2;');
   });
 });
+
+describe('white label no React Native', () => {
+  it('mapeia as variáveis para as cores semânticas', async () => {
+    const { brandNativeColors } = await import('./brand-theme.js');
+    const light = brandNativeColors({ primaryColor: '#7A1FA2', accentColor: '#FFC400' }, 'light');
+    expect(light).toMatchObject({ action: '#7A1FA2', link: '#7A1FA2', accent: '#FFC400' });
+    const dark = brandNativeColors({ primaryColor: '#7A1FA2' }, 'dark');
+    expect(contrastRatio(dark.link!, palette.tinta)).toBeGreaterThanOrEqual(4.5);
+    expect(brandNativeColors({ primaryColor: '#FFFF00' }, 'light')).toEqual({});
+  });
+});

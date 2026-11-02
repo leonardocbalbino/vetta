@@ -13,9 +13,14 @@
       "associatedDomains": ["applinks:app.vettafit.com.br"],
       "infoPlist": {
         "NSFaceIDUsageDescription": "Use o Face ID para entrar na Vetta com segurança.",
-        "NSCameraUsageDescription": "A câmera é usada para fotos de progresso e avaliação postural."
+        "NSCameraUsageDescription": "A câmera é usada para fotos de progresso e avaliação postural.",
+        "NSHealthShareUsageDescription": "A Vetta lê passos, frequência cardíaca, peso e treinos que você autorizar, para o seu personal acompanhar sua evolução.",
+        "NSHealthUpdateUsageDescription": "A Vetta grava no Apple Saúde os treinos que você concluir no app."
       },
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "entitlements": {
+        "com.apple.developer.healthkit": true
+      }
     },
     "android": {
       "package": "br.com.vettafit.app",
@@ -35,7 +40,14 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#101418"
-      }
+      },
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.READ_EXERCISE",
+        "android.permission.health.WRITE_EXERCISE"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -74,7 +86,26 @@
           }
         }
       ],
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "A Vetta lê passos, frequência cardíaca, peso e treinos que você autorizar, para o seu personal acompanhar sua evolução.",
+          "NSHealthUpdateUsageDescription": "A Vetta grava no Apple Saúde os treinos que você concluir no app.",
+          "background": false
+        }
+      ],
+      "expo-health-connect",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
