@@ -1,9 +1,9 @@
 import { logoSymbol, logoWordmark, palette } from '@vetta/tokens';
 import { cn } from '../utils.js';
 
-export type LogoVariant = 'principal' | 'positivo' | 'monocromatico' | 'simbolo';
+export type LogoVariant = 'auto' | 'principal' | 'positivo' | 'monocromatico' | 'simbolo';
 
-const COLORS: Record<Exclude<LogoVariant, 'simbolo'>, { symbol: string; word: string }> = {
+const COLORS: Record<Exclude<LogoVariant, 'simbolo' | 'auto'>, { symbol: string; word: string }> = {
   /** Fundo claro: símbolo e palavra em tinta. */
   principal: { symbol: palette.tinta, word: palette.tinta },
   /** Fundo escuro: símbolo cume, palavra névoa. */
@@ -47,7 +47,7 @@ export function LogoSymbol({
  * Variantes: principal, positivo (fundo escuro), monocromático e símbolo só.
  */
 export function Logo({
-  variant = 'principal',
+  variant = 'auto',
   size = 32,
   className,
 }: {
@@ -62,13 +62,17 @@ export function Logo({
       </span>
     );
   }
-  const c = COLORS[variant];
+  // auto: principal no modo claro, positivo no escuro (segue a classe .dark).
+  const auto = variant === 'auto';
+  const c = auto ? { symbol: 'currentColor', word: 'currentColor' } : COLORS[variant];
   return (
     <span className={cn('inline-flex items-center gap-2', className)} role="img" aria-label="Vetta">
-      <LogoSymbol size={size} color={c.symbol} />
+      <span className={cn('inline-flex', auto && 'text-tinta dark:text-cume')}>
+        <LogoSymbol size={size} color={c.symbol} />
+      </span>
       <span
         aria-hidden
-        className="font-display leading-none"
+        className={cn('font-display leading-none', auto && 'text-tinta dark:text-nevoa')}
         style={{
           color: c.word,
           fontSize: size * 0.9,

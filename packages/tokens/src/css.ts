@@ -62,7 +62,8 @@ export function buildTailwindCss(): string {
     '@utility font-display {',
     '  font-family: var(--font-display);',
     '  font-stretch: 125%;',
-    '  letter-spacing: -0.03em;',
+    // Títulos: Archivo Expanded fica largo; tracking mais fechado que o da logo.
+    '  letter-spacing: -0.045em;',
     '}',
     '',
   ].join('\n');
