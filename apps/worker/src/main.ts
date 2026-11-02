@@ -29,8 +29,14 @@ import {
   QueueEventPublisher,
   S3StorageProvider,
   SCHEDULED_JOBS,
-  UnconfiguredSmsProvider,
-  UnconfiguredWhatsAppProvider,
+  createCalendarProvider,
+  createCustomDomainProvider,
+  createSmsProvider,
+  createWhatsAppProvider,
+  maintainCalendarSync,
+  markSupportSlaBreaches,
+  sendDuePlatformBroadcasts,
+  verifyPendingDomains,
   DEFAULT_JOB_OPTIONS,
   appointmentReminders,
   blockOverdueStudents,
@@ -129,11 +135,14 @@ const deliveryDeps = {
   redis,
   email: createEmailProvider(env),
   push: new ExpoPushProvider(env.EXPO_ACCESS_TOKEN),
-  whatsapp: new UnconfiguredWhatsAppProvider(),
-  sms: new UnconfiguredSmsProvider(),
+  whatsapp: createWhatsAppProvider(env),
+  sms: createSmsProvider(env),
   webUrl: env.APP_WEB_URL,
+  emailFrom: env.EMAIL_FROM,
+  apiUrl: env.APP_API_URL,
   adminUrl: env.APP_ADMIN_URL,
 };
+const customDomains = createCustomDomainProvider(env);
 const jobDeps = {
   db,
   publisher,
@@ -177,6 +186,16 @@ const scheduled: Record<string, () => Promise<unknown>> = {
   [SCHEDULED_JOBS.broadcasts.name]: () => sendScheduledBroadcasts(jobDeps),
   [SCHEDULED_JOBS.periodization.name]: () => switchPeriodizationPhases(jobDeps),
   [SCHEDULED_JOBS.anamnesisReapply.name]: () => reapplyAnamnesis(jobDeps),
+  [SCHEDULED_JOBS.customDomains.name]: () => verifyPendingDomains(db, customDomains, publisher),
+  [SCHEDULED_JOBS.supportSla.name]: () => markSupportSlaBreaches(db),
+  [SCHEDULED_JOBS.platformBroadcasts.name]: () => sendDuePlatformBroadcasts(db, publisher),
+  [SCHEDULED_JOBS.calendarSync.name]: () =>
+    maintainCalendarSync({
+      db,
+      calendar: createCalendarProvider(env),
+      encryptionKey: env.APP_ENCRYPTION_KEY,
+      webhookUrl: `${env.APP_API_URL}/v1/integrations/google/webhook`,
+    }),
 };
 
 function onFailed(name: string) {

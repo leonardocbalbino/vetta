@@ -1,6 +1,7 @@
 import type { NotificationChannel, PrismaClient } from '../generated/client';
 import { MVP_TEMPLATES } from './catalog-templates-mvp';
 import { PRO_TEMPLATES } from './catalog-templates-pro';
+import { PRO_PLUS_TEMPLATES } from './catalog-templates-pro-plus';
 
 interface TemplateSeed {
   event: string;
@@ -277,7 +278,7 @@ const PT_BR: TemplateSeed[] = [
 /** Cria a versão 1 dos templates que ainda não existem. Seguro em produção. */
 export async function syncNotificationTemplates(db: PrismaClient): Promise<number> {
   let created = 0;
-  for (const t of [...PT_BR, ...MVP_TEMPLATES, ...PRO_TEMPLATES]) {
+  for (const t of [...PT_BR, ...MVP_TEMPLATES, ...PRO_TEMPLATES, ...PRO_PLUS_TEMPLATES]) {
     const exists = await db.notificationTemplate.findFirst({
       where: { event: t.event, channel: t.channel, locale: 'pt-BR', tenantId: null },
     });

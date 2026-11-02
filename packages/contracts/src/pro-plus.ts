@@ -138,8 +138,14 @@ export const InviteAssistantSchema = z.object({
 });
 
 export const UpdateMemberSchema = z.object({
-  permissions: z.array(z.enum(ASSISTANT_PERMISSIONS)).max(3).optional(),
-  status: z.enum(['ACTIVE', 'SUSPENDED']).optional(),
+  permissions: z.array(z.enum(ASSISTANT_PERMISSIONS)).max(3),
+});
+
+export const AcceptTeamInviteSchema = z.object({
+  token: z.string().min(20),
+  name: z.string().trim().min(2).max(120).optional(),
+  password: z.string().min(8).max(128).optional(),
+  acceptTerms: z.literal(true),
 });
 
 export const AssignStudentsSchema = z.object({
@@ -291,9 +297,7 @@ export const PlatformBroadcastSchema = z.object({
   segment: z
     .object({
       plans: z.array(z.enum(PlanCode)).default([]),
-      statuses: z
-        .array(z.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'EXPIRED']))
-        .default([]),
+      statuses: z.array(z.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED'])).default([]),
       signupFrom: z.iso.date().nullable().optional(),
       signupTo: z.iso.date().nullable().optional(),
     })

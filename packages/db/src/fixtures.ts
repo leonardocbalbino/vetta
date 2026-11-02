@@ -538,6 +538,26 @@ export async function createTenantWorld(
     }),
   );
 
+  // Fase 3: uso da IA
+  track(
+    'AiGeneration',
+    await db.aiGeneration.create({
+      data: {
+        tenantId,
+        memberId: owner_m.id,
+        kind: 'WEEKLY_SUMMARY',
+        status: 'SUCCEEDED',
+        provider: 'anthropic',
+        model: 'claude-opus-5-5',
+        inputTokens: 1200,
+        outputTokens: 250,
+        costMicroUsd: 9800,
+        // Mês anterior: não consome a cota mensal dos testes.
+        createdAt: new Date(Date.now() - 45 * 86_400_000),
+      },
+    }),
+  );
+
   // M12 / M13
   track(
     'TenantBrand',

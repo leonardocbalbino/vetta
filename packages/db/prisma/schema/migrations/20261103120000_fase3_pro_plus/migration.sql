@@ -25,6 +25,9 @@ CREATE TYPE "PlatformBroadcastStatus" AS ENUM ('DRAFT', 'SCHEDULED', 'SENDING', 
 -- AlterEnum
 ALTER TYPE "ConsentType" ADD VALUE 'WHATSAPP';
 
+-- AlterEnum
+ALTER TYPE "AuthTokenType" ADD VALUE 'TEAM_INVITE';
+
 -- AlterTable
 ALTER TABLE "appointments" ADD COLUMN     "google_updated_at" TIMESTAMPTZ(3);
 

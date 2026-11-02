@@ -46,3 +46,5 @@ export * from './ai/recordings';
 export * from './domains/custom-domain';
 export * from './calendar/google';
 export * from './calendar/sync';
+export * from './jobs/pro-plus';
+export * from './documents/table-export';

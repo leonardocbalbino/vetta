@@ -2,7 +2,9 @@ import { toAppUrl } from '@vetta/contracts';
 import type { PrismaClient } from '@vetta/db';
 import { renderNotificationEmail } from '@vetta/emails';
 import type { Redis } from 'ioredis';
+import { checkPrimary } from '@vetta/tokens';
 import { maskRecipient } from '../crypto';
+import { resolveEntitlements } from '../entitlements';
 import type { EmailProvider } from '../email/email';
 import {
   NotConfiguredError,
@@ -21,6 +23,43 @@ export interface DeliveryDeps {
   sms: SmsProvider;
   webUrl: string;
   adminUrl?: string;
+  /** Remetente padrão (ex.: "Vetta <nao-responda@vettafit.com.br>"); o white label troca o nome. */
+  emailFrom?: string;
+  /** URL pública da API (logo do personal no e-mail). */
+  apiUrl?: string;
+}
+
+/**
+ * Marca do personal no e-mail: só com white label ativo no plano (downgrade volta à Vetta).
+ * A cor só entra se passar no contraste AA.
+ */
+export async function emailBrand(db: PrismaClient, tenantId: string, apiUrl?: string) {
+  const tenant = await db.tenant.findUnique({ where: { id: tenantId }, include: { brand: true } });
+  if (!tenant?.brand) return null;
+  const features = (await resolveEntitlements(db, tenantId)).features;
+  if (features['brand.white_label'] !== true) return null;
+  const b = tenant.brand;
+  const domainActive =
+    b.customDomain && b.customDomainStatus === 'ACTIVE' && features['brand.custom_domain'] === true;
+  return {
+    email: {
+      name: b.emailFromName ?? b.displayName ?? tenant.name,
+      primaryColor: b.primaryColor && checkPrimary(b.primaryColor).ok ? b.primaryColor : null,
+      logoUrl: b.logoMediaId && apiUrl ? `${apiUrl}/v1/public/brand/${tenantId}/logo` : null,
+    },
+    webUrl: domainActive ? `https://${b.customDomain}` : null,
+  };
+}
+
+/** "Studio Ana <nao-responda@vettafit.com.br>": mesmo endereço, nome do personal. */
+export function senderWithName(name: string, defaultFrom: string): string {
+  const address = /<([^>]+)>/.exec(defaultFrom)?.[1] ?? defaultFrom;
+  const safe =
+    name
+      .replace(/["<>\r\n]/g, '')
+      .trim()
+      .slice(0, 60) || 'Vetta';
+  return `"${safe}" <${address}>`;
 }
 
 const pushTicketKey = (ticketId: string) => `push:ticket:${ticketId}`;
@@ -92,28 +131,22 @@ export async function deliver(
 
     switch (job.channel) {
       case 'EMAIL': {
-        const tenant = log.tenantId
-          ? await db.tenant.findUnique({ where: { id: log.tenantId }, include: { brand: true } })
-          : null;
+        const brand = log.tenantId ? await emailBrand(db, log.tenantId, deps.apiUrl) : null;
         const { html, text } = await renderNotificationEmail({
           title: job.title,
           body,
           ctaLabel: job.ctaLabel,
-          ctaUrl: new URL(job.deepLink, deps.webUrl).toString(),
-          ...(tenant?.brand?.emailFromName || tenant?.brand?.primaryColor
-            ? {
-                brand: {
-                  name: tenant.brand.emailFromName ?? tenant.name,
-                  primaryColor: tenant.brand.primaryColor,
-                },
-              }
-            : {}),
+          ctaUrl: new URL(job.deepLink, brand?.webUrl ?? deps.webUrl).toString(),
+          ...(brand ? { brand: brand.email } : {}),
         });
         const r = await deps.email.send({
           to: user.email,
           subject: job.subject ?? job.title,
           html,
           text,
+          ...(brand && deps.emailFrom
+            ? { from: senderWithName(brand.email.name, deps.emailFrom) }
+            : {}),
           tags: { event: log.event },
         });
         provider = deps.email.name;

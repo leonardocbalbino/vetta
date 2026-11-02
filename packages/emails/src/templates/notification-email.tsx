@@ -133,7 +133,7 @@ export function NotificationEmail({
           ) : null}
           <Hr style={{ borderColor: palette.linha, margin: '24px 0' }} />
           <Text style={{ color: palette.grafite, fontSize: 12, lineHeight: '16px', margin: 0 }}>
-            {brand.name === 'Vetta' ? footer : `${brand.name} · enviado pela Vetta`}
+            {brand.name === 'Vetta' ? footer : `${brand.name} · feito com Vetta`}
           </Text>
         </Container>
       </Body>

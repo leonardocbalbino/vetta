@@ -74,6 +74,14 @@ export const DOMAIN_EVENTS = {
   'testimonial.submitted': 'SYSTEM',
   'result.consent_requested': 'SYSTEM',
   'document.shared': 'SYSTEM',
+  // Fase 3 – equipe, white label, suporte, comunicados da plataforma
+  'team.invited': 'SYSTEM',
+  'team.joined': 'SYSTEM',
+  'custom_domain.active': 'SYSTEM',
+  'custom_domain.failed': 'SYSTEM',
+  'support.ticket_created': 'SYSTEM',
+  'support.ticket_replied': 'SYSTEM',
+  'platform.broadcast': 'MARKETING',
 } as const satisfies Record<string, NotificationCategory>;
 
 export type DomainEventName = keyof typeof DOMAIN_EVENTS;

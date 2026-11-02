@@ -74,6 +74,9 @@ describe('cobertura', () => {
       'notifications',
       'delivery_logs',
       'notification_templates',
+      'support_tickets',
+      'support_messages',
+      'platform_broadcast_recipients',
     ]);
     expect(SYSTEM_MODELS_WITH_TENANT_COLUMN.size).toBe(systemTables.size);
     const unprotected = rows.filter(

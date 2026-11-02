@@ -34,6 +34,12 @@ export const deepLinks = {
   resetPassword: (token: string) => `/redefinir-senha?token=${encodeURIComponent(token)}`,
   magicLink: (token: string) => `/entrar/link?token=${encodeURIComponent(token)}`,
   invite: (token: string) => `/convite/${encodeURIComponent(token)}`,
+  teamInvite: (token: string) => `/equipe/convite/${encodeURIComponent(token)}`,
+  team: () => '/equipe',
+  brand: () => '/marca',
+  supportTicket: (id: string) => `/suporte/${id}`,
+  adminTicket: (id: string) => `/suporte/${id}`,
+  academy: (slug?: string) => (slug ? `/academy/${slug}` : '/academy'),
 } as const;
 
 export function toAppUrl(path: string): string {

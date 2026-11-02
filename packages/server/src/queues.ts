@@ -52,6 +52,11 @@ export const SCHEDULED_JOBS = {
   broadcasts: { name: 'comms.scheduled-broadcasts', every: 60 * 1000 },
   periodization: { name: 'workouts.periodization-switch', every: 60 * 60 * 1000 },
   anamnesisReapply: { name: 'anamnesis.reapply', every: 6 * 60 * 60 * 1000 },
+  // Fase 3
+  customDomains: { name: 'brand.verify-custom-domains', every: 10 * 60 * 1000 },
+  supportSla: { name: 'support.sla-breaches', every: 10 * 60 * 1000 },
+  platformBroadcasts: { name: 'platform.broadcasts', every: 60 * 1000 },
+  calendarSync: { name: 'schedule.google-calendar-sync', every: 30 * 60 * 1000 },
 } as const;
 export type ScheduledJobName = (typeof SCHEDULED_JOBS)[keyof typeof SCHEDULED_JOBS]['name'];
 

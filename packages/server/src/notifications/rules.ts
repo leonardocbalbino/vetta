@@ -8,6 +8,7 @@ import {
 } from '@vetta/contracts';
 import { MVP_RULES } from './rules-mvp';
 import { PRO_RULES } from './rules-pro';
+import { PRO_PLUS_RULES } from './rules-pro-plus';
 
 /**
  * Quem recebe o evento:
@@ -192,6 +193,7 @@ const RULES_LIST: NotificationRule[] = [
     deepLink: (e) => deepLinks.appointment(p(e, 'appointmentId')),
   },
   ...PRO_RULES,
+  ...PRO_PLUS_RULES,
 ];
 
 export const NOTIFICATION_RULES: Readonly<Partial<Record<DomainEventName, NotificationRule>>> =

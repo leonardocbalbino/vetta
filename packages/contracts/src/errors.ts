@@ -26,6 +26,10 @@ export const ErrorCode = [
   'PAYMENT_OVERDUE',
   'WEBHOOK_INVALID',
   'SLOT_UNAVAILABLE',
+  'AI_NOT_CONFIGURED',
+  'AI_FAILED',
+  'INTEGRATION_NOT_CONFIGURED',
+  'INTEGRATION_FAILED',
 ] as const;
 export type ErrorCode = (typeof ErrorCode)[number];
 
