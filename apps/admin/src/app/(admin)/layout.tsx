@@ -2,7 +2,18 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Button, Logo, Skeleton, cn } from '@vetta/ui';
-import { BookOpen, Gauge, Layers, ScrollText, Wallet, Users } from 'lucide-react';
+import {
+  BookOpen,
+  Gauge,
+  GraduationCap,
+  Layers,
+  LifeBuoy,
+  Megaphone,
+  ScrollText,
+  Sparkles,
+  Wallet,
+  Users,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
@@ -14,6 +25,10 @@ const NAV = [
   { href: '/planos', label: 'Planos', icon: Layers },
   { href: '/financeiro', label: 'Financeiro', icon: Wallet },
   { href: '/biblioteca', label: 'Biblioteca global', icon: BookOpen },
+  { href: '/suporte', label: 'Suporte', icon: LifeBuoy },
+  { href: '/comunicados', label: 'Comunicados', icon: Megaphone },
+  { href: '/academy', label: 'Academy', icon: GraduationCap },
+  { href: '/ia', label: 'IA de treino', icon: Sparkles },
   { href: '/auditoria', label: 'Auditoria', icon: ScrollText },
 ];
 
