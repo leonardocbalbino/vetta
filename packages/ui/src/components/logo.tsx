@@ -86,3 +86,95 @@ export function Logo({
     </span>
   );
 }
+
+const LOADER_CSS = `
+@keyframes vetta-draw {
+  0% { stroke-dashoffset: 1; opacity: 1; }
+  55% { stroke-dashoffset: 0; opacity: 1; }
+  80% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes vetta-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.vetta-loader-check {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: vetta-draw 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vetta-loader-check { stroke-dashoffset: 0; animation: vetta-pulse 1.6s ease-in-out infinite; }
+}`;
+
+/**
+ * Loading da marca: o V se desenha como um check e some, em loop.
+ * Com "reduzir movimento", só pulsa. Use `fullscreen` para telas inteiras.
+ */
+export function LogoLoader({
+  size = 56,
+  label = 'Carregando',
+  showWordmark = false,
+  fullscreen = false,
+  className,
+}: {
+  size?: number;
+  label?: string;
+  showWordmark?: boolean;
+  fullscreen?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={cn(
+        'flex flex-col items-center justify-center gap-3',
+        fullscreen && 'min-h-dvh w-full',
+        className,
+      )}
+    >
+      <style>{LOADER_CSS}</style>
+      <svg
+        width={size}
+        height={size}
+        viewBox={logoSymbol.viewBox}
+        aria-hidden
+        className="text-tinta dark:text-cume"
+      >
+        {/* Trilho discreto + traço que se desenha (pathLength normaliza o comprimento). */}
+        <polyline
+          points={logoSymbol.points}
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity={0.12}
+          strokeWidth={logoSymbol.strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <polyline
+          className="vetta-loader-check"
+          pathLength={1}
+          points={logoSymbol.points}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={logoSymbol.strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      {showWordmark ? (
+        <span
+          aria-hidden
+          className="font-display leading-none text-tinta dark:text-nevoa"
+          style={{
+            fontSize: size * 0.45,
+            fontWeight: logoWordmark.fontWeight,
+            fontStretch: logoWordmark.fontStretch,
+            letterSpacing: logoWordmark.letterSpacing,
+          }}
+        >
+          {logoWordmark.text}
+        </span>
+      ) : null}
+      <span className="sr-only">{label}</span>
+    </div>
+  );
+}
