@@ -64,7 +64,8 @@ docker build -t vetta-app:homolog \
 docker compose -f docker-compose.homolog.yml --env-file "$ENV_FILE" up -d
 
 # nginx do host: só adiciona o arquivo do Vetta e valida antes de recarregar.
-if [ -d /etc/nginx/sites-available ]; then
+# Só na primeira vez: depois o certbot edita o arquivo (HTTPS) e ele não pode ser sobrescrito.
+if [ -d /etc/nginx/sites-available ] && [ ! -f /etc/nginx/sites-available/vetta-homolog ]; then
   cp nginx/vetta-homolog.conf /etc/nginx/sites-available/vetta-homolog
   ln -sf /etc/nginx/sites-available/vetta-homolog /etc/nginx/sites-enabled/vetta-homolog
   nginx -t && systemctl reload nginx
