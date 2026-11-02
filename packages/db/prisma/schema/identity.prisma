@@ -62,6 +62,7 @@ enum ConsentType {
   PRIVACY
   HEALTH_DATA
   MARKETING
+  WHATSAPP
 }
 
 enum DocumentType {
@@ -114,6 +115,7 @@ model User {
   notificationPreferences NotificationPreference[]
   ownedMedia              Media[]                  @relation("MediaOwnerUser")
   academyProgress         AcademyProgress[]
+  healthSamples           HealthSample[]
 
   @@map("users")
 }
@@ -245,6 +247,7 @@ model Tenant {
   walletEntries        WalletEntry[]
   expenses             Expense[]
   brand                TenantBrand?
+  aiGenerations        AiGeneration[]
   salesPage            SalesPage?
   studentDocuments     StudentDocument[]
   consents             Consent[]
@@ -263,15 +266,17 @@ model Tenant {
 }
 
 model TenantMember {
-  id        String           @id @default(uuid(7)) @db.Uuid
-  tenantId  String           @map("tenant_id") @db.Uuid
-  userId    String           @map("user_id") @db.Uuid
-  role      TenantMemberRole
-  status    MemberStatus     @default(ACTIVE)
-  invitedAt DateTime?        @map("invited_at") @db.Timestamptz(3)
-  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime?        @map("deleted_at") @db.Timestamptz(3)
+  id          String           @id @default(uuid(7)) @db.Uuid
+  tenantId    String           @map("tenant_id") @db.Uuid
+  userId      String           @map("user_id") @db.Uuid
+  role        TenantMemberRole
+  status      MemberStatus     @default(ACTIVE)
+  invitedAt   DateTime?        @map("invited_at") @db.Timestamptz(3)
+  /// Permissões do assistente: prescribe, assess, chat (o dono ignora).
+  permissions String[]         @default(["prescribe", "assess", "chat"])
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime?        @map("deleted_at") @db.Timestamptz(3)
 
   tenant               Tenant                @relation(fields: [tenantId], references: [id])
   user                 User                  @relation(fields: [userId], references: [id])

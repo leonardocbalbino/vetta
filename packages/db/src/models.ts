@@ -11,6 +11,10 @@ export const SYSTEM_MODELS_WITH_TENANT_COLUMN = new Set([
   'Notification',
   'DeliveryLog',
   'NotificationTemplate',
+  // Fase 3: suporte e comunicados da plataforma são lidos pelo admin (cruzam tenants).
+  'SupportTicket',
+  'SupportMessage',
+  'PlatformBroadcastRecipient',
 ]);
 
 /** Tabelas que o papel vetta_tenant não pode acessar de forma alguma. */

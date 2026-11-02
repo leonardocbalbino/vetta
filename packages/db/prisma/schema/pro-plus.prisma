@@ -1,0 +1,201 @@
+// ─── Fase 3: Pro Plus ───────────────────────────────────────────────────────
+
+enum AiGenerationKind {
+  PROGRAM
+  LOAD_SUGGESTION
+  WEEKLY_SUMMARY
+}
+
+enum AiGenerationStatus {
+  SUCCEEDED
+  FAILED
+}
+
+/// Uso da IA: uma linha por geração (cota mensal, custo e auditoria).
+model AiGeneration {
+  id               String             @id @default(uuid(7)) @db.Uuid
+  tenantId         String             @map("tenant_id") @db.Uuid
+  memberId         String?            @map("member_id") @db.Uuid
+  studentLinkId    String?            @map("student_link_id") @db.Uuid
+  kind             AiGenerationKind
+  status           AiGenerationStatus
+  provider         String
+  model            String
+  /// Programa criado como rascunho (só em PROGRAM).
+  programId        String?            @map("program_id") @db.Uuid
+  inputTokens      Int                @default(0) @map("input_tokens")
+  outputTokens     Int                @default(0) @map("output_tokens")
+  cacheReadTokens  Int                @default(0) @map("cache_read_tokens")
+  cacheWriteTokens Int                @default(0) @map("cache_write_tokens")
+  /// Custo estimado em milionésimos de dólar.
+  costMicroUsd     Int                @default(0) @map("cost_micro_usd")
+  durationMs       Int                @default(0) @map("duration_ms")
+  toolCalls        Int                @default(0) @map("tool_calls")
+  /// Resultado validado (sugestões e resumo); programas ficam nas tabelas de treino.
+  output           Json?
+  error            String?
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime?          @map("deleted_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, kind, createdAt])
+  @@index([createdAt])
+  @@map("ai_generations")
+}
+
+enum CustomDomainStatus {
+  PENDING
+  VERIFYING
+  ACTIVE
+  FAILED
+}
+
+enum HealthSampleType {
+  STEPS
+  HEART_RATE
+  WEIGHT
+  WORKOUT
+}
+
+enum HealthSource {
+  HEALTHKIT
+  HEALTH_CONNECT
+}
+
+/// Amostras agregadas importadas do Apple Health / Health Connect (dado do titular).
+model HealthSample {
+  id         String           @id @default(uuid(7)) @db.Uuid
+  userId     String           @map("user_id") @db.Uuid
+  source     HealthSource
+  type       HealthSampleType
+  /// Id da amostra na origem (idempotência).
+  externalId String           @map("external_id")
+  startAt    DateTime         @map("start_at") @db.Timestamptz(3)
+  endAt      DateTime         @map("end_at") @db.Timestamptz(3)
+  value      Decimal          @db.Decimal(12, 3)
+  unit       String
+  metadata   Json             @default("{}")
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt  DateTime?        @map("deleted_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, source, externalId])
+  @@index([userId, type, startAt])
+  @@map("health_samples")
+}
+
+enum SupportTicketStatus {
+  OPEN
+  WAITING_USER
+  RESOLVED
+  CLOSED
+}
+
+enum SupportPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+/// Chamado de suporte aberto por um personal (prioridade e SLA pelo plano).
+model SupportTicket {
+  id                 String              @id @default(uuid(7)) @db.Uuid
+  number             Int                 @unique @default(autoincrement())
+  tenantId           String              @map("tenant_id") @db.Uuid
+  userId             String              @map("user_id") @db.Uuid
+  subject            String
+  category           String
+  status             SupportTicketStatus @default(OPEN)
+  priority           SupportPriority     @default(NORMAL)
+  /// Plano no momento da abertura (define o SLA).
+  planCode           PlanCode            @map("plan_code")
+  pageUrl            String?             @map("page_url")
+  assignedAdminId    String?             @map("assigned_admin_id") @db.Uuid
+  firstResponseDueAt DateTime            @map("first_response_due_at") @db.Timestamptz(3)
+  resolutionDueAt    DateTime            @map("resolution_due_at") @db.Timestamptz(3)
+  firstRespondedAt   DateTime?           @map("first_responded_at") @db.Timestamptz(3)
+  resolvedAt         DateTime?           @map("resolved_at") @db.Timestamptz(3)
+  slaBreachedAt      DateTime?           @map("sla_breached_at") @db.Timestamptz(3)
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt          DateTime?           @map("deleted_at") @db.Timestamptz(3)
+
+  messages SupportMessage[]
+
+  @@index([tenantId, createdAt])
+  @@index([status, firstResponseDueAt])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  ticketId      String    @map("ticket_id") @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  authorUserId  String?   @map("author_user_id") @db.Uuid
+  authorAdminId String?   @map("author_admin_id") @db.Uuid
+  body          String
+  /// Nota interna da equipe Vetta (não aparece para o personal).
+  internal      Boolean   @default(false)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+  @@map("support_messages")
+}
+
+enum PlatformBroadcastStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELED
+}
+
+/// Comunicado da plataforma para personais, segmentado por plano, status e cadastro.
+model PlatformBroadcast {
+  id               String                  @id @default(uuid(7)) @db.Uuid
+  title            String
+  body             String
+  url              String?
+  channels         NotificationChannel[]
+  /// { plans: PlanCode[], statuses: SubscriptionStatus[], signupFrom?, signupTo? }
+  segment          Json                    @default("{}")
+  status           PlatformBroadcastStatus @default(DRAFT)
+  scheduledAt      DateTime?               @map("scheduled_at") @db.Timestamptz(3)
+  sentAt           DateTime?               @map("sent_at") @db.Timestamptz(3)
+  recipientCount   Int                     @default(0) @map("recipient_count")
+  createdByAdminId String?                 @map("created_by_admin_id") @db.Uuid
+  createdAt        DateTime                @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime                @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime?               @map("deleted_at") @db.Timestamptz(3)
+
+  recipients PlatformBroadcastRecipient[]
+
+  @@index([status, scheduledAt])
+  @@map("platform_broadcasts")
+}
+
+model PlatformBroadcastRecipient {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  broadcastId String    @map("broadcast_id") @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  deliveredAt DateTime? @map("delivered_at") @db.Timestamptz(3)
+  openedAt    DateTime? @map("opened_at") @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  broadcast PlatformBroadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+
+  @@unique([broadcastId, userId])
+  @@index([userId])
+  @@map("platform_broadcast_recipients")
+}

@@ -22,19 +22,26 @@ enum AcademyContentType {
 
 /// White label: logo, cores, domínio e remetente de e-mail.
 model TenantBrand {
-  id                     String    @id @default(uuid(7)) @db.Uuid
-  tenantId               String    @unique @map("tenant_id") @db.Uuid
-  logoMediaId            String?   @map("logo_media_id") @db.Uuid
-  primaryColor           String?   @map("primary_color")
-  accentColor            String?   @map("accent_color")
-  customDomain           String?   @unique @map("custom_domain")
-  customDomainVerifiedAt DateTime? @map("custom_domain_verified_at") @db.Timestamptz(3)
-  emailFromName          String?   @map("email_from_name")
-  emailFromAddress       String?   @map("email_from_address")
-  emailDomainVerifiedAt  DateTime? @map("email_domain_verified_at") @db.Timestamptz(3)
-  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt              DateTime? @map("deleted_at") @db.Timestamptz(3)
+  id                     String              @id @default(uuid(7)) @db.Uuid
+  tenantId               String              @unique @map("tenant_id") @db.Uuid
+  logoMediaId            String?             @map("logo_media_id") @db.Uuid
+  primaryColor           String?             @map("primary_color")
+  accentColor            String?             @map("accent_color")
+  customDomain           String?             @unique @map("custom_domain")
+  customDomainVerifiedAt DateTime?           @map("custom_domain_verified_at") @db.Timestamptz(3)
+  customDomainStatus     CustomDomainStatus? @map("custom_domain_status")
+  /// Id do custom hostname no provider (Cloudflare for SaaS).
+  customDomainProviderId String?             @map("custom_domain_provider_id")
+  customDomainError      String?             @map("custom_domain_error")
+  customDomainCheckedAt  DateTime?           @map("custom_domain_checked_at") @db.Timestamptz(3)
+  /// Nome exibido no app do aluno, e-mails e PDFs.
+  displayName            String?             @map("display_name")
+  emailFromName          String?             @map("email_from_name")
+  emailFromAddress       String?             @map("email_from_address")
+  emailDomainVerifiedAt  DateTime?           @map("email_domain_verified_at") @db.Timestamptz(3)
+  createdAt              DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt              DateTime?           @map("deleted_at") @db.Timestamptz(3)
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
 

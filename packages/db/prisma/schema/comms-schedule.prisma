@@ -131,6 +131,8 @@ model Appointment {
   recurrenceRule     String?           @map("recurrence_rule")
   recurrenceParentId String?           @map("recurrence_parent_id") @db.Uuid
   googleEventId      String?           @map("google_event_id")
+  /// updated do evento no Google na última sincronização (evita eco).
+  googleUpdatedAt    DateTime?         @map("google_updated_at") @db.Timestamptz(3)
   confirmedAt        DateTime?         @map("confirmed_at") @db.Timestamptz(3)
   /// Lembrete de 24 h.
   reminderSentAt     DateTime?         @map("reminder_sent_at") @db.Timestamptz(3)
@@ -204,19 +206,22 @@ model AvailabilityRule {
 
 /// Bloqueio na agenda (férias, compromisso pessoal).
 model ScheduleBlock {
-  id        String    @id @default(uuid(7)) @db.Uuid
-  tenantId  String    @map("tenant_id") @db.Uuid
-  memberId  String    @map("member_id") @db.Uuid
-  startsAt  DateTime  @map("starts_at") @db.Timestamptz(3)
-  endsAt    DateTime  @map("ends_at") @db.Timestamptz(3)
-  reason    String?
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  id            String    @id @default(uuid(7)) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  memberId      String    @map("member_id") @db.Uuid
+  startsAt      DateTime  @map("starts_at") @db.Timestamptz(3)
+  endsAt        DateTime  @map("ends_at") @db.Timestamptz(3)
+  reason        String?
+  /// Bloqueio vindo de um evento do Google Calendar (sincronização).
+  googleEventId String?   @map("google_event_id")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
 
   tenant Tenant       @relation(fields: [tenantId], references: [id])
   member TenantMember @relation(fields: [memberId], references: [id])
 
+  @@unique([memberId, googleEventId])
   @@index([tenantId, memberId, startsAt])
   @@map("schedule_blocks")
 }
@@ -234,6 +239,14 @@ model CalendarIntegration {
   tokenExpiresAt        DateTime? @map("token_expires_at") @db.Timestamptz(3)
   syncToken             String?   @map("sync_token")
   lastSyncedAt          DateTime? @map("last_synced_at") @db.Timestamptz(3)
+  /// Canal de notificações de mudança (events.watch).
+  channelId             String?   @unique @map("channel_id")
+  channelResourceId     String?   @map("channel_resource_id")
+  channelToken          String?   @map("channel_token")
+  channelExpiresAt      DateTime? @map("channel_expires_at") @db.Timestamptz(3)
+  lastError             String?   @map("last_error")
+  /// OAuth: state de uso único enquanto a conexão não termina.
+  oauthState            String?   @unique @map("oauth_state")
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt             DateTime? @map("deleted_at") @db.Timestamptz(3)
