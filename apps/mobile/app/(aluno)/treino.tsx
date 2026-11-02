@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { estimateMinutes, ExerciseCard } from '../../src/components/routine-preview';
+import { UnreadMessagesAlert } from '../../src/components/unread-messages';
 import { client } from '../../src/lib/client';
 import { fetchWithCache, pendingCount, syncPending } from '../../src/lib/offline';
 import { useSession } from '../../src/lib/session';
@@ -202,6 +203,7 @@ export default function TreinoTab() {
         )}
 
         <View style={{ padding: t.spacing[5], gap: t.spacing[3] }}>
+          <UnreadMessagesAlert href="/(aluno)/chat" />
           {q.data?.offline ? (
             <View
               style={{

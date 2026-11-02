@@ -2,11 +2,13 @@ import { Button, Card, Text, useTheme } from '@vetta/ui-native';
 import { router } from 'expo-router';
 import { Appearance, Linking, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useUnreadMessages } from '../../src/components/unread-messages';
 import { useSession } from '../../src/lib/session';
 
 const WEB = process.env.EXPO_PUBLIC_WEB_URL ?? 'https://app.vettafit.com.br';
 
 export default function Mais() {
+  const unread = useUnreadMessages();
   const t = useTheme();
   const { me, active, signOut } = useSession();
   return (
@@ -14,7 +16,15 @@ export default function Mais() {
       <ScrollView contentContainerStyle={{ padding: t.spacing[5], gap: t.spacing[4] }}>
         <Text variant="display">{me?.name}</Text>
         <Text muted>{active?.tenantName}</Text>
-        <Button title="Mensagens" variant="secondary" onPress={() => router.push('/conversas')} />
+        <Button
+          title={
+            unread.total
+              ? `Mensagens (${unread.total} não lida${unread.total > 1 ? 's' : ''})`
+              : 'Mensagens'
+          }
+          variant={unread.total ? 'action' : 'secondary'}
+          onPress={() => router.push('/conversas')}
+        />
         <Button
           title="Agenda"
           variant="secondary"

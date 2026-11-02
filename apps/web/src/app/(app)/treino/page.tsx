@@ -7,6 +7,7 @@ import { Badge, Button, Card, CardContent, EmptyState, Skeleton, toast } from '@
 import { Dumbbell } from 'lucide-react';
 import { useState } from 'react';
 import { Player, type RecordHit } from '@/components/player';
+import { UnreadMessagesAlert } from '@/components/unread-messages';
 import { errorMessage, fmtDate, useApi } from '@/lib/api';
 
 /** Treino do dia do aluno: escolhe a rotina (sugerida em rodízio) e abre o player. */
@@ -19,11 +20,14 @@ export default function TodayPage() {
   if (!today.data) return <Skeleton className="h-96" />;
   if (!today.data.programs.length) {
     return (
-      <EmptyState
-        icon={<Dumbbell />}
-        title="Seu treino ainda não chegou"
-        description="Assim que seu personal publicar, ele aparece aqui e você recebe um aviso."
-      />
+      <div className="flex flex-col gap-4">
+        <UnreadMessagesAlert />
+        <EmptyState
+          icon={<Dumbbell />}
+          title="Seu treino ainda não chegou"
+          description="Assim que seu personal publicar, ele aparece aqui e você recebe um aviso."
+        />
+      </div>
     );
   }
   if (selected) {
@@ -62,6 +66,7 @@ export default function TodayPage() {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="font-display text-3xl">Treino do dia</h1>
+      <UnreadMessagesAlert />
       {today.data.programs.map((p) => (
         <section key={p.id} className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">

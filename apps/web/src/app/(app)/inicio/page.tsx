@@ -14,6 +14,7 @@ import {
 } from '@vetta/ui';
 import { Cake, Moon, Stethoscope } from 'lucide-react';
 import Link from 'next/link';
+import { UnreadMessagesAlert } from '@/components/unread-messages';
 import { useApi, fmtDate } from '@/lib/api';
 
 interface Dashboard {
@@ -60,6 +61,7 @@ export default function PersonalHome() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-display text-3xl">Bom te ver por aqui!</h1>
+      <UnreadMessagesAlert />
 
       {done < STEPS.length ? (
         <Card className="border-action">

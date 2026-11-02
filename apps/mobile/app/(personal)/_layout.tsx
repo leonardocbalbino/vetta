@@ -1,5 +1,6 @@
 import { useTheme } from '@vetta/ui-native';
 import { Tabs } from 'expo-router';
+import { tabBadge, useUnreadMessages } from '../../src/components/unread-messages';
 import { Text, type ColorValue } from 'react-native';
 
 const icon = (glyph: string) => {
@@ -11,6 +12,7 @@ const icon = (glyph: string) => {
 
 /** Modo Personal: Hoje, Alunos, Feedbacks e Mais. */
 export default function PersonalTabs() {
+  const unread = useUnreadMessages();
   const t = useTheme();
   return (
     <Tabs
@@ -29,7 +31,10 @@ export default function PersonalTabs() {
       <Tabs.Screen name="hoje" options={{ title: 'Hoje', tabBarIcon: icon('☀️') }} />
       <Tabs.Screen name="alunos" options={{ title: 'Alunos', tabBarIcon: icon('👥') }} />
       <Tabs.Screen name="feedbacks" options={{ title: 'Feedbacks', tabBarIcon: icon('⭐') }} />
-      <Tabs.Screen name="mais" options={{ title: 'Mais', tabBarIcon: icon('☰') }} />
+      <Tabs.Screen
+        name="mais"
+        options={{ title: 'Mais', tabBarIcon: icon('☰'), tabBarBadge: tabBadge(unread.total) }}
+      />
     </Tabs>
   );
 }

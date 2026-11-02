@@ -48,6 +48,7 @@ import {
   UsersRound,
 } from 'lucide-react';
 import { SupportWidget } from './support-widget';
+import { UnreadBadge, useUnreadMessages } from './unread-messages';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
@@ -196,6 +197,7 @@ function Nav({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void 
   const path = usePathname();
   const { tenantId } = useActiveTenant();
   const ent = useEntitlements(tenantId);
+  const unread = useUnreadMessages();
   return (
     <nav aria-label="Principal" className="flex flex-col gap-1">
       {items.map((i) => {
@@ -214,6 +216,7 @@ function Nav({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void 
           >
             <i.icon className="size-5" aria-hidden />
             <span className="flex-1">{i.label}</span>
+            {i.href === '/mensagens' ? <UnreadBadge count={unread.total} /> : null}
             {locked ? (
               <Lock className="size-4 opacity-70" aria-label="fora do plano" />
             ) : i.soon ? (
