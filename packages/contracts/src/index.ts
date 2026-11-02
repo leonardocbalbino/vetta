@@ -15,3 +15,4 @@ export * from './workouts.js';
 export * from './training.js';
 export * from './assessments.js';
 export * from './pro.js';
+export * from './pro-plus.js';

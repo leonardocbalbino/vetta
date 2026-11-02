@@ -90,12 +90,26 @@ export const FEATURE_CATALOG = [
   bool('workouts.group_apply', 'M6', 'Aplicar a grupo', 'Enviar treino para vários alunos'),
   bool('workouts.public_link', 'M6', 'Link público', 'Compartilhar treino por link e WhatsApp'),
   bool('workouts.ai_assistant', 'M6', 'IA de treino', 'Assistente de prescrição com IA'),
+  limit(
+    'workouts.ai_monthly',
+    'M6',
+    'Gerações de IA por mês',
+    'Treinos, ajustes de carga e resumos gerados pela IA no mês',
+    0,
+    'gerações',
+  ),
   // M7 player
   bool('training.player', 'M7', 'Player do aluno', 'Execução do treino com cronômetro', true),
   bool('training.feedback', 'M7', 'Feedback do treino', 'Feedback obrigatório ao finalizar', true),
   // M8 progresso
   bool('progress.charts', 'M8', 'Gráficos de evolução', 'Peso, medidas e cargas', true),
   bool('progress.photos', 'M8', 'Fotos de progresso', 'Antes e depois'),
+  bool(
+    'progress.health_integrations',
+    'M8',
+    'Apple Health e Health Connect',
+    'Importar passos, frequência cardíaca, peso e treinos',
+  ),
   // M9 comunicação
   bool('comms.chat', 'M9', 'Chat', 'Chat 1:1 com texto', true),
   bool('comms.chat_media', 'M9', 'Chat com mídia', 'Áudio, imagem e vídeo no chat'),
@@ -179,6 +193,7 @@ const PRO_FEATURES = {
   'storage.quota_mb': 5 * 1024,
   'workouts.templates': true,
   'workouts.periodization': true,
+  'workouts.ai_monthly': 20,
   'workouts.group_apply': true,
   'workouts.public_link': true,
   'progress.photos': true,
@@ -197,6 +212,8 @@ const PRO_PLUS_FEATURES = {
   'team.assistants': 5,
   'storage.quota_mb': 50 * 1024,
   'workouts.ai_assistant': true,
+  'workouts.ai_monthly': 200,
+  'progress.health_integrations': true,
   'brand.white_label': true,
   'brand.custom_domain': true,
   'comms.whatsapp': true,
