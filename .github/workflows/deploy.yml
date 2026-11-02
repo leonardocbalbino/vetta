@@ -1,0 +1,53 @@
+name: Deploy homologação
+
+# Depois que o CI passa na main, publica na VPS (vettafit.com.br).
+# Também pode ser disparado à mão em Actions → Deploy homologação → Run workflow.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-homologacao
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Publicar na VPS
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment:
+      name: homologacao
+      url: https://app.vettafit.com.br
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Chave SSH de deploy
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Enviar código e rodar o setup
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          # A chave só executa /usr/local/bin/vetta-deploy (command= no servidor).
+          git archive --format=tar HEAD \
+            | ssh -i ~/.ssh/deploy -o ServerAliveInterval=30 "root@$VPS_HOST"
+
+      - name: Verificar no ar
+        run: |
+          for u in https://vettafit.com.br https://app.vettafit.com.br/entrar https://api.vettafit.com.br/health; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --retry 5 --retry-delay 5 "$u")
+            echo "$u → $code"
+            [ "$code" = "200" ] || exit 1
+          done

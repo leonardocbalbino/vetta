@@ -2,7 +2,7 @@ import type { ApiProgram } from '@vetta/sdk';
 import { Button, EmptyState, Skeleton, Text, useTheme } from '@vetta/ui-native';
 import { useQuery } from '@tanstack/react-query';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { estimateMinutes, ExerciseCard } from '../../src/components/routine-preview';
@@ -44,7 +44,7 @@ export default function TreinoTab() {
     }, []),
   );
 
-  const programs = q.data?.data.programs ?? [];
+  const programs = useMemo(() => q.data?.data.programs ?? [], [q.data]);
   // Rotina sugerida do programa principal como padrão.
   useEffect(() => {
     if (selected || !programs.length) return;

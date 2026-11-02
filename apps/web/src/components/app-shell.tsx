@@ -394,7 +394,7 @@ export function AppShell({ me, children }: { me: MeResponse; children: ReactNode
             // eslint-disable-next-line @next/next/no-img-element
             <img src={wl.logoUrl} alt={wl.displayName} className="h-7 max-w-44 object-contain" />
           ) : (
-            <span className="block truncate font-display text-lg">{wl.displayName}</span>
+            <span className="block truncate text-base font-semibold">{wl.displayName}</span>
           )
         ) : (
           <Logo />
