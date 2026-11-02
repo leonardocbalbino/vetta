@@ -206,3 +206,43 @@ export async function adminToken(
   const { token } = await tokens.signAccess({ sub: admin.id, sid: session.id, typ: 'admin' });
   return { token, adminId: admin.id };
 }
+
+/** PUT direto no storage com a URL pré-assinada (como o cliente faz). */
+export async function putSigned(
+  target: { url: string; headers?: Record<string, string> },
+  body: Buffer,
+) {
+  const res = await fetch(target.url, {
+    method: 'PUT',
+    body: new Uint8Array(body),
+    headers: target.headers ?? {},
+  });
+  if (!res.ok) throw new Error(`PUT falhou: ${res.status} ${await res.text()}`);
+  return res;
+}
+
+/** Upload completo (cria, envia, completa e processa) e devolve o mediaId. */
+export async function uploadFile(
+  ctx: TestContext,
+  client: ReturnType<typeof as>,
+  input: {
+    purpose: string;
+    fileName: string;
+    mimeType: string;
+    body: Buffer;
+    studentLinkId?: string;
+  },
+): Promise<string> {
+  const created = await client.post('/v1/uploads', {
+    purpose: input.purpose,
+    fileName: input.fileName,
+    mimeType: input.mimeType,
+    size: input.body.length,
+    ...(input.studentLinkId ? { studentLinkId: input.studentLinkId } : {}),
+  });
+  if (created.status !== 201) throw new Error(`upload falhou: ${JSON.stringify(created.body)}`);
+  await putSigned(created.body.target, input.body);
+  await client.post(`/v1/uploads/${created.body.mediaId}/complete`);
+  await runMediaJob(ctx, created.body.mediaId);
+  return created.body.mediaId as string;
+}
