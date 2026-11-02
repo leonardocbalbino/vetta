@@ -60,3 +60,53 @@ export async function getLegal(kind: 'terms' | 'privacy'): Promise<LegalDoc | nu
 
 export const brl = (cents: number) =>
   (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+/** URL da API vista pelo navegador (checkout da página de vendas). */
+export const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.vettafit.com.br';
+
+export interface SalesPagePlan {
+  id: string;
+  name: string;
+  description: string | null;
+  priceCents: number;
+  cycle: BillingCycle;
+  paymentMode: 'ONE_TIME' | 'INSTALLMENTS' | 'RECURRING';
+  maxInstallments: number;
+  methods: ('PIX' | 'BOLETO' | 'CREDIT_CARD')[];
+  benefits: string[];
+}
+
+export interface SalesPage {
+  slug: string;
+  name: string;
+  cref: string | null;
+  headline: string | null;
+  bio: string | null;
+  photoUrl: string | null;
+  logoUrl: string | null;
+  specialties: string[];
+  faq: { question: string; answer: string }[];
+  socialLinks: Record<string, string>;
+  seoTitle: string;
+  seoDescription: string | null;
+  checkoutEnabled: boolean;
+  plans: SalesPagePlan[];
+  testimonials: { id: string; authorName: string; text: string; rating: number | null }[];
+  results: {
+    id: string;
+    caption: string | null;
+    beforeUrl: string | null;
+    afterUrl: string | null;
+  }[];
+}
+
+/** Página de vendas do personal (ISR de 5 min: o personal edita e logo aparece). */
+export async function getSalesPage(slug: string): Promise<SalesPage | null> {
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return null;
+  try {
+    const res = await fetch(`${API_URL}/v1/public/pages/${slug}`, { next: { revalidate: 300 } });
+    return res.ok ? ((await res.json()) as SalesPage) : null;
+  } catch {
+    return null;
+  }
+}
