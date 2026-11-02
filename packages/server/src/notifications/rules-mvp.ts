@@ -24,7 +24,7 @@ export const MVP_RULES: NotificationRule[] = [
     event: 'training.reminder',
     category: 'TRAINING',
     recipients: 'user',
-    channels: ['PUSH'],
+    channels: ['PUSH', 'WHATSAPP'],
     immediate: true,
     deepLink: () => deepLinks.todayWorkout(),
   },

@@ -2,6 +2,7 @@ import type { DomainEvent, NotificationChannel, NotificationDto } from '@vetta/c
 import type { PrismaClient } from '@vetta/db';
 import type { Redis } from 'ioredis';
 import { resolveEntitlements } from '../entitlements';
+import { WHATSAPP_TEMPLATES } from '../messaging/messaging';
 import { decideDelivery, type RecipientContext } from './engine';
 import { NOTIFICATION_RULES, type NotificationRule } from './rules';
 import { localeFallbacks, renderTemplate } from './template';
@@ -15,6 +16,8 @@ export interface DeliveryJobData {
   ctaLabel: string | null;
   deepLink: string;
   groupKey: string | null;
+  /** WhatsApp: template aprovado na Meta e variáveis na ordem do template. */
+  whatsapp?: { template: string; variables: string[] };
 }
 
 export interface DispatcherDeps {
@@ -189,6 +192,9 @@ export async function dispatchEvent(
       hasEmail: !!user.email,
       hasPhone: !!user.phone,
       pushDevices: user._count.devices,
+      whatsappOptIn: rule.channels.includes('WHATSAPP')
+        ? await hasWhatsAppOptIn(db, userId)
+        : false,
     };
     const vars = { ...event.payload, name: user.name, tenantName: tenant?.name ?? 'Vetta' };
 
@@ -230,12 +236,18 @@ export async function dispatchEvent(
         now,
         recipient: ctx,
         tenantFeatures: { whatsapp },
+        hasWhatsAppTemplate: !!WHATSAPP_TEMPLATES[event.name],
       });
       if (!decision.send) {
         await skip(decision.reason);
         continue;
       }
-      const tpl = await findTemplate(db, event.name, channel, user.locale, event.tenantId);
+      // WhatsApp usa o template aprovado na Meta; o local (se houver) só dá título ao log.
+      const tpl =
+        (await findTemplate(db, event.name, channel, user.locale, event.tenantId)) ??
+        (channel === 'WHATSAPP'
+          ? { title: event.name, body: '', subject: null, ctaLabel: null, version: 0 }
+          : null);
       if (!tpl) {
         await skip('no_template');
         continue;
@@ -316,6 +328,14 @@ export async function dispatchEvent(
           ctaLabel: tpl.ctaLabel,
           deepLink,
           groupKey,
+          ...(channel === 'WHATSAPP' && WHATSAPP_TEMPLATES[event.name]
+            ? {
+                whatsapp: {
+                  template: WHATSAPP_TEMPLATES[event.name]!.name,
+                  variables: WHATSAPP_TEMPLATES[event.name]!.variables(vars),
+                },
+              }
+            : {}),
         },
         delayMs,
       );
@@ -369,4 +389,13 @@ async function dispatchToAdmins(
     out.push({ userId: admin.id, channel: 'EMAIL', status: 'queued', scheduledFor: now });
   }
   return out;
+}
+
+/** Último registro de consentimento de WhatsApp do usuário (aceite vigente). */
+export async function hasWhatsAppOptIn(db: PrismaClient, userId: string): Promise<boolean> {
+  const c = await db.consent.findFirst({
+    where: { userId, type: 'WHATSAPP' },
+    orderBy: { grantedAt: 'desc' },
+  });
+  return !!c && c.granted && !c.revokedAt;
 }

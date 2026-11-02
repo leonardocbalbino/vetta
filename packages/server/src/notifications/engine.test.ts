@@ -168,10 +168,44 @@ describe('plano e endereços', () => {
         category: 'FINANCE',
         channel: 'WHATSAPP',
         now: at('12:00'),
-        recipient: r,
+        recipient: recipient({ whatsappOptIn: true }),
         tenantFeatures: { whatsapp: true },
+        hasWhatsAppTemplate: true,
       }).send,
     ).toBe(true);
+  });
+
+  it('WhatsApp exige template aprovado e opt-in, e respeita o silêncio mesmo se imediato', () => {
+    const input = {
+      category: 'FINANCE' as const,
+      channel: 'WHATSAPP' as const,
+      now: at('12:00'),
+      tenantFeatures: { whatsapp: true },
+    };
+    expect(decideDelivery({ ...input, recipient: recipient({ whatsappOptIn: true }) })).toEqual({
+      send: false,
+      reason: 'no_template',
+    });
+    expect(decideDelivery({ ...input, hasWhatsAppTemplate: true, recipient: recipient() })).toEqual(
+      { send: false, reason: 'no_opt_in' },
+    );
+    const night = decideDelivery({
+      ...input,
+      now: at('23:00'),
+      immediate: true,
+      hasWhatsAppTemplate: true,
+      recipient: recipient({ whatsappOptIn: true }),
+    });
+    expect(night).toMatchObject({ send: true, deferredByQuietHours: true });
+    const push = decideDelivery({
+      ...input,
+      channel: 'PUSH',
+      category: 'TRAINING',
+      now: at('23:00'),
+      immediate: true,
+      recipient: recipient(),
+    });
+    expect(push).toMatchObject({ send: true, deferredByQuietHours: false });
   });
 
   it('SMS só para segurança', () => {

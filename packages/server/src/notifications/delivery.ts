@@ -156,11 +156,12 @@ export async function deliver(
       }
       case 'WHATSAPP': {
         if (!user.phone) throw new NotConfiguredError('WhatsApp (telefone ausente)');
+        if (!job.whatsapp) throw new NotConfiguredError('WhatsApp (sem template aprovado)');
         const r = await deps.whatsapp.sendTemplate({
           to: user.phone,
-          template: log.event.replace(/\./g, '_'),
+          template: job.whatsapp.template,
           locale: user.locale,
-          variables: [body],
+          variables: job.whatsapp.variables,
         });
         provider = deps.whatsapp.name;
         providerMessageId = r.id;

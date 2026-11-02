@@ -82,5 +82,31 @@ export const SharedEnvSchema = z.object({
   NFEIO_API_KEY: z.string().optional(),
   NFEIO_COMPANY_ID: z.string().optional(),
   NFEIO_CITY_SERVICE_CODE: z.string().default('0107'),
+
+  /** IA de treino (Fase 3). Sem chave, as rotas de IA respondem 503. */
+  ANTHROPIC_API_KEY: z.string().optional(),
+  AI_MODEL: z.string().default('claude-opus-5-5'),
+  AI_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).default('medium'),
+  AI_REFUSAL_FALLBACK: envBool(true),
+  AI_PRICE_INPUT_PER_MTOK: z.coerce.number().positive().optional(),
+  AI_PRICE_OUTPUT_PER_MTOK: z.coerce.number().positive().optional(),
+
+  /** WhatsApp Cloud API (Meta) ou BSP compatível. */
+  WHATSAPP_BASE_URL: z.url().default('https://graph.facebook.com/v21.0'),
+  WHATSAPP_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  /** SMS (só segurança). */
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN: z.string().optional(),
+  TWILIO_FROM: z.string().optional(),
+
+  /** Domínio próprio: Cloudflare for SaaS (custom hostnames). */
+  CLOUDFLARE_ZONE_ID: z.string().optional(),
+  CLOUDFLARE_SAAS_TOKEN: z.string().optional(),
+  CUSTOM_DOMAIN_TARGET: z.string().default('custom.vettafit.com.br'),
+
+  /** Google Calendar (OAuth do personal). */
+  GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
+  GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional(),
 });
 export type SharedEnv = z.infer<typeof SharedEnvSchema>;
