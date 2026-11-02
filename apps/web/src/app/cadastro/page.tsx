@@ -45,6 +45,7 @@ export default function SignupPage() {
         </CardHeader>
         <CardContent>
           <form
+            method="post"
             noValidate
             className="flex flex-col gap-4"
             onSubmit={form.handleSubmit(async (v) => {

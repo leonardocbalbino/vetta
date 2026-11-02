@@ -115,7 +115,7 @@ function MonthPicker({ value, onChange }: { value: string; onChange: (v: string)
       aria-label="Mês"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-44"
+      className="w-56"
     />
   );
 }
@@ -1209,6 +1209,7 @@ function FinancePage() {
       <h1 className="font-display text-3xl">Financeiro</h1>
       <LockedFeature
         locked={feature.locked}
+        loading={feature.loading}
         title="Cobrança de alunos"
         requiredPlan="PRO"
         description="Receba por Pix, boleto e cartão com repasse automático para sua conta."

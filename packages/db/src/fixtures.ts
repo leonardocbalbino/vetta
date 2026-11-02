@@ -464,6 +464,7 @@ export async function createTenantWorld(
         tenantId,
         studentLinkId: firstStudent,
         consultingPlanId: cplan.id,
+        priceCents: 19900,
         startedAt: new Date(),
         nextDueDate: days(30),
         method: 'PIX',

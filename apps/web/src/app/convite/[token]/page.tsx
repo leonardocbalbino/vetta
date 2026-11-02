@@ -62,6 +62,7 @@ export default function InvitePage() {
         </CardHeader>
         <CardContent>
           <form
+            method="post"
             className="flex flex-col gap-4"
             onSubmit={async (e) => {
               e.preventDefault();

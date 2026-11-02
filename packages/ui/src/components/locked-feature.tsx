@@ -7,6 +7,8 @@ import { PlanBadge } from './display.js';
 export interface LockedFeatureProps {
   /** true = mostra o cadeado no lugar do conteúdo. */
   locked: boolean;
+  /** Plano ainda carregando: não monta o conteúdo (evita chamadas que dariam 402). */
+  loading?: boolean;
   title: string;
   description?: string;
   /** Plano mínimo que libera (vem de details.requiredPlan ou do catálogo). */
@@ -22,6 +24,7 @@ export interface LockedFeatureProps {
 /** Cadeado + CTA de upgrade para recursos fora do plano (use com useFeature). */
 export function LockedFeature({
   locked,
+  loading,
   title,
   description,
   requiredPlan,
@@ -31,6 +34,13 @@ export function LockedFeature({
   children,
   className,
 }: LockedFeatureProps) {
+  if (loading)
+    return (
+      <div
+        aria-busy="true"
+        className={cn('min-h-24 animate-pulse rounded-card bg-muted', className)}
+      />
+    );
   if (!locked) return <>{children}</>;
   if (mode === 'inline') {
     return (

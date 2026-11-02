@@ -17,6 +17,7 @@ export default function MyDocuments() {
       <h1 className="font-display text-3xl">Documentos</h1>
       <LockedFeature
         locked={feature.locked}
+        loading={feature.loading}
         title="Pasta de documentos"
         description="Seu personal ainda não usa a pasta de documentos."
       >

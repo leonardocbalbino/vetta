@@ -482,7 +482,12 @@ function Logo() {
         <CardTitle>Logo nos PDFs de treino e avaliação</CardTitle>
       </CardHeader>
       <CardContent>
-        <LockedFeature locked={branding.locked} title="PDF com sua logo" requiredPlan="PRO">
+        <LockedFeature
+          locked={branding.locked}
+          loading={branding.loading}
+          title="PDF com sua logo"
+          requiredPlan="PRO"
+        >
           <p className="mb-2 text-sm">
             {logo.data?.mediaId ? 'Logo cadastrada.' : 'Sem logo: os PDFs usam o seu nome.'} Use PNG
             ou JPG com fundo transparente ou branco.
@@ -519,6 +524,7 @@ export default function SalesPageEditor() {
       <h1 className="font-display text-3xl">Minha página</h1>
       <LockedFeature
         locked={feature.locked}
+        loading={feature.loading}
         title="Página de vendas"
         requiredPlan="PRO"
         description="Sua vitrine com planos e checkout: quem compra já vira aluno."

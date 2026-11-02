@@ -70,7 +70,7 @@ export default function LoginPage() {
               <Button onClick={onTwoFactor}>{t('submit')}</Button>
             </div>
           ) : (
-            <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+            <form method="post" onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
               <Field label={t('email')} error={form.formState.errors.email?.message}>
                 <Input type="email" autoComplete="email" {...form.register('email')} />
               </Field>

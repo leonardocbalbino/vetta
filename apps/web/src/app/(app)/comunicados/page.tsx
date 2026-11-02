@@ -55,7 +55,9 @@ export default function BroadcastsPage() {
   const { tenantId } = useActiveTenant();
   const feature = useFeature(tenantId, 'comms.broadcast');
   const client = useVettaClient();
-  const list = useApi<Broadcast[]>('/v1/broadcasts', { enabled: !feature.locked });
+  const list = useApi<Broadcast[]>('/v1/broadcasts', {
+    enabled: !feature.locked && !feature.loading,
+  });
   const groups = useApi<{ id: string; name: string }[]>('/v1/student-groups', {
     enabled: !feature.locked,
   });
@@ -92,7 +94,8 @@ export default function BroadcastsPage() {
             },
           };
   useEffect(() => {
-    if (feature.locked || (f.kind === 'group' && !f.groupId)) return setCount(null);
+    if (feature.locked || feature.loading || (f.kind === 'group' && !f.groupId))
+      return setCount(null);
     const t = setTimeout(() => {
       void client
         .request<{ count: number }>('POST', '/v1/broadcasts/audience', { audience: audience() })
@@ -114,7 +117,12 @@ export default function BroadcastsPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-display text-3xl">Comunicados</h1>
-      <LockedFeature locked={feature.locked} title="Comunicados em massa" requiredPlan="PRO">
+      <LockedFeature
+        locked={feature.locked}
+        loading={feature.loading}
+        title="Comunicados em massa"
+        requiredPlan="PRO"
+      >
         <Card>
           <CardHeader>
             <CardTitle>Novo comunicado</CardTitle>

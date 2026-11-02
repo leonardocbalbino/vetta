@@ -88,6 +88,8 @@ const fmtValue = (v: boolean | number | undefined, unit?: string) =>
     `${v.toLocaleString('pt-BR')} ${unit ?? ''}`
   );
 
+const mb = (v: number) => (v >= 1024 ? `${(v / 1024).toFixed(1).replace('.', ',')} GB` : `${v} MB`);
+
 const CYCLES: BillingCycle[] = ['MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'ANNUAL'];
 
 function Checkout({ plan, onClose }: { plan: Plan; onClose: () => void }) {
@@ -376,7 +378,9 @@ export default function SubscriptionPage() {
                   {FEATURE_CATALOG.find((f) => f.key === k)?.name ?? k}
                 </p>
                 <p className="font-display text-xl tabular-nums">
-                  {l.used} / {l.max === UNLIMITED ? '∞' : l.max}
+                  {k === 'storage.quota_mb'
+                    ? `${mb(l.used)} / ${l.max === UNLIMITED ? '∞' : mb(l.max)}`
+                    : `${l.used} / ${l.max === UNLIMITED ? '∞' : l.max}`}
                 </p>
               </div>
             ))}

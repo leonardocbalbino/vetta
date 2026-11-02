@@ -7,7 +7,20 @@ import { useEffect, type ReactNode } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { useActiveTenant } from '@/lib/session';
 
-const STUDENT_ROUTES = ['/treino', '/historico', '/evolucao', '/anamnese', '/perfil'];
+/** Só do aluno (a equipe é levada ao início). */
+const STUDENT_ROUTES = [
+  '/treino',
+  '/historico',
+  '/evolucao',
+  '/anamnese',
+  '/perfil',
+  '/pagamentos',
+  '/documentos',
+];
+/** Mesma rota, tela conforme o papel. */
+const SHARED_ROUTES = ['/mensagens', '/agenda'];
+const under = (path: string, list: string[]) =>
+  list.some((r) => path === r || path.startsWith(`${r}/`));
 
 /** Portão: exige login, escolhe o vínculo e manda cada perfil para a área certa. */
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -29,8 +42,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const active = me.data?.memberships.find((m) => m.tenantId === tenantId);
   useEffect(() => {
     if (!active) return;
-    const studentArea = STUDENT_ROUTES.some((r) => path === r || path.startsWith(`${r}/`));
-    if (active.role === 'ALUNO' && !studentArea) router.replace('/treino');
+    const studentArea = under(path, STUDENT_ROUTES);
+    if (active.role === 'ALUNO' && !studentArea && !under(path, SHARED_ROUTES))
+      router.replace('/treino');
     if (active.role !== 'ALUNO' && studentArea) router.replace('/inicio');
   }, [active, path, router]);
 

@@ -512,7 +512,9 @@ export class FinanceService {
     const [subs, invoices, link] = await Promise.all([
       db.studentSubscription.findMany({
         where: { studentLinkId: linkId, deletedAt: null, status: { not: 'CANCELED' } },
-        include: { consultingPlan: { select: { name: true, cycle: true, benefits: true } } },
+        include: {
+          consultingPlan: { select: { name: true, cycle: true, benefits: true, priceCents: true } },
+        },
         orderBy: { createdAt: 'desc' },
       }),
       db.invoice.findMany({
@@ -528,7 +530,8 @@ export class FinanceService {
         id: s.id,
         status: s.status,
         plan: s.consultingPlan,
-        priceCents: s.priceCents,
+        // Assinaturas antigas (antes da Fase 2) não congelaram o valor: usa o do plano.
+        priceCents: s.priceCents || s.consultingPlan.priceCents,
         paymentMode: s.paymentMode,
         endsAt: s.endsAt,
         canceledAt: s.canceledAt,

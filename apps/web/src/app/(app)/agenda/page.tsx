@@ -417,7 +417,7 @@ function Calendar() {
         <Button variant="secondary" size="icon" aria-label="Próximo" onClick={() => move(1)}>
           <ChevronRight />
         </Button>
-        <p className="flex-1 font-display text-xl capitalize">{title}</p>
+        <p className="flex-1 font-display text-xl first-letter:uppercase">{title}</p>
         <Select value={view} onValueChange={(v) => setView(v as View)}>
           <SelectTrigger className="w-32" aria-label="Visualização">
             <SelectValue />
@@ -516,6 +516,7 @@ const hhmm = (m: number) =>
 const toMin = (s: string) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3, 5));
 
 function Availability() {
+  const blockRange = useStableRange(0, 365 * DAY);
   const rules = useApi<Rule[]>('/v1/schedule/availability');
   const [draft, setDraft] = useState<Rule[] | null>(null);
   const save = useApiMutation<object>('PUT', '/v1/schedule/availability', {
@@ -531,7 +532,7 @@ function Availability() {
     success: 'Política salva.',
   });
   const blocks = useApi<{ id: string; startsAt: string; endsAt: string; reason: string | null }[]>(
-    `/v1/schedule/blocks?from=${new Date().toISOString()}&to=${new Date(Date.now() + 365 * DAY).toISOString()}`,
+    `/v1/schedule/blocks?from=${blockRange.from}&to=${blockRange.to}`,
   );
   const addBlock = useApiMutation<object>('POST', '/v1/schedule/blocks', {
     invalidate: ['/v1/schedule'],
@@ -790,14 +791,24 @@ interface Slots {
   }[];
 }
 
+/** Intervalo fixo por montagem: datas na chave da consulta não podem mudar a cada render. */
+function useStableRange(fromOffsetMs: number, toOffsetMs: number) {
+  const [r] = useState(() => {
+    const now = Math.floor(Date.now() / 60_000) * 60_000;
+    return {
+      from: new Date(now + fromOffsetMs).toISOString(),
+      to: new Date(now + toOffsetMs).toISOString(),
+    };
+  });
+  return r;
+}
+
 function StudentSchedule() {
-  const from = new Date();
-  const to = new Date(Date.now() + 14 * DAY);
-  const slots = useApi<Slots>(
-    `/v1/schedule/slots?from=${from.toISOString()}&to=${to.toISOString()}`,
-  );
+  const range = useStableRange(0, 14 * DAY);
+  const mineRange = useStableRange(-DAY, 60 * DAY);
+  const slots = useApi<Slots>(`/v1/schedule/slots?from=${range.from}&to=${range.to}`);
   const mine = useApi<Appointment[]>(
-    `/v1/schedule/appointments?from=${new Date(Date.now() - DAY).toISOString()}&to=${new Date(Date.now() + 60 * DAY).toISOString()}`,
+    `/v1/schedule/appointments?from=${mineRange.from}&to=${mineRange.to}`,
   );
   const book = useApiMutation<object>('POST', '/v1/schedule/book', {
     invalidate: ['/v1/schedule'],
@@ -949,6 +960,7 @@ export default function SchedulePage() {
       <h1 className="font-display text-3xl">Agenda</h1>
       <LockedFeature
         locked={feature.locked}
+        loading={feature.loading}
         title="Agenda"
         requiredPlan="PRO"
         description="Aulas presenciais e online, turmas e recorrência."
