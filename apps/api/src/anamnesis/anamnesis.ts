@@ -23,7 +23,7 @@ import {
   type AnamnesisQuestion,
 } from '@vetta/contracts';
 import type { Prisma } from '@vetta/db';
-import type { EventPublisher } from '@vetta/server';
+import { localDate, type EventPublisher } from '@vetta/server';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { Can, RequireFeature, Roles } from '../access/decorators';
@@ -129,7 +129,10 @@ export class AnamnesisService {
     if (!tpl) throw notFound('Modelo não encontrado.');
     if (tpl.kind === 'CUSTOM')
       await this.entitlements.assertFeature(t.tenantId, 'assessment.anamnesis_custom');
-    const first = dto.firstDueOn ?? new Date().toISOString().slice(0, 10);
+    const tz = (
+      await db.tenant.findFirstOrThrow({ where: { id: t.tenantId }, select: { timezone: true } })
+    ).timezone;
+    const first = dto.firstDueOn ?? localDate(new Date(), tz);
     for (const studentLinkId of dto.studentLinkIds) {
       await assertStudentInScope(this.prisma, t, studentLinkId);
       await db.anamnesisAssignment.upsert({

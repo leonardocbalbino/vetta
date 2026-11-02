@@ -238,18 +238,25 @@ export async function switchPeriodizationPhases(deps: ProJobDeps, now = new Date
 
 /** Reaplicação periódica de anamnese. */
 export async function reapplyAnamnesis(deps: ProJobDeps, now = new Date()) {
-  const today = toDateOnly(now);
+  // Data civil mais adiantada (UTC+14) para não perder ninguém; cada tenant usa o próprio fuso.
+  const horizon = localDate(now, 'Pacific/Kiritimati');
   const due = await deps.db.anamnesisAssignment.findMany({
-    where: { isActive: true, deletedAt: null, nextDueOn: { lte: new Date(`${today}T00:00:00Z`) } },
+    where: {
+      isActive: true,
+      deletedAt: null,
+      nextDueOn: { lte: new Date(`${horizon}T00:00:00Z`) },
+    },
     include: {
       template: true,
-      tenant: { select: { name: true } },
+      tenant: { select: { name: true, timezone: true } },
       studentLink: { select: { status: true } },
     },
     take: 500,
   });
   let sent = 0;
   for (const a of due) {
+    const today = localDate(now, a.tenant.timezone);
+    if (toDateOnly(a.nextDueOn) > today) continue;
     const next = new Date(`${addDaysToDate(today, a.repeatEveryDays)}T00:00:00Z`);
     await deps.db.anamnesisAssignment.update({
       where: { id: a.id },
