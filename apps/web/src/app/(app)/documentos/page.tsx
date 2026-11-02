@@ -14,7 +14,7 @@ export default function MyDocuments() {
   const linkId = me.data?.memberships.find((m) => m.tenantId === tenantId)?.studentLinkId;
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-display text-3xl">Documentos</h1>
+      <h1 className="font-display text-2xl">Documentos</h1>
       <LockedFeature
         locked={feature.locked}
         loading={feature.loading}

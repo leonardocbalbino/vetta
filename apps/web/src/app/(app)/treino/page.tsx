@@ -65,7 +65,7 @@ export default function TodayPage() {
   }
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-display text-3xl">Treino do dia</h1>
+      <h1 className="font-display text-2xl">Treino do dia</h1>
       <UnreadMessagesAlert />
       {today.data.programs.map((p) => (
         <section key={p.id} className="flex flex-col gap-2">

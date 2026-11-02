@@ -191,7 +191,7 @@ export default function LibraryPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-display text-3xl">Biblioteca</h1>
+        <h1 className="font-display text-2xl">Biblioteca</h1>
         <LockedFeature
           locked={custom.locked}
           title="Exercícios próprios"

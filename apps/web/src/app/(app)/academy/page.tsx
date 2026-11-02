@@ -34,7 +34,7 @@ export default function AcademyPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-display text-3xl">Academy</h1>
+        <h1 className="font-display text-2xl">Academy</h1>
         <p className="text-muted-foreground">Conteúdo para crescer como personal.</p>
       </div>
       <div role="tablist" aria-label="Tipo de conteúdo" className="flex flex-wrap gap-2">

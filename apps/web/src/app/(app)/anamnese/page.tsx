@@ -26,7 +26,7 @@ export default function AnamnesisList() {
     );
   return (
     <div className="flex flex-col gap-3">
-      <h1 className="font-display text-3xl">Anamnese</h1>
+      <h1 className="font-display text-2xl">Anamnese</h1>
       {r.data.map((x) => (
         <Link
           key={x.id}

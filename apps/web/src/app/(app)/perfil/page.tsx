@@ -38,7 +38,7 @@ export default function ProfilePage() {
   if (!me.data) return <Skeleton className="h-64" />;
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-display text-3xl">Perfil</h1>
+      <h1 className="font-display text-2xl">Perfil</h1>
       <Button variant="secondary" asChild className="self-start">
         <Link href="/perfil/autorizacoes">Autorizações de fotos e depoimento</Link>
       </Button>

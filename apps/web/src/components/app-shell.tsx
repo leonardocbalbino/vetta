@@ -247,8 +247,10 @@ function NavLink({
       onClick={onNavigate}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'flex min-h-11 items-center gap-3 rounded-control px-3 text-sm font-medium',
-        active ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted',
+        'relative flex min-h-10 items-center gap-3 rounded-control px-3 text-sm',
+        active
+          ? 'bg-muted font-semibold text-foreground before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-full before:bg-action'
+          : 'font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
       )}
     >
       <item.icon className="size-5" aria-hidden />
@@ -349,7 +351,7 @@ function Nav({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void 
               className={cn(
                 'flex size-11 items-center justify-center rounded-control',
                 isActive(path, i.href)
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-muted text-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >
@@ -385,14 +387,14 @@ export function AppShell({ me, children }: { me: MeResponse; children: ReactNode
   const wl = brand.data?.whiteLabel ? brand.data : null;
 
   const sidebar = (
-    <div className="flex h-full flex-col gap-6">
+    <div className="flex h-full flex-col gap-5">
       <Link href={staff ? '/inicio' : '/treino'} className="px-2">
         {wl ? (
           wl.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={wl.logoUrl} alt={wl.displayName} className="h-8 max-w-48 object-contain" />
+            <img src={wl.logoUrl} alt={wl.displayName} className="h-7 max-w-44 object-contain" />
           ) : (
-            <span className="font-display text-xl">{wl.displayName}</span>
+            <span className="block truncate font-display text-lg">{wl.displayName}</span>
           )
         ) : (
           <Logo />
@@ -448,7 +450,7 @@ export function AppShell({ me, children }: { me: MeResponse; children: ReactNode
               </SelectContent>
             </Select>
           ) : (
-            <span className="truncate text-sm font-semibold">{active?.tenantName}</span>
+            <span className="truncate text-sm font-semibold lg:hidden">{active?.tenantName}</span>
           )}
           <div className="ml-auto flex items-center gap-2">
             {staff && ent.data ? (

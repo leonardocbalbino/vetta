@@ -351,7 +351,7 @@ export default function SubscriptionPage() {
   );
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl">Minha assinatura</h1>
+      <h1 className="font-display text-2xl">Minha assinatura</h1>
       {s.status === 'PAST_DUE' ? (
         <div role="alert" className="rounded-card border border-danger bg-danger/10 p-4">
           Sua fatura está em atraso. Pague até {fmtDate(s.graceEndsAt)} para não voltar ao Free.

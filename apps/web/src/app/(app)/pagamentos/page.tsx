@@ -134,7 +134,7 @@ export default function PaymentsPage() {
   const open = mine.data.invoices.filter((i) => i.status === 'PENDING' || i.status === 'OVERDUE');
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl">Pagamentos</h1>
+      <h1 className="font-display text-2xl">Pagamentos</h1>
       {mine.data.blocked ? (
         <div role="alert" className="rounded-card border border-danger bg-danger/10 p-4">
           <p className="font-semibold">Seu acesso aos treinos está pausado.</p>

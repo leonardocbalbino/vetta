@@ -521,7 +521,7 @@ export default function SalesPageEditor() {
   const feature = useFeature(tenantId, 'brand.sales_page');
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl">Minha página</h1>
+      <h1 className="font-display text-2xl">Minha página</h1>
       <LockedFeature
         locked={feature.locked}
         loading={feature.loading}

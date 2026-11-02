@@ -165,7 +165,7 @@ export default function BrandPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-display text-3xl">Minha marca</h1>
+        <h1 className="font-display text-2xl">Minha marca</h1>
         <p className="text-muted-foreground">
           O app do aluno, os e-mails, os PDFs e a página de vendas usam a sua marca, com um rodapé
           discreto “feito com Vetta”.

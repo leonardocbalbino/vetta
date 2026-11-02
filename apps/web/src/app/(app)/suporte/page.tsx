@@ -11,7 +11,7 @@ export default function SupportPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-display text-3xl">Suporte</h1>
+        <h1 className="font-display text-2xl">Suporte</h1>
         <p className="text-muted-foreground">
           Antes de abrir um chamado, veja a{' '}
           <a className="text-link underline" href="https://vettafit.com.br/ajuda">

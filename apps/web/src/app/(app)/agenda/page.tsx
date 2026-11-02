@@ -957,7 +957,7 @@ export default function SchedulePage() {
   const role = useActiveRole();
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-display text-3xl">Agenda</h1>
+      <h1 className="font-display text-2xl">Agenda</h1>
       <LockedFeature
         locked={feature.locked}
         loading={feature.loading}

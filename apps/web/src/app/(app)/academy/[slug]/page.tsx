@@ -48,7 +48,7 @@ export default function AcademyContentPage() {
         <Link href="/academy" className="text-sm text-link underline">
           ← Academy
         </Link>
-        <h1 className="mt-2 font-display text-3xl">{c.data.title}</h1>
+        <h1 className="mt-2 font-display text-2xl">{c.data.title}</h1>
         {c.data.summary ? <p className="text-muted-foreground">{c.data.summary}</p> : null}
       </div>
       {c.data.fileUrl ? (

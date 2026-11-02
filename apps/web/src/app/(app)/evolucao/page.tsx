@@ -19,7 +19,7 @@ export default function EvolutionPage() {
   const maxLoads = (records.data ?? []).filter((r) => r.type === 'MAX_LOAD').slice(0, 6);
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-display text-3xl">Sua evolução</h1>
+      <h1 className="font-display text-2xl">Sua evolução</h1>
       <Card>
         <CardContent className="flex flex-wrap items-end gap-2 pt-6">
           <Field label="Peso de hoje (kg)">

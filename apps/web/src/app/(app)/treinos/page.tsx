@@ -82,7 +82,7 @@ export default function WorkoutsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-display text-3xl">Treinos</h1>
+        <h1 className="font-display text-2xl">Treinos</h1>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" asChild>
             <Link href="/treinos/ia">

@@ -106,7 +106,7 @@ export default function FeedbacksPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-display text-3xl">Feedbacks</h1>
+        <h1 className="font-display text-2xl">Feedbacks</h1>
         <label className="flex items-center gap-2 text-sm">
           <Switch checked={unread} onCheckedChange={setUnread} aria-label="Só não lidos" /> Só não
           lidos
