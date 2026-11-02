@@ -13,21 +13,21 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
   - Caminho: BFF no Next com cookie `Secure; SameSite=Lax`.
 - [ ] **Credenciais de produção, cada uma com o que destrava**
 
-| Credencial                                                            | Destrava |
-| --------------------------------------------------------------------- | -------- |
-| Asaas (chave da conta-mãe, `walletId` da Vetta, token de webhook)     | Fase 2   |
-| NFE.io (empresa e chave)                                              | Fase 2   |
-| Resend com domínio verificado                                         | Fase 0   |
-| Expo Push token                                                       | Fase 0   |
-| Sentry DSN                                                            | Fase 0   |
-| Cloudflare R2 e Stream (ou Mux)                                       | Fase 0   |
-| Google e Apple OAuth                                                  | Fase 1   |
-| Anthropic (`ANTHROPIC_API_KEY`)                                       | Fase 3   |
-| Meta WhatsApp Business ou BSP (token, número, templates aprovados)    | Fase 3   |
-| Twilio (SMS de segurança)                                             | Fase 3   |
-| Cloudflare for SaaS (zona e token de custom hostnames)                | Fase 3   |
-| Google Cloud: OAuth do Calendar (cliente web e tela de consentimento) | Fase 3   |
-| Apple: entitlement de HealthKit; Google: declaração do Health Connect | Fase 3   |
+| Credencial                                                              | Destrava |
+| ----------------------------------------------------------------------- | -------- |
+| Asaas (chave da conta-mãe, `walletId` da Vetta, token de webhook)       | Fase 2   |
+| NFE.io (empresa e chave)                                                | Fase 2   |
+| Resend com domínio verificado                                           | Fase 0   |
+| Expo Push token                                                         | Fase 0   |
+| Sentry DSN                                                              | Fase 0   |
+| Cloudflare R2 e Stream (ou Mux)                                         | Fase 0   |
+| Google e Apple OAuth                                                    | Fase 1   |
+| Anthropic (`ANTHROPIC_API_KEY`)                                         | Fase 3   |
+| Meta WhatsApp Business ou BSP (token, número, templates aprovados)      | Fase 3   |
+| textbee (SMS de segurança; Twilio como reserva), no admin > Integrações | Fase 3   |
+| Cloudflare for SaaS (zona e token de custom hostnames)                  | Fase 3   |
+| Google Cloud: OAuth do Calendar (cliente web e tela de consentimento)   | Fase 3   |
+| Apple: entitlement de HealthKit; Google: declaração do Health Connect   | Fase 3   |
 
 - [ ] **Regra das lojas para link externo** (Fase 2, ADR-010)
   - Confirmar a elegibilidade antes de ligar as flags `EXPO_PUBLIC_EXTERNAL_CHECKOUT_*`.
@@ -55,7 +55,15 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
   - Não há pacote Expo com a fonte; usamos Archivo.
   - Caminho: embutir o `.ttf` licenciado.
 - [ ] **Pagar.me** como segunda implementação de `PaymentProvider`.
-- [x] **SMS de segurança** (provider real) (Fase 0): Twilio implementado na Fase 3; falta a credencial.
+- [x] **SMS de segurança** (provider real) (Fase 0): textbee (principal) e Twilio (reserva), escolhidos e configurados no admin > Integrações; falta a credencial.
+  - Para ligar o textbee:
+    1. Crie a conta em app.textbee.dev.
+    2. Instale o app no Android (textbee.dev/download) e entre com a conta.
+    3. No painel, use "Register device" e leia o QR code com o app.
+    4. Gere a chave em "API Keys".
+    5. No admin, em Integrações > textbee, cole a chave (e o ID do aparelho, opcional), salve e use "Enviar teste".
+  - O plano grátis do textbee permite 50 SMS por dia e 300 por mês. O celular precisa ficar ligado, com chip e bateria.
+- [ ] **Vídeos da biblioteca global**: links do YouTube escolhidos automaticamente em `packages/db/src/seed/exercise-videos.ts`. Revise antes da produção e troque o que não agradar (o seed só preenche exercício sem mídia).
 - [x] **Academy** (M14): telas do personal e do admin (Fase 3).
 
 ## Riscos acompanhados
