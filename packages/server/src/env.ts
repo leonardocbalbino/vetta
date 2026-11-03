@@ -91,7 +91,7 @@ export const SharedEnvSchema = z.object({
   GROQ_API_KEY: z.string().optional(),
   GROQ_BASE_URL: z.url().default('https://api.groq.com/openai/v1'),
   ANTHROPIC_API_KEY: z.string().optional(),
-  /** Padrão: openai/gpt-oss-120b na Groq, claude-opus-5-5 na Anthropic. */
+  /** Padrão: openai/gpt-oss-20b na Groq, claude-opus-5-5 na Anthropic. */
   AI_MODEL: z.string().optional(),
   AI_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).default('medium'),
   AI_REFUSAL_FALLBACK: envBool(true),

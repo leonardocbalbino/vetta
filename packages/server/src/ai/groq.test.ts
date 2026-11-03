@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { createAiProvider } from './factory';
-import { createGroqClient, GroqAiProvider, type ChatClient, type ChatCompletion } from './groq';
+import {
+  ChatHttpError,
+  createGroqClient,
+  GroqAiProvider,
+  type ChatClient,
+  type ChatCompletion,
+} from './groq';
 import { type AiError, type AiTask } from './provider';
 import type { SharedEnv } from '../env';
 
@@ -103,6 +109,24 @@ describe('GroqAiProvider', () => {
     expect((err as AiError).code).toBe('INVALID_OUTPUT');
   });
 
+  it('JSON inválido recusado pela Groq (tool_use_failed) vira rodada de correção', async () => {
+    let calls = 0;
+    const client: ChatClient = {
+      create: () =>
+        ++calls === 1
+          ? Promise.reject(
+              new ChatHttpError(
+                400,
+                'Failed to parse tool call arguments as JSON',
+                'tool_use_failed',
+              ),
+            )
+          : Promise.resolve(call('submit', { total: 5 })),
+    };
+    expect((await provider(client).run(task())).output.total).toBe(5);
+    expect(calls).toBe(2);
+  });
+
   it('sem ferramenta de saída: lembra uma vez e depois falha', async () => {
     const text: ChatCompletion = {
       choices: [{ finish_reason: 'stop', message: { content: 'oi' } }],
@@ -150,7 +174,7 @@ describe('escolha do provedor de IA', () => {
     ({ AI_EFFORT: 'medium', AI_REFUSAL_FALLBACK: true, ...e }) as SharedEnv;
   it('Groq quando há chave; Anthropic se pedido; sem chave, não configurado', () => {
     expect(createAiProvider(env({ GROQ_API_KEY: 'g' })).name).toBe('groq');
-    expect(createAiProvider(env({ GROQ_API_KEY: 'g' })).model).toBe('openai/gpt-oss-120b');
+    expect(createAiProvider(env({ GROQ_API_KEY: 'g' })).model).toBe('openai/gpt-oss-20b');
     expect(
       createAiProvider(env({ GROQ_API_KEY: 'g', ANTHROPIC_API_KEY: 'a', AI_PROVIDER: 'anthropic' }))
         .name,

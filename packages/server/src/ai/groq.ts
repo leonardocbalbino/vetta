@@ -47,6 +47,8 @@ export class ChatHttpError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /** Código da Groq (ex.: tool_use_failed quando o modelo gera JSON inválido). */
+    readonly code?: string,
   ) {
     super(message);
   }
@@ -83,12 +85,13 @@ export function createGroqClient(
           signal: AbortSignal.timeout(120_000),
         });
         const json = (await res.json().catch(() => ({}))) as ChatCompletion & {
-          error?: { message?: string };
+          error?: { message?: string; code?: string };
         };
         if (res.ok) return json;
         const message = json.error?.message ?? 'falha na Groq';
         const wait = res.status === 429 ? retryAfterMs(res, message) : 0;
-        if (!wait || waited + wait > maxWaitMs) throw new ChatHttpError(res.status, message);
+        if (!wait || waited + wait > maxWaitMs)
+          throw new ChatHttpError(res.status, message, json.error?.code);
         waited += wait;
         await sleep(wait);
       }
@@ -188,6 +191,16 @@ export class GroqAiProvider implements AiProvider {
             : {}),
         });
       } catch (e) {
+        // A Groq valida a chamada de ferramenta e recusa JSON malformado: vira uma rodada de correção.
+        if (e instanceof ChatHttpError && e.code === 'tool_use_failed' && repairs < maxRepairs) {
+          repairs++;
+          messages.push({
+            role: 'user',
+            content:
+              'Sua última chamada de ferramenta veio com JSON inválido. Envie de novo, com JSON válido e completo.',
+          });
+          continue;
+        }
         if (e instanceof ChatHttpError && e.status === 429)
           throw fail('UPSTREAM', 'Limite de uso da IA atingido. Tente de novo em instantes.');
         const status = e instanceof ChatHttpError ? ` (HTTP ${e.status})` : '';

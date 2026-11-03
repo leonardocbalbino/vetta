@@ -49,3 +49,8 @@ O Pro Plus inclui um assistente que monta programas de treino, sugere ajuste de 
 - Custo medido: um programa de 3 dias leva cerca de 11 s e custa uns US$ 0,003, contra cerca de US$ 0,10 no Opus.
 - O plano grátis da Groq limita a 8 mil tokens por minuto. O cliente espera o tempo indicado no 429 (até 90 s somados). Para produção, use o plano Dev.
 - A Anthropic continua disponível (`AI_PROVIDER=anthropic`).
+- Modelo padrão: `openai/gpt-oss-20b`, o mais barato da Groq (US$ 0,075 de entrada e US$ 0,30 de saída por milhão de tokens).
+  - Três de três programas de teste saíram válidos, cada um a uns US$ 0,002.
+  - Para mais qualidade, use `AI_MODEL=openai/gpt-oss-120b` (US$ 0,15 / 0,60).
+  - O Qwen 3.8 27B da Groq ficou de fora: custa mais (US$ 0,80 / 4,00) e ainda está em preview.
+- Quando o modelo gera JSON inválido na chamada de ferramenta, a Groq responde 400 (`tool_use_failed`). O provider trata isso como uma rodada de correção.

@@ -17,7 +17,7 @@ export function createAiProvider(env: SharedEnv, client?: MessagesClient): AiPro
   const name = client ? 'anthropic' : aiProviderName(env);
   if (name === 'groq' && env.GROQ_API_KEY) {
     return new GroqAiProvider(createGroqClient(env.GROQ_API_KEY, env.GROQ_BASE_URL), {
-      model: env.AI_MODEL ?? 'openai/gpt-oss-120b',
+      model: env.AI_MODEL ?? 'openai/gpt-oss-20b',
       effort: env.AI_EFFORT,
       price,
     });
