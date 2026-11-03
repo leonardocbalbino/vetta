@@ -36,10 +36,15 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
 
 ## Infra e entrega
 
-- [ ] **PRs e merges em ordem** (Fases 0–3): cada branch nasce da anterior.
-  - Abrir e mergear `feat/fase-0-fundacao` → `feat/fase-1-mvp` → `feat/fase-2-pro` → `feat/fase-3-pro-plus`.
-  - O `gh` não está instalado nesta máquina.
-- [ ] **CI do GitHub Actions:** ainda não rodou no GitHub (Fases 0–2).
+- [x] **PRs e merges das Fases 0–3:** `feat/fase-3-pro-plus` entrou na `main` (PRs #1 e #2).
+  - O que foi feito depois (SMS no admin, IA na Groq, vídeos da biblioteca, detalhes e edição de exercício, Instagram) ainda precisa de push e de um novo PR.
+- [x] **CI do GitHub Actions:** roda em todo PR.
+- [ ] **Deploy automático na VPS** (`.github/workflows/deploy.yml`):
+  - instalar `deploy/remote-deploy.sh` como `/usr/local/bin/vetta-deploy`;
+  - criar a chave de deploy com comando forçado;
+  - cadastrar os secrets `VPS_HOST`, `VPS_SSH_KEY` e `VPS_KNOWN_HOSTS`.
+  - Até lá o deploy é manual.
+- [ ] **Senhas da VPS:** trocar a senha de root (foi compartilhada em conversa) e a chave da Groq (idem).
 - [ ] **EAS** (Fase 1):
   - definir `EAS_PROJECT_ID`;
   - primeiro build `development`, `preview` e `production`;
@@ -87,10 +92,8 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
 
 ## Fase 3 – itens abertos
 
-- [ ] **Validar a IA com a chave real.** Os testes usam respostas gravadas. Com a chave:
-  - rodar algumas gerações reais e conferir qualidade, tempo e custo;
-  - regravar as respostas se o formato mudar;
-  - ajustar `AI_EFFORT` se o custo pedir.
+- [x] **Validar a IA com a chave real.** A Groq (`gpt-oss-20b`) está validada na homologação: um programa sai em uns 40 s e custa uns US$ 0,002.
+  - Pendente: o plano Dev da Groq para produção, porque o grátis limita a 8 mil tokens por minuto.
 - [ ] **Templates do WhatsApp aprovados na Meta** (em espera: decidido usar a Meta direto, sem BSP; retomar depois), com os nomes de `WHATSAPP_TEMPLATES`:
   - `vetta_cobranca_nova`, `vetta_cobranca_lembrete`, `vetta_cobranca_atraso`;
   - `vetta_lembrete_treino`, `vetta_lembrete_aula`.
