@@ -22,7 +22,7 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
 | Sentry DSN                                                              | Fase 0   |
 | Cloudflare R2 e Stream (ou Mux)                                         | Fase 0   |
 | Google e Apple OAuth                                                    | Fase 1   |
-| Anthropic (`ANTHROPIC_API_KEY`)                                         | Fase 3   |
+| Groq (`GROQ_API_KEY`) — feito na homologação; plano Dev para produção   | Fase 3   |
 | Meta WhatsApp Business ou BSP (token, número, templates aprovados)      | Fase 3   |
 | textbee (SMS de segurança; Twilio como reserva), no admin > Integrações | Fase 3   |
 | Cloudflare for SaaS (zona e token de custom hostnames)                  | Fase 3   |

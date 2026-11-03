@@ -10,6 +10,7 @@ import type {
 import { costMicroUsd, priceFor, type ModelPrice } from './pricing';
 import {
   AiError,
+  checkAiOutput,
   type AiProvider,
   type AiResult,
   type AiTask,
@@ -149,7 +150,7 @@ export class AnthropicAiProvider implements AiProvider {
       for (const call of calls) {
         usage.toolCalls++;
         if (call.name === task.output.name) {
-          const errors = await this.checkOutput(task, call.input);
+          const errors = await checkAiOutput(task, call.input);
           if (errors.ok) {
             final = { value: errors.value };
             results.push({ type: 'tool_result', tool_use_id: call.id, content: 'Recebido.' });
@@ -192,25 +193,6 @@ export class AnthropicAiProvider implements AiProvider {
       messages.push({ role: 'user', content: results });
     }
     throw fail('TOO_MANY_TURNS', 'A IA excedeu o limite de etapas.');
-  }
-
-  private async checkOutput<T>(
-    task: AiTask<T>,
-    raw: unknown,
-  ): Promise<{ ok: true; value: T } | { ok: false; messages: string[] }> {
-    const parsed = task.output.schema.safeParse(raw);
-    if (!parsed.success) {
-      return {
-        ok: false,
-        messages: parsed.error.issues
-          .slice(0, 20)
-          .map((i) => `${i.path.join('.') || '(raiz)'}: ${i.message}`),
-      };
-    }
-    const errors = (await task.output.validate?.(parsed.data)) ?? [];
-    return errors.length
-      ? { ok: false, messages: errors.slice(0, 20) }
-      : { ok: true, value: parsed.data };
   }
 
   private params(

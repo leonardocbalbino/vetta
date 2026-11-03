@@ -38,6 +38,7 @@ export * from './documents/workout-pdf';
 export * from './ai/provider';
 export * from './ai/pricing';
 export * from './ai/anthropic';
+export * from './ai/groq';
 export * from './ai/factory';
 export * from './ai/minimize';
 export * from './ai/tasks';

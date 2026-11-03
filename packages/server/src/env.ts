@@ -83,9 +83,16 @@ export const SharedEnvSchema = z.object({
   NFEIO_COMPANY_ID: z.string().optional(),
   NFEIO_CITY_SERVICE_CODE: z.string().default('0107'),
 
-  /** IA de treino (Fase 3). Sem chave, as rotas de IA respondem 503. */
+  /**
+   * IA de treino (Fase 3). Sem chave, as rotas de IA respondem 503. AI_PROVIDER escolhe;
+   * sem ele, usa a Groq se houver GROQ_API_KEY, senão a Anthropic.
+   */
+  AI_PROVIDER: z.enum(['groq', 'anthropic']).optional(),
+  GROQ_API_KEY: z.string().optional(),
+  GROQ_BASE_URL: z.url().default('https://api.groq.com/openai/v1'),
   ANTHROPIC_API_KEY: z.string().optional(),
-  AI_MODEL: z.string().default('claude-opus-5-5'),
+  /** Padrão: openai/gpt-oss-120b na Groq, claude-opus-5-5 na Anthropic. */
+  AI_MODEL: z.string().optional(),
   AI_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).default('medium'),
   AI_REFUSAL_FALLBACK: envBool(true),
   AI_PRICE_INPUT_PER_MTOK: z.coerce.number().positive().optional(),
