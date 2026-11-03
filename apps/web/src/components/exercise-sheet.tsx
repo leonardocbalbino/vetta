@@ -454,9 +454,9 @@ export function ExerciseSheet({
   const title = isNew ? 'Novo exercício' : (e?.name ?? 'Exercício');
   return (
     <Sheet open={!!id} onOpenChange={(o) => (o ? null : onOpenChange(null))}>
-      <SheetContent className="flex w-full flex-col gap-4 overflow-y-auto sm:max-w-xl">
+      <SheetContent className="flex w-full flex-col gap-4 overflow-y-auto overflow-x-hidden sm:max-w-xl">
         <div className="pr-10">
-          <SheetTitle className="font-display text-xl">
+          <SheetTitle className="font-display text-xl break-words">
             {editing ? `Editar: ${title}` : title}
           </SheetTitle>
           <SheetDescription>
