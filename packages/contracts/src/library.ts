@@ -36,6 +36,12 @@ export type ExerciseCategory = (typeof ExerciseCategory)[number];
 export const ExerciseLevel = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
 export type ExerciseLevel = (typeof ExerciseLevel)[number];
 
+export const LEVEL_LABEL: Record<ExerciseLevel, string> = {
+  BEGINNER: 'Iniciante',
+  INTERMEDIATE: 'Intermediário',
+  ADVANCED: 'Avançado',
+};
+
 export const CATEGORY_LABEL: Record<ExerciseCategory, string> = {
   STRENGTH: 'Força',
   CARDIO: 'Cardio',
