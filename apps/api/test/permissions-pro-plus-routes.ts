@@ -231,6 +231,8 @@ export function proPlusRoutes(ids: () => { studentLinkId: string }): ProRoute[] 
       tenant: false,
       allowed: USERS,
     },
+    // badge de mensagens não lidas
+    { method: 'get', path: '/v1/chat/unread', tenant: true, allowed: USERS },
     // 3.8 suporte
     { method: 'get', path: '/v1/support/tickets', tenant: true, allowed: STAFF },
     {

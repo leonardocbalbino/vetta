@@ -1,0 +1,146 @@
+# Homologação na VPS. Tudo isolado na rede "vetta"; só o nginx do host fala com os
+# serviços, pelas portas presas em 127.0.0.1 (8610–8614). Uso:
+#   docker compose -f deploy/docker-compose.homolog.yml --env-file deploy/.env.homolog up -d --build
+name: vetta-homolog
+
+x-app: &app
+  image: vetta-app:homolog
+  restart: unless-stopped
+  env_file: .env.homolog
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vetta
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: vetta
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U vetta -d vetta']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Storage S3 (no lugar do R2 enquanto não há credencial). Público via cdn.vettafit.com.br.
+  s3:
+    image: chrislusf/seaweedfs:latest
+    restart: unless-stopped
+    command: ['server', '-dir=/data', '-s3', '-s3.port=9000', '-s3.config=/etc/seaweedfs/s3.json']
+    ports:
+      - '127.0.0.1:8614:9000'
+    volumes:
+      - s3-data:/data
+      - ./s3.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1:9000/healthz || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  s3-setup:
+    image: amazon/aws-cli:latest
+    depends_on:
+      s3:
+        condition: service_healthy
+    env_file: .env.homolog
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: auto
+    volumes:
+      - ./s3-cors.json:/cors.json:ro
+    entrypoint: >
+      /bin/sh -c "
+      aws --endpoint-url http://s3:9000 s3api head-bucket --bucket vetta-media 2>/dev/null ||
+      aws --endpoint-url http://s3:9000 s3api create-bucket --bucket vetta-media;
+      aws --endpoint-url http://s3:9000 s3api put-bucket-cors --bucket vetta-media --cors-configuration file:///cors.json || true"
+    restart: 'no'
+
+  # E-mails de homologação ficam presos aqui (nada sai para fora). Acesse por túnel SSH:
+  #   ssh -L 8025:127.0.0.1:8615 root@VPS  →  http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:8615:8025'
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+
+  # Migrations, catálogo e seed de homologação (roda uma vez a cada deploy).
+  migrate:
+    <<: *app
+    restart: 'no'
+    command: >
+      sh -c "cd packages/db && pnpm exec prisma migrate deploy &&
+      pnpm exec tsx src/seed/catalog.ts &&
+      if [ \"$$RUN_DEV_SEED\" = 'true' ]; then ALLOW_DEV_SEED=true pnpm exec tsx src/seed/index.ts; fi"
+
+  api:
+    <<: *app
+    command: ['node', 'apps/api/dist/main.js']
+    working_dir: /repo
+    ports:
+      - '127.0.0.1:8610:4000'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *app
+    command: ['node', 'apps/worker/dist/main.js']
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      clamav:
+        condition: service_started
+
+  web:
+    <<: *app
+    working_dir: /repo/apps/web
+    command: ['pnpm', 'exec', 'next', 'start', '--port', '3000']
+    ports:
+      - '127.0.0.1:8611:3000'
+
+  admin:
+    <<: *app
+    working_dir: /repo/apps/admin
+    command: ['pnpm', 'exec', 'next', 'start', '--port', '3001']
+    ports:
+      - '127.0.0.1:8612:3001'
+
+  site:
+    <<: *app
+    working_dir: /repo/apps/site
+    command: ['pnpm', 'exec', 'next', 'start', '--port', '3002']
+    ports:
+      - '127.0.0.1:8613:3002'
+
+volumes:
+  postgres-data:
+  redis-data:
+  s3-data:

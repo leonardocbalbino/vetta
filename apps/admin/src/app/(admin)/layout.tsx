@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Button, Logo, Skeleton, cn } from '@vetta/ui';
+import { Button, Logo, LogoLoader, cn } from '@vetta/ui';
 import {
   BookOpen,
   Gauge,
@@ -45,7 +45,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     if (me.isError) router.replace('/entrar');
   }, [me.isError, router]);
 
-  if (!me.data) return <Skeleton className="m-6 h-64" />;
+  if (!me.data) return <LogoLoader fullscreen showWordmark />;
   return (
     <div className="flex min-h-dvh">
       <aside className="sticky top-0 flex h-dvh w-60 shrink-0 flex-col gap-6 border-r border-border bg-surface p-4">

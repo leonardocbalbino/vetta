@@ -1,7 +1,7 @@
 'use client';
 
 import { useMe } from '@vetta/sdk/react';
-import { Skeleton } from '@vetta/ui';
+import { LogoLoader } from '@vetta/ui';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 import { AppShell } from '@/components/app-shell';
@@ -50,15 +50,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   if (!me.data || !active) {
     return (
-      <div className="mx-auto flex max-w-4xl flex-col gap-4 p-6">
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-40" />
+      <div className="mx-auto flex min-h-dvh max-w-4xl flex-col items-center justify-center gap-4 p-6">
         {me.data && !me.data.memberships.length ? (
-          <p className="text-muted-foreground">
+          <p className="text-center text-muted-foreground">
             Sua conta ainda não tem vínculo com um personal. Abra o convite recebido por e-mail ou
             WhatsApp.
           </p>
-        ) : null}
+        ) : (
+          <LogoLoader showWordmark />
+        )}
       </div>
     );
   }

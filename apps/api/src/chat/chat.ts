@@ -86,6 +86,37 @@ export class ChatService {
       .catch(() => db.conversation.findFirstOrThrow({ where: { studentLinkId } }));
   }
 
+  /** Total de mensagens não lidas do usuário no vínculo (badge do menu e alerta do início). */
+  async unread(t: TenantAccess): Promise<{ total: number; conversations: number }> {
+    const db = this.prisma.tenant(t.tenantId);
+    const staff = isStaff(t);
+    const convs = await db.conversation.findMany({
+      where: {
+        deletedAt: null,
+        ...(staff ? { studentLink: studentScope(t) } : { studentLinkId: t.studentLinkId! }),
+      },
+      select: { id: true, staffLastReadAt: true, studentLastReadAt: true },
+      take: 500,
+    });
+    const counts = await Promise.all(
+      convs.map((c) => {
+        const lastRead = staff ? c.staffLastReadAt : c.studentLastReadAt;
+        return db.message.count({
+          where: {
+            conversationId: c.id,
+            fromStaff: !staff,
+            deletedAt: null,
+            ...(lastRead ? { createdAt: { gt: lastRead } } : {}),
+          },
+        });
+      }),
+    );
+    return {
+      total: counts.reduce((a, b) => a + b, 0),
+      conversations: counts.filter((n) => n > 0).length,
+    };
+  }
+
   async list(t: TenantAccess, q?: string) {
     const db = this.prisma.tenant(t.tenantId);
     if (t.role === 'ALUNO') {
@@ -441,6 +472,13 @@ export class ChatService {
 @Controller('chat')
 export class ChatController {
   constructor(private readonly chat: ChatService) {}
+
+  @Get('unread')
+  @Can('read', 'chat')
+  @RequireFeature('comms.chat')
+  unread(@CurrentTenant() t: TenantAccess) {
+    return this.chat.unread(t);
+  }
 
   @Get('conversations')
   @Can('read', 'chat')

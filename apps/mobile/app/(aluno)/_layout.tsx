@@ -4,6 +4,7 @@ import { router, Tabs } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { client } from '../../src/lib/client';
 import { useSession } from '../../src/lib/session';
+import { tabBadge, useUnreadMessages } from '../../src/components/unread-messages';
 import { Text, type ColorValue } from 'react-native';
 
 const icon = (glyph: string) => {
@@ -20,6 +21,7 @@ const icon = (glyph: string) => {
 export default function AlunoTabs() {
   const t = useTheme();
   const { active } = useSession();
+  const unread = useUnreadMessages();
   const fin = useQuery({
     queryKey: ['my-finance', active?.tenantId],
     queryFn: () => client.request<{ blocked: boolean }>('GET', '/v1/me/finance'),
@@ -61,7 +63,10 @@ export default function AlunoTabs() {
       <Tabs.Screen name="treino" options={{ title: 'Treino', tabBarIcon: icon('🏋️') }} />
       <Tabs.Screen name="evolucao" options={{ title: 'Evolução', tabBarIcon: icon('📈') }} />
       <Tabs.Screen name="agenda" options={{ title: 'Agenda', tabBarIcon: icon('📅') }} />
-      <Tabs.Screen name="chat" options={{ title: 'Chat', tabBarIcon: icon('💬') }} />
+      <Tabs.Screen
+        name="chat"
+        options={{ title: 'Chat', tabBarIcon: icon('💬'), tabBarBadge: tabBadge(unread.total) }}
+      />
       <Tabs.Screen name="perfil" options={{ title: 'Perfil', tabBarIcon: icon('👤') }} />
     </Tabs>
   );

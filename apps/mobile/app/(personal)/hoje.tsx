@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Linking, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { UnreadMessagesAlert } from '../../src/components/unread-messages';
 import { client } from '../../src/lib/client';
 
 interface Dashboard {
@@ -56,6 +57,7 @@ export default function Hoje() {
           <Text variant="display">Hoje</Text>
           {d ? <PlanBadge plan={d.plan.code} /> : null}
         </View>
+        <UnreadMessagesAlert href="/conversas" />
         {!d ? (
           <Skeleton height={200} />
         ) : (

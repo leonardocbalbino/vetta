@@ -127,12 +127,17 @@ export function SelectTrigger({
 }: ComponentProps<typeof SelectPrimitive.Trigger>) {
   return (
     <SelectPrimitive.Trigger
-      className={cn(control, 'flex h-11 items-center justify-between gap-2', className)}
+      className={cn(
+        control,
+        // Texto à esquerda numa linha só (o botão nativo centraliza e quebra).
+        'flex h-11 min-w-0 items-center justify-between gap-2 whitespace-nowrap text-left [&>span]:min-w-0 [&>span]:truncate',
+        className,
+      )}
       {...props}
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <ChevronDown className="size-4 opacity-60" />
+        <ChevronDown className="size-4 shrink-0 opacity-60" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
