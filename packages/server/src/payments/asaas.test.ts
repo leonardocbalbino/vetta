@@ -5,7 +5,12 @@ import accountApproved from './fixtures/account-approved.json';
 import cardRefused from './fixtures/card-refused.json';
 import paymentReceived from './fixtures/payment-received.json';
 import transferDone from './fixtures/transfer-done.json';
-import { ASAAS_PRODUCTION_URL, AsaasPaymentProvider, mapAsaasPayment } from './asaas';
+import {
+  ASAAS_PRODUCTION_URL,
+  AsaasPaymentProvider,
+  asaasStatusMessage,
+  mapAsaasPayment,
+} from './asaas';
 import {
   invoiceStatusOf,
   nextInvoiceStatus,
@@ -244,5 +249,14 @@ describe('cliente HTTP', () => {
       }),
     ).rejects.toThrow(PaymentProviderError);
     await expect(p.getCharge('nao-existe')).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe('mensagens de erro do Asaas sem descrição', () => {
+  it('403 na criação de subconta explica a exigência de CNPJ', () => {
+    expect(asaasStatusMessage(403, '/accounts')).toContain('pessoa jurídica (CNPJ)');
+    expect(asaasStatusMessage(403, '/payments')).toContain('lista de IPs');
+    expect(asaasStatusMessage(401, '/payments')).toContain('ASAAS_API_KEY');
+    expect(asaasStatusMessage(500, '/payments')).toBe('Asaas respondeu 500');
   });
 });

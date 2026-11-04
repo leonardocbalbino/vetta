@@ -79,7 +79,11 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
 
 ## Fase 2 – itens abertos
 
-- [ ] **Validar com o sandbox real do Asaas.** Os testes usam um dublê com o contrato do sandbox. Com a chave, rodar o fluxo: checkout, webhooks, subconta e KYC, split, saque.
+- [ ] **Validar com o sandbox real do Asaas.** A chave do sandbox já está na homologação.
+  - [x] Assinatura da plataforma no cartão (free@ → Pro): aprovada na hora e o plano mudou (04/11).
+  - [ ] Subconta, KYC, split e saque: o Asaas só deixa conta de **pessoa jurídica (CNPJ)** criar subcontas, e a conta sandbox atual é de pessoa física. É preciso uma conta sandbox com CNPJ. A conta de produção da Vetta também precisa ser PJ.
+  - [ ] Pix e boleto: a confirmação depende do webhook da conta-mãe (item abaixo).
+  - Os personais do seed têm uma carteira "aprovada" de mentira, sem subconta real. Na homologação, refazer a ativação da carteira em Financeiro.
 - [ ] **Webhook da conta-mãe no painel do Asaas** apontando para `https://api.vettafit.com.br/v1/webhooks/asaas` com o `ASAAS_WEBHOOK_TOKEN`. As subcontas já nascem configuradas.
 - [ ] **Sitemap com as páginas de vendas publicadas.** Exige rota pública que liste os slugs.
 - [ ] **Marcação de pontos e linhas na foto postural** só existe na web; no app há captura com guia, grade e checklist.
