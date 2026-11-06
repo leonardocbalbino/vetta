@@ -439,6 +439,14 @@ describe('white label', () => {
       .get(`/v1/public/brand?host=${host}`)
       .set('Origin', 'https://evil.test');
     expect(evil.headers['access-control-allow-origin']).toBeUndefined();
+    // O Socket.IO (chat e sino em tempo real) segue a mesma regra no handshake.
+    const ws = await ctx.http.get('/ws/?EIO=4&transport=polling').set('Origin', `https://${host}`);
+    expect(ws.status).toBe(200);
+    expect(ws.headers['access-control-allow-origin']).toBe(`https://${host}`);
+    const wsEvil = await ctx.http
+      .get('/ws/?EIO=4&transport=polling')
+      .set('Origin', 'https://evil.test');
+    expect(wsEvil.headers['access-control-allow-origin']).toBeUndefined();
 
     // Outro personal não pode usar o mesmo domínio.
     const other = await seedWorld(ctx, 'PRO_PLUS');
