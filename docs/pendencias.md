@@ -112,8 +112,8 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
 - [ ] **HealthKit e Health Connect:**
   - gerar build de desenvolvimento (EAS) e testar em iPhone e Android reais;
   - publicar a política de privacidade de dados de saúde exigida pelas lojas.
-- [ ] **Socket.IO no domínio próprio:** liberar as origens dinâmicas também no adapter do Socket.IO. Hoje, no domínio próprio, chat e sino não atualizam em tempo real.
+- [x] **Socket.IO no domínio próprio:** o Socket.IO usa a mesma regra de origem do HTTP (domínios próprios ativos).
 - [ ] **Remetente com domínio do personal** (DKIM próprio). Hoje só o nome do remetente muda.
-- [ ] **PDFs de treino e avaliação com as cores do personal.** Hoje levam a logo; as cores do white label ainda não.
+- [x] **PDFs de treino e avaliação com as cores do personal:** título, faixa, blocos e linhas na cor da marca, ajustada para leitura no papel.
 - [ ] **Maestro e Playwright:** fluxos novos (IA, equipe, marca, saúde) ainda não escritos.
 - [ ] **Central de ajuda:** revisar os textos com o time de produto e incluir capturas de tela.
