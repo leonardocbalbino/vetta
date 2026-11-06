@@ -50,7 +50,7 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
   - primeiro build `development`, `preview` e `production`;
   - credenciais de assinatura.
 - [ ] **Maestro:** os fluxos existem (`apps/mobile/.maestro`), mas não foram executados (não há emulador nesta máquina) (Fases 1–2).
-- [ ] **Playwright web:** rodar de novo após a Fase 2 (Fase 1).
+- [x] **Playwright web:** roda no CI e localmente; 4 fluxos passando (cadastro ao primeiro treino, biblioteca, chat em tempo real, agenda).
 - [ ] **Migração para Prisma 7** (ADR-003, Fase 0).
 
 ## Produto (planejado para fases seguintes)
@@ -91,7 +91,7 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
 - [ ] **Marcação de pontos e linhas na foto postural** só existe na web; no app há captura com guia, grade e checklist.
 - [ ] **Vídeo de exercício pelo app:** o PUT reaproveita os dados atuais do exercício. Validar com exercícios que tenham todos os campos preenchidos.
 - [ ] **Maestro:** fluxos novos (chat, agenda, pagamento do aluno) ainda não escritos nem executados.
-- [ ] **Playwright web:** cobrir checkout e agenda. Hoje há só a fumaça manual, feita com navegador headless.
+- [ ] **Playwright web:** agenda coberta (marcar e confirmar aula); falta o checkout, que depende do sandbox do Asaas com CNPJ.
 - [ ] **Cartão do aluno com confirmação tardia:** a tela trata o pagamento aprovado na hora; quando o gateway confirma depois, o status chega por webhook e aparece ao recarregar.
 - [ ] **Tempo real em várias instâncias da API:** o Socket.IO usa o adapter Redis (já configurado). Validar com mais de uma instância.
 - [ ] **Login do aluno:** depois de entrar, o aluno passa por `/inicio` antes de ir para `/treino`, o que gera dois 403 no console (vem da Fase 1).
