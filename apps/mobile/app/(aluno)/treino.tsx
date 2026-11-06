@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { estimateMinutes, ExerciseCard } from '../../src/components/routine-preview';
 import { UnreadMessagesAlert } from '../../src/components/unread-messages';
 import { client } from '../../src/lib/client';
+import { prefetchExerciseMedia } from '../../src/lib/media-cache';
 import { fetchWithCache, pendingCount, syncPending } from '../../src/lib/offline';
 import { useSession } from '../../src/lib/session';
 
@@ -54,6 +55,15 @@ export default function TreinoTab() {
   }, [programs, selected]);
 
   const program = programs.find((p) => p.id === selected?.programId);
+  // Deixa vídeos e imagens do programa no aparelho para o player funcionar sem internet.
+  useEffect(() => {
+    if (!program) return;
+    void prefetchExerciseMedia(
+      program.routines.flatMap((r) =>
+        r.exercises.map((i) => ({ exerciseId: i.exerciseId, offline: i.exercise.media?.offline })),
+      ),
+    );
+  }, [program]);
   const routine = program?.routines.find((r) => r.id === selected?.routineId);
   const start = () =>
     routine &&

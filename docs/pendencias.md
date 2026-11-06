@@ -55,7 +55,9 @@ Lista viva do que ficou para depois, com origem e o que destrava cada item. Ao c
 
 ## Produto (planejado para fases seguintes)
 
-- [ ] **Download de vídeos para o player offline** (Fase 1). Hoje o vídeo exige internet; o treino e os registros funcionam offline.
+- [x] **Download de vídeos para o player offline** (Fase 1): o worker gera um MP4 leve (360p, sem áudio, até 90 s) e o app baixa a mídia do programa ao abrir o treino (vídeo, senão GIF ou foto).
+  - Vídeos enviados antes desta mudança não têm o MP4 leve: o app baixa o GIF. Para ter o vídeo offline, reprocessar ou reenviar.
+  - Vídeos do YouTube não podem ser baixados (termos do YouTube); offline aparece a capa.
 - [ ] **Fonte Archivo Expanded no mobile** (Fase 1)
   - Não há pacote Expo com a fonte; usamos Archivo.
   - Caminho: embutir o `.ttf` licenciado.

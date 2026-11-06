@@ -160,11 +160,19 @@ export class LibraryService {
         ? (urls.get(e.imageMediaId)?.webp ?? urls.get(e.imageMediaId)?.original ?? null)
         : null,
     };
+    const offlineVideo = e.videoMediaId ? (urls.get(e.videoMediaId)?.offline_mp4 ?? null) : null;
+    const offlineImage = own.gif ?? own.image ?? own.thumbnail ?? yt?.thumbnail ?? null;
     return {
       ...own,
       thumbnail: own.thumbnail ?? yt?.thumbnail ?? null,
       image: own.image ?? yt?.thumbnail ?? null,
       youtube: own.video ? null : yt,
+      /** O que o app baixa para o player sem internet: MP4 leve, senão GIF ou foto. */
+      offline: offlineVideo
+        ? { kind: 'video' as const, url: offlineVideo }
+        : offlineImage
+          ? { kind: 'image' as const, url: offlineImage }
+          : null,
     };
   }
 
