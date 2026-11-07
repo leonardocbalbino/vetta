@@ -46,12 +46,13 @@ import {
   Palette,
   Plug,
   UsersRound,
+  ChevronDown,
 } from 'lucide-react';
 import { SupportWidget } from './support-widget';
 import { UnreadBadge, useUnreadMessages } from './unread-messages';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useApi, useApiMutation, fmtDateTime } from '@/lib/api';
 import { useActiveTenant } from '@/lib/session';
 
@@ -63,19 +64,24 @@ interface NavItem {
   soon?: boolean;
   /** Assistente não vê (financeiro, marca, configurações). */
   ownerOnly?: boolean;
+  /** Sem grupo = item principal, sempre visível. "rodape" = ícone no pé do menu. */
+  group?: NavGroupId;
 }
+
+type NavGroupId = 'acompanhamento' | 'conteudo' | 'gestao' | 'mais' | 'rodape';
+const GROUP_LABEL: Record<Exclude<NavGroupId, 'rodape'>, string> = {
+  acompanhamento: 'Acompanhamento',
+  conteudo: 'Conteúdo',
+  gestao: 'Gestão',
+  mais: 'Mais',
+};
 
 const PERSONAL_NAV: NavItem[] = [
   { href: '/inicio', label: 'Início', icon: Home },
   { href: '/alunos', label: 'Alunos', icon: Users },
   { href: '/treinos', label: 'Treinos', icon: Dumbbell },
-  { href: '/biblioteca', label: 'Biblioteca', icon: BookOpen },
-  { href: '/avaliacoes', label: 'Avaliações', icon: Stethoscope },
-  { href: '/modelos-anamnese', label: 'Anamneses', icon: ClipboardList },
-  { href: '/feedbacks', label: 'Feedbacks', icon: MessageSquareHeart },
-  { href: '/mensagens', label: 'Mensagens', icon: MessageCircle },
-  { href: '/comunicados', label: 'Comunicados', icon: Megaphone, feature: 'comms.broadcast' },
   { href: '/agenda', label: 'Agenda', icon: CalendarDays, feature: 'schedule.calendar' },
+  { href: '/mensagens', label: 'Mensagens', icon: MessageCircle },
   {
     href: '/financeiro',
     label: 'Financeiro',
@@ -83,12 +89,24 @@ const PERSONAL_NAV: NavItem[] = [
     feature: 'finance.student_billing',
     ownerOnly: true,
   },
+  { href: '/feedbacks', label: 'Feedbacks', icon: MessageSquareHeart, group: 'acompanhamento' },
+  { href: '/avaliacoes', label: 'Avaliações', icon: Stethoscope, group: 'acompanhamento' },
+  { href: '/modelos-anamnese', label: 'Anamneses', icon: ClipboardList, group: 'acompanhamento' },
+  { href: '/biblioteca', label: 'Biblioteca', icon: BookOpen, group: 'conteudo' },
+  {
+    href: '/comunicados',
+    label: 'Comunicados',
+    icon: Megaphone,
+    feature: 'comms.broadcast',
+    group: 'conteudo',
+  },
   {
     href: '/minha-pagina',
     label: 'Minha página',
     icon: Globe,
     feature: 'brand.sales_page',
     ownerOnly: true,
+    group: 'conteudo',
   },
   {
     href: '/relatorios',
@@ -96,31 +114,45 @@ const PERSONAL_NAV: NavItem[] = [
     icon: BarChart3,
     feature: 'finance.advanced_reports',
     ownerOnly: true,
+    group: 'gestao',
   },
-  { href: '/equipe', label: 'Equipe', icon: UsersRound, ownerOnly: true },
+  { href: '/equipe', label: 'Equipe', icon: UsersRound, ownerOnly: true, group: 'gestao' },
   {
     href: '/marca',
     label: 'Minha marca',
     icon: Palette,
     feature: 'brand.white_label',
     ownerOnly: true,
+    group: 'gestao',
   },
-  { href: '/integracoes', label: 'Integrações', icon: Plug },
-  { href: '/academy', label: 'Academy', icon: GraduationCap },
-  { href: '/suporte', label: 'Suporte', icon: LifeBuoy },
-  { href: '/configuracoes', label: 'Configurações', icon: Settings, ownerOnly: true },
+  { href: '/integracoes', label: 'Integrações', icon: Plug, group: 'gestao' },
+  { href: '/academy', label: 'Academy', icon: GraduationCap, group: 'rodape' },
+  { href: '/suporte', label: 'Suporte', icon: LifeBuoy, group: 'rodape' },
+  {
+    href: '/configuracoes',
+    label: 'Configurações',
+    icon: Settings,
+    ownerOnly: true,
+    group: 'rodape',
+  },
 ];
 
 const STUDENT_NAV: NavItem[] = [
   { href: '/treino', label: 'Treino do dia', icon: Dumbbell },
-  { href: '/historico', label: 'Histórico', icon: History },
   { href: '/evolucao', label: 'Evolução', icon: LineChart },
-  { href: '/mensagens', label: 'Mensagens', icon: MessageCircle },
   { href: '/agenda', label: 'Agenda', icon: CalendarDays, feature: 'schedule.calendar' },
+  { href: '/mensagens', label: 'Mensagens', icon: MessageCircle },
   { href: '/pagamentos', label: 'Pagamentos', icon: Wallet },
-  { href: '/documentos', label: 'Documentos', icon: FileText, feature: 'docs.student_folder' },
-  { href: '/anamnese', label: 'Anamnese', icon: ClipboardList },
-  { href: '/perfil', label: 'Perfil', icon: User },
+  { href: '/historico', label: 'Histórico', icon: History, group: 'mais' },
+  {
+    href: '/documentos',
+    label: 'Documentos',
+    icon: FileText,
+    feature: 'docs.student_folder',
+    group: 'mais',
+  },
+  { href: '/anamnese', label: 'Anamnese', icon: ClipboardList, group: 'mais' },
+  { href: '/perfil', label: 'Perfil', icon: User, group: 'rodape' },
 ];
 
 function NotificationBell() {
@@ -193,39 +225,142 @@ function NotificationBell() {
   );
 }
 
+const OPEN_KEY = 'vetta:nav-open';
+const isActive = (path: string, href: string) => path === href || path.startsWith(href + '/');
+
+function NavLink({
+  item,
+  active,
+  locked,
+  badge,
+  onNavigate,
+}: {
+  item: NavItem;
+  active: boolean;
+  locked: boolean;
+  badge?: number | undefined;
+  onNavigate?: (() => void) | undefined;
+}) {
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      aria-current={active ? 'page' : undefined}
+      className={cn(
+        'relative flex min-h-10 items-center gap-3 rounded-control px-3 text-sm',
+        active
+          ? 'bg-muted font-semibold text-foreground before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-full before:bg-action'
+          : 'font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
+      )}
+    >
+      <item.icon className="size-5" aria-hidden />
+      <span className="flex-1">{item.label}</span>
+      {badge ? <UnreadBadge count={badge} /> : null}
+      {locked ? (
+        <Lock className="size-4 opacity-70" aria-label="fora do plano" />
+      ) : item.soon ? (
+        <Badge variant="outline">em breve</Badge>
+      ) : null}
+    </Link>
+  );
+}
+
+/**
+ * Menu lateral: itens principais sempre visíveis, os demais em grupos recolhíveis (o grupo
+ * da página atual abre sozinho; a escolha fica salva) e atalhos de conta no rodapé.
+ */
 function Nav({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void }) {
   const path = usePathname();
   const { tenantId } = useActiveTenant();
   const ent = useEntitlements(tenantId);
   const unread = useUnreadMessages();
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try {
+      setOpen(JSON.parse(localStorage.getItem(OPEN_KEY) ?? '{}') as Record<string, boolean>);
+    } catch {
+      // preferência inválida: começa recolhido
+    }
+  }, []);
+  const toggle = (g: string) =>
+    setOpen((o) => {
+      const next = { ...o, [g]: !o[g] };
+      localStorage.setItem(OPEN_KEY, JSON.stringify(next));
+      return next;
+    });
+  const locked = (i: NavItem) =>
+    !!(i.feature && ent.data && ent.data.features[i.feature] === false);
+  const link = (i: NavItem) => (
+    <NavLink
+      key={i.href}
+      item={i}
+      active={isActive(path, i.href)}
+      locked={locked(i)}
+      badge={i.href === '/mensagens' ? unread.total : undefined}
+      onNavigate={onNavigate}
+    />
+  );
+  const groups = (Object.keys(GROUP_LABEL) as (keyof typeof GROUP_LABEL)[])
+    .map((g) => ({ id: g, items: items.filter((i) => i.group === g) }))
+    .filter((g) => g.items.length);
+  const footer = items.filter((i) => i.group === 'rodape');
+
   return (
-    <nav aria-label="Principal" className="flex flex-col gap-1">
-      {items.map((i) => {
-        const active = path === i.href || path.startsWith(`${i.href}/`);
-        const locked = i.feature && ent.data && ent.data.features[i.feature] === false;
-        return (
-          <Link
-            key={i.href}
-            href={i.href}
-            onClick={onNavigate}
-            aria-current={active ? 'page' : undefined}
-            className={cn(
-              'flex min-h-11 items-center gap-3 rounded-control px-3 text-sm font-medium',
-              active ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted',
-            )}
-          >
-            <i.icon className="size-5" aria-hidden />
-            <span className="flex-1">{i.label}</span>
-            {i.href === '/mensagens' ? <UnreadBadge count={unread.total} /> : null}
-            {locked ? (
-              <Lock className="size-4 opacity-70" aria-label="fora do plano" />
-            ) : i.soon ? (
-              <Badge variant="outline">em breve</Badge>
-            ) : null}
-          </Link>
-        );
-      })}
-    </nav>
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <nav aria-label="Principal" className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+        {items.filter((i) => !i.group).map(link)}
+        {groups.map((g) => {
+          const hasActive = g.items.some((i) => isActive(path, i.href));
+          const expanded = hasActive || !!open[g.id];
+          const panel = 'nav-' + g.id;
+          return (
+            <div key={g.id} className="mt-2 flex flex-col gap-1">
+              <button
+                type="button"
+                aria-expanded={expanded}
+                aria-controls={panel}
+                onClick={() => toggle(g.id)}
+                disabled={hasActive}
+                className="flex min-h-9 items-center gap-2 rounded-control px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground disabled:cursor-default disabled:hover:text-muted-foreground"
+              >
+                <span className="flex-1 text-left">{GROUP_LABEL[g.id]}</span>
+                <ChevronDown
+                  className={cn('size-4 transition-transform', expanded && 'rotate-180')}
+                  aria-hidden
+                />
+              </button>
+              {expanded ? (
+                <div id={panel} className="flex flex-col gap-1">
+                  {g.items.map(link)}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </nav>
+      {footer.length ? (
+        <div className="flex items-center gap-1 border-t border-border pt-3">
+          {footer.map((i) => (
+            <Link
+              key={i.href}
+              href={i.href}
+              onClick={onNavigate}
+              title={i.label}
+              aria-label={i.label}
+              aria-current={isActive(path, i.href) ? 'page' : undefined}
+              className={cn(
+                'flex size-11 items-center justify-center rounded-control',
+                isActive(path, i.href)
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
+            >
+              <i.icon className="size-5" aria-hidden />
+            </Link>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -252,14 +387,14 @@ export function AppShell({ me, children }: { me: MeResponse; children: ReactNode
   const wl = brand.data?.whiteLabel ? brand.data : null;
 
   const sidebar = (
-    <div className="flex h-full flex-col gap-6">
+    <div className="flex h-full flex-col gap-5">
       <Link href={staff ? '/inicio' : '/treino'} className="px-2">
         {wl ? (
           wl.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={wl.logoUrl} alt={wl.displayName} className="h-8 max-w-48 object-contain" />
+            <img src={wl.logoUrl} alt={wl.displayName} className="h-7 max-w-44 object-contain" />
           ) : (
-            <span className="font-display text-xl">{wl.displayName}</span>
+            <span className="block truncate text-base font-semibold">{wl.displayName}</span>
           )
         ) : (
           <Logo />
@@ -315,7 +450,7 @@ export function AppShell({ me, children }: { me: MeResponse; children: ReactNode
               </SelectContent>
             </Select>
           ) : (
-            <span className="truncate text-sm font-semibold">{active?.tenantName}</span>
+            <span className="truncate text-sm font-semibold lg:hidden">{active?.tenantName}</span>
           )}
           <div className="ml-auto flex items-center gap-2">
             {staff && ent.data ? (

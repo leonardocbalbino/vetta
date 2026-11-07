@@ -59,7 +59,7 @@ export default function PublicWorkoutPage() {
         />
       ) : (
         <>
-          <h1 className="font-display text-3xl">
+          <h1 className="font-display text-2xl">
             {q.data.studentFirstName ? `${q.data.studentFirstName}, seu treino` : 'Seu treino'}:{' '}
             {q.data.name}
           </h1>

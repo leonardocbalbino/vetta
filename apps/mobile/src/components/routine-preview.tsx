@@ -2,6 +2,7 @@ import type { ApiItem, ApiRoutine } from '@vetta/sdk';
 import { Text, useTheme } from '@vetta/ui-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
 import { Image, Modal, Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -81,7 +82,8 @@ export function ExerciseCard({
   const t = useTheme();
   const [video, setVideo] = useState(false);
   const media = item.exercise.media;
-  const thumb = media?.thumbnail ?? media?.image ?? media?.gif ?? null;
+  const thumb = media?.thumbnail ?? media?.image ?? media?.gif ?? media?.youtube?.thumbnail ?? null;
+  const youtube = !media?.video ? media?.youtube : null;
   const work = item.sets.filter((s) => s.type === 'WORK');
   const reps = [...new Set(work.map((s) => s.reps).filter(Boolean))];
   const rest = item.sets[0]?.restSeconds ?? item.restSeconds;
@@ -180,15 +182,21 @@ export function ExerciseCard({
           </Text>
         ) : null}
       </View>
-      {thumb || media?.video ? (
+      {thumb || media?.video || youtube ? (
         <Pressable
-          onPress={() => media?.video && setVideo(true)}
+          onPress={() =>
+            media?.video
+              ? setVideo(true)
+              : youtube
+                ? void WebBrowser.openBrowserAsync(youtube.watchUrl)
+                : undefined
+          }
           accessibilityRole="button"
           accessibilityLabel={`Ver vídeo de ${item.exercise.name}`}
           style={{ width: 112, backgroundColor: t.colors.muted }}
         >
           {thumb ? <Image source={{ uri: thumb }} style={{ flex: 1 }} resizeMode="cover" /> : null}
-          {media?.video ? (
+          {media?.video || youtube ? (
             <View
               style={{
                 position: 'absolute',

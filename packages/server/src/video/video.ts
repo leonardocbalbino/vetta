@@ -20,7 +20,7 @@ export interface VideoResult {
   durationSeconds: number | null;
   width: number | null;
   height: number | null;
-  /** hls (playlist master), thumbnail, preview_gif. */
+  /** hls (playlist master), thumbnail, preview_gif e offline_mp4 (360p para baixar no app). */
   variants: Record<string, VideoVariant>;
 }
 
@@ -46,7 +46,11 @@ function run(bin: string, args: string[]): Promise<string> {
     p.on('close', (code) =>
       code === 0
         ? resolve(out + err)
-        : reject(new Error(`ffmpeg saiu com ${code}: ${err.slice(-500)}`)),
+        : reject(
+            Object.assign(new Error(`ffmpeg saiu com ${code}: ${err.slice(-500)}`), {
+              output: out + err,
+            }),
+          ),
     );
   });
 }
@@ -68,8 +72,9 @@ export class LocalFfmpegVideoProvider implements VideoProvider {
       const src = path.join(dir, 'source');
       await pipeline(await this.storage.getStream(storageKey), createWriteStream(src));
 
+      // Sem saída o ffmpeg termina com erro; o que interessa é o log completo da entrada.
       const probe = await run(this.ffmpegPath, ['-hide_banner', '-i', src]).catch(
-        (e: Error) => e.message,
+        (e: Error & { output?: string }) => e.output ?? e.message,
       );
       const dur = /Duration: (\d+):(\d+):(\d+\.\d+)/.exec(probe);
       const durationSeconds = dur
@@ -146,6 +151,30 @@ export class LocalFfmpegVideoProvider implements VideoProvider {
         gif,
       ]);
 
+      // Cópia leve para o app baixar e tocar sem internet: 360p, sem áudio, até 90 s.
+      const offline = path.join(dir, 'offline.mp4');
+      await run(this.ffmpegPath, [
+        '-y',
+        '-i',
+        src,
+        '-t',
+        '90',
+        '-vf',
+        'scale=-2:360',
+        '-c:v',
+        'libx264',
+        '-preset',
+        'veryfast',
+        '-crf',
+        '28',
+        '-pix_fmt',
+        'yuv420p',
+        '-an',
+        '-movflags',
+        '+faststart',
+        offline,
+      ]);
+
       const variants: Record<string, VideoVariant> = {};
       const hlsPrefix = variantKey(storageKey, 'hls');
       for (const f of await readdir(hlsDir)) {
@@ -157,6 +186,7 @@ export class LocalFfmpegVideoProvider implements VideoProvider {
       for (const [name, file, mime] of [
         ['thumbnail', thumb, 'image/jpeg'],
         ['preview_gif', gif, 'image/gif'],
+        ['offline_mp4', offline, 'video/mp4'],
       ] as const) {
         const body = await readFile(file);
         const key = variantKey(storageKey, path.basename(file));

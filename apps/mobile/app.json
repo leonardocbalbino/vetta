@@ -6,7 +6,6 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "br.com.vettafit.app",
       "supportsTablet": true,
@@ -95,7 +94,7 @@
           "background": false
         }
       ],
-      "expo-health-connect",
+      "react-native-health-connect",
       [
         "expo-build-properties",
         {
@@ -109,11 +108,15 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "http://localhost:4000"
+      "apiUrl": "http://localhost:4000",
+      "eas": {
+        "projectId": "4803b7b3-fe87-479f-b457-b9392fcef44e"
+      }
     },
     "icon": "./assets/icon.png",
     "runtimeVersion": {
       "policy": "appVersion"
-    }
+    },
+    "owner": "leonardocbalbino"
   }
 }

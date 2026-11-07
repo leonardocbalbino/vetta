@@ -77,7 +77,7 @@ function AiProgramForm() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="flex items-center gap-2 font-display text-3xl">
+        <h1 className="flex items-center gap-2 font-display text-2xl">
           <Sparkles className="size-7" aria-hidden /> Treino com IA
         </h1>
         <p className="text-muted-foreground">

@@ -2,7 +2,7 @@ import type { PrismaClient } from '@vetta/db';
 import { palette } from '@vetta/tokens';
 import { createElement as h, type ReactElement } from 'react';
 import { buildStorageKey, type StorageProvider } from '../storage/storage';
-import { loadTenantLogo } from './brand';
+import { loadPdfBrand } from './brand';
 
 const BMI_LABEL: Record<string, string> = {
   underweight: 'Abaixo do peso',
@@ -28,7 +28,8 @@ export interface AssessmentPdfDeps {
 
 /**
  * Gera o PDF da avaliação física (react-pdf) e salva como documento do aluno.
- * Com a feature assessment.pdf_branding o cabeçalho leva o nome do personal.
+ * Com a feature assessment.pdf_branding o cabeçalho leva a logo (ou o nome) e as cores do
+ * personal.
  */
 export async function generateAssessmentPdf(
   deps: AssessmentPdfDeps,
@@ -44,6 +45,7 @@ export async function generateAssessmentPdf(
   const r = (a.results ?? {}) as Record<string, number | string | undefined>;
   const perimeters = (a.perimeters ?? {}) as Record<string, number>;
   const skinfolds = (a.skinfolds ?? {}) as Record<string, number>;
+  const { logo, theme: t } = await loadPdfBrand(deps.db, deps.storage, job.tenantId, job.branded);
   const s = StyleSheet.create({
     page: { padding: 36, fontSize: 10, color: palette.tinta, fontFamily: 'Helvetica' },
     header: {
@@ -51,12 +53,15 @@ export async function generateAssessmentPdf(
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 18,
+      paddingBottom: 10,
+      borderBottomWidth: 2,
+      borderBottomColor: t.accent,
     },
     brand: { flexDirection: 'row', alignItems: 'center' },
-    title: { fontSize: 18, fontFamily: 'Helvetica-Bold', marginBottom: 4 },
+    title: { fontSize: 18, fontFamily: 'Helvetica-Bold', marginBottom: 4, color: t.heading },
     muted: { color: palette.grafite },
     section: { marginTop: 14 },
-    h2: { fontSize: 12, fontFamily: 'Helvetica-Bold', marginBottom: 6 },
+    h2: { fontSize: 12, fontFamily: 'Helvetica-Bold', marginBottom: 6, color: t.heading },
     grid: { flexDirection: 'row', flexWrap: 'wrap' },
     card: {
       width: '31%',
@@ -64,14 +69,14 @@ export async function generateAssessmentPdf(
       marginBottom: 8,
       padding: 8,
       borderRadius: 8,
-      backgroundColor: palette.nevoa,
+      backgroundColor: t.panel,
     },
     big: { fontSize: 16, fontFamily: 'Helvetica-Bold' },
     row: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       borderBottomWidth: 1,
-      borderBottomColor: palette.linha,
+      borderBottomColor: t.rule,
       paddingVertical: 3,
     },
     footer: {
@@ -106,7 +111,6 @@ export async function generateAssessmentPdf(
       : null;
 
   const brandName = job.branded ? a.tenant.name : 'Vetta';
-  const logo = job.branded ? await loadTenantLogo(deps.db, deps.storage, job.tenantId) : null;
   const doc: ReactElement = h(
     Document,
     { title: `Avaliação física — ${a.studentLink.displayName}`, author: brandName },
@@ -126,7 +130,7 @@ export async function generateAssessmentPdf(
                 { width: 22, height: 22, viewBox: '0 0 48 48' },
                 h(Polyline, {
                   points: '7,16 19,36 41,9',
-                  stroke: palette.tinta,
+                  stroke: t.accent,
                   strokeWidth: 7.5,
                   fill: 'none',
                 }),

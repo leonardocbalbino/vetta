@@ -9,6 +9,7 @@ import {
   normalizeText,
   type ExerciseInput,
   type ExerciseQuery,
+  youtubeMedia,
 } from '@vetta/contracts';
 import type { Exercise, Prisma } from '@vetta/db';
 import type { StorageProvider } from '@vetta/server';
@@ -103,9 +104,11 @@ export class LibraryService {
   }
 
   /** URLs assinadas das mídias (thumbnail/vídeo) de uma lista de exercícios. */
-  async withMedia<T extends Pick<Exercise, 'videoMediaId' | 'imageMediaId' | 'gifMediaId'>>(
-    items: T[],
-  ) {
+  async withMedia<
+    T extends Pick<Exercise, 'videoMediaId' | 'imageMediaId' | 'gifMediaId'> & {
+      externalVideoUrl?: string | null;
+    },
+  >(items: T[]) {
     const ids = [
       ...new Set(
         items
@@ -129,23 +132,48 @@ export class LibraryService {
     }
     return items.map((e) => ({
       ...e,
-      media: {
-        video: e.videoMediaId
-          ? (urls.get(e.videoMediaId)?.hls ?? urls.get(e.videoMediaId)?.original ?? null)
-          : null,
-        thumbnail:
-          (e.videoMediaId && urls.get(e.videoMediaId)?.thumbnail) ||
-          (e.imageMediaId &&
-            (urls.get(e.imageMediaId)?.thumbnail ?? urls.get(e.imageMediaId)?.original)) ||
-          null,
-        gif: e.gifMediaId
-          ? (urls.get(e.gifMediaId)?.original ?? null)
-          : (e.videoMediaId && urls.get(e.videoMediaId)?.preview_gif) || null,
-        image: e.imageMediaId
-          ? (urls.get(e.imageMediaId)?.webp ?? urls.get(e.imageMediaId)?.original ?? null)
-          : null,
-      },
+      media: this.mediaOf(e, urls),
     }));
+  }
+
+  /** Vídeo próprio tem prioridade; sem ele, o YouTube dá o vídeo e a miniatura. */
+  private mediaOf(
+    e: Pick<Exercise, 'videoMediaId' | 'imageMediaId' | 'gifMediaId'> & {
+      externalVideoUrl?: string | null;
+    },
+    urls: Map<string, Record<string, string>>,
+  ) {
+    const yt = youtubeMedia(e.externalVideoUrl);
+    const own = {
+      video: e.videoMediaId
+        ? (urls.get(e.videoMediaId)?.hls ?? urls.get(e.videoMediaId)?.original ?? null)
+        : null,
+      thumbnail:
+        (e.videoMediaId && urls.get(e.videoMediaId)?.thumbnail) ||
+        (e.imageMediaId &&
+          (urls.get(e.imageMediaId)?.thumbnail ?? urls.get(e.imageMediaId)?.original)) ||
+        null,
+      gif: e.gifMediaId
+        ? (urls.get(e.gifMediaId)?.original ?? null)
+        : (e.videoMediaId && urls.get(e.videoMediaId)?.preview_gif) || null,
+      image: e.imageMediaId
+        ? (urls.get(e.imageMediaId)?.webp ?? urls.get(e.imageMediaId)?.original ?? null)
+        : null,
+    };
+    const offlineVideo = e.videoMediaId ? (urls.get(e.videoMediaId)?.offline_mp4 ?? null) : null;
+    const offlineImage = own.gif ?? own.image ?? own.thumbnail ?? yt?.thumbnail ?? null;
+    return {
+      ...own,
+      thumbnail: own.thumbnail ?? yt?.thumbnail ?? null,
+      image: own.image ?? yt?.thumbnail ?? null,
+      youtube: own.video ? null : yt,
+      /** O que o app baixa para o player sem internet: MP4 leve, senão GIF ou foto. */
+      offline: offlineVideo
+        ? { kind: 'video' as const, url: offlineVideo }
+        : offlineImage
+          ? { kind: 'image' as const, url: offlineImage }
+          : null,
+    };
   }
 
   private where(q: ExerciseQuery, tenantId: string | null): Prisma.ExerciseWhereInput {
@@ -413,6 +441,8 @@ export class LibraryService {
         tips: r.dicas || null,
         commonMistakes: r.erros_comuns || null,
         ...(video ? { videoMediaId: video } : {}),
+        // youtube: link do vídeo (sem upload; a miniatura vira a foto do exercício)
+        ...(r.youtube ? { externalVideoUrl: r.youtube } : {}),
       });
       if (!parsed.success || !parsed.data.code) {
         errors.push({

@@ -10,9 +10,21 @@ import {
   Checkbox,
   PlanBadge,
   Skeleton,
-  StatTile,
+  cn,
 } from '@vetta/ui';
-import { Cake, Moon, Stethoscope } from 'lucide-react';
+import { useMe } from '@vetta/sdk/react';
+import {
+  ArrowRight,
+  Cake,
+  CalendarPlus,
+  CheckCircle2,
+  Dumbbell,
+  Moon,
+  Sparkles,
+  Stethoscope,
+  UserPlus,
+} from 'lucide-react';
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { UnreadMessagesAlert } from '@/components/unread-messages';
 import { useApi, fmtDate } from '@/lib/api';
@@ -52,15 +64,32 @@ const wa = (phone: string, name: string) =>
 
 export default function PersonalHome() {
   const d = useApi<Dashboard>('/v1/dashboard');
+  const me = useMe();
   if (!d.data) return <Skeleton className="h-96" />;
   const { alerts, onboarding, limits, plan } = d.data;
   const done = STEPS.filter((s) => onboarding[s.key]).length;
   const students = limits['students.max'];
   const storage = limits['storage.quota_mb'];
+  const firstName = me.data?.name.split(' ')[0];
+  const attention = alerts.inactive.length + alerts.birthdays.length + alerts.reassessments.length;
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl">Bom te ver por aqui!</h1>
+      <header className="flex flex-col gap-1">
+        <p className="text-sm text-muted-foreground first-letter:uppercase">{today()}</p>
+        <h1 className="font-display text-2xl">{firstName ? `Olá, ${firstName}` : 'Olá!'}</h1>
+      </header>
+
+      <div className="flex flex-wrap gap-2">
+        {ACTIONS.map((a) => (
+          <Button key={a.href} variant={a.primary ? 'action' : 'secondary'} asChild>
+            <Link href={a.href}>
+              <a.icon aria-hidden /> {a.label}
+            </Link>
+          </Button>
+        ))}
+      </div>
+
       <UnreadMessagesAlert />
 
       {done < STEPS.length ? (
@@ -88,117 +117,170 @@ export default function PersonalHome() {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatTile label="Alunos ativos" value={d.data.activeStudents} />
-        <StatTile label="Treinos feitos hoje" value={d.data.workoutsToday} />
-        <Link href="/feedbacks?pendentes=1">
-          <StatTile
-            label="Feedbacks pendentes"
-            value={d.data.pendingFeedbacks}
-            hint="Toque para responder"
-            className="hover:border-action"
-          />
-        </Link>
+        <Kpi href="/alunos" label="Alunos ativos" value={d.data.activeStudents} />
+        <Kpi href="/feedbacks" label="Treinos feitos hoje" value={d.data.workoutsToday} />
+        <Kpi
+          href="/feedbacks?pendentes=1"
+          label="Feedbacks para responder"
+          value={d.data.pendingFeedbacks}
+          highlight={d.data.pendingFeedbacks > 0}
+        />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Moon className="size-5" aria-hidden /> Sem treinar há {alerts.inactivityDays}+ dias
+              Precisa de atenção
+              {attention ? <Badge variant="warning">{attention}</Badge> : null}
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            {alerts.inactive.length ? (
-              alerts.inactive.map((s) => (
-                <div key={s.id} className="flex items-center justify-between gap-2">
-                  <Link href={`/alunos/${s.id}`} className="truncate hover:underline">
-                    {s.name}
-                  </Link>
-                  {s.whatsapp ? (
-                    <Button size="sm" variant="secondary" asChild>
-                      <a href={wa(s.whatsapp, s.name)} target="_blank" rel="noreferrer">
-                        Chamar no WhatsApp
-                      </a>
-                    </Button>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">
-                      {s.lastWorkoutAt ? fmtDate(s.lastWorkoutAt) : 'nunca treinou'}
-                    </span>
-                  )}
-                </div>
-              ))
+          <CardContent>
+            {!attention ? (
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CheckCircle2 className="size-4 text-success" aria-hidden /> Tudo em dia: ninguém
+                sumido, sem aniversários nem reavaliações nos próximos 7 dias.
+              </p>
             ) : (
-              <p className="text-sm text-muted-foreground">Todo mundo em dia. 👏</p>
+              <ul className="flex flex-col divide-y divide-border">
+                {alerts.inactive.map((s) => (
+                  <Row
+                    key={`i-${s.id}`}
+                    icon={<Moon className="size-4" aria-hidden />}
+                    href={`/alunos/${s.id}`}
+                    name={s.name}
+                    detail={
+                      s.lastWorkoutAt
+                        ? `sem treinar desde ${fmtDate(s.lastWorkoutAt)}`
+                        : 'ainda não treinou'
+                    }
+                    action={
+                      s.whatsapp ? (
+                        <Button size="sm" variant="secondary" asChild>
+                          <a href={wa(s.whatsapp, s.name)} target="_blank" rel="noreferrer">
+                            WhatsApp
+                          </a>
+                        </Button>
+                      ) : null
+                    }
+                  />
+                ))}
+                {alerts.birthdays.map((b) => (
+                  <Row
+                    key={`b-${b.id}`}
+                    icon={<Cake className="size-4" aria-hidden />}
+                    href={`/alunos/${b.id}`}
+                    name={b.name}
+                    detail={
+                      b.inDays === 0 ? 'faz aniversário hoje 🎉' : `aniversário em ${b.inDays} dias`
+                    }
+                  />
+                ))}
+                {alerts.reassessments.map((r) => (
+                  <Row
+                    key={`r-${r.assessmentId}`}
+                    icon={<Stethoscope className="size-4" aria-hidden />}
+                    href={`/alunos/${r.student.id}?aba=assessments`}
+                    name={r.student.displayName}
+                    detail={`reavaliação em ${fmtDate(r.date)}`}
+                  />
+                ))}
+              </ul>
             )}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Cake className="size-5" aria-hidden /> Aniversários (7 dias)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            {alerts.birthdays.length ? (
-              alerts.birthdays.map((b) => (
-                <Link
-                  key={b.id}
-                  href={`/alunos/${b.id}`}
-                  className="flex justify-between hover:underline"
-                >
-                  <span>{b.name}</span>
-                  <Badge variant={b.inDays === 0 ? 'accent' : 'outline'}>
-                    {b.inDays === 0 ? 'hoje' : `em ${b.inDays} dias`}
-                  </Badge>
-                </Link>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">Nenhum aniversário na semana.</p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Stethoscope className="size-5" aria-hidden /> Reavaliações (7 dias)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            {alerts.reassessments.length ? (
-              alerts.reassessments.map((r) => (
-                <Link
-                  key={r.assessmentId}
-                  href={`/alunos/${r.student.id}?aba=assessments`}
-                  className="flex justify-between hover:underline"
-                >
-                  <span>{r.student.displayName}</span>
-                  <span className="text-sm text-muted-foreground">{fmtDate(r.date)}</span>
-                </Link>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">Nenhuma reavaliação marcada.</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Uso do plano <PlanBadge plan={plan.code} />
-            {plan.status === 'TRIALING' ? (
-              <Badge variant="accent">teste até {fmtDate(plan.trialEndsAt)}</Badge>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex flex-wrap items-center gap-2">
+              Seu plano <PlanBadge plan={plan.code} />
+              {plan.status === 'TRIALING' ? (
+                <Badge variant="accent">teste até {fmtDate(plan.trialEndsAt)}</Badge>
+              ) : null}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {students ? <UsageBar label="Alunos" used={students.used} max={students.max} /> : null}
+            {storage ? (
+              <UsageBar label="Armazenamento (MB)" used={storage.used} max={storage.max} />
             ) : null}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          {students ? <UsageBar label="Alunos" used={students.used} max={students.max} /> : null}
-          {storage ? (
-            <UsageBar label="Armazenamento (MB)" used={storage.used} max={storage.max} />
-          ) : null}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
+  );
+}
+
+const ACTIONS = [
+  { href: '/alunos?convidar=1', label: 'Convidar aluno', icon: UserPlus, primary: true },
+  { href: '/treinos/novo', label: 'Novo treino', icon: Dumbbell },
+  { href: '/treinos/ia', label: 'Gerar com IA', icon: Sparkles },
+  { href: '/agenda', label: 'Nova aula', icon: CalendarPlus },
+];
+
+const today = () =>
+  new Date().toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'America/Sao_Paulo',
+  });
+
+function Kpi({
+  href,
+  label,
+  value,
+  highlight,
+}: {
+  href: string;
+  label: string;
+  value: number;
+  highlight?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'group flex flex-col gap-2 rounded-card border bg-surface p-5 transition-colors hover:border-action',
+        highlight ? 'border-action' : 'border-border',
+      )}
+    >
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="flex items-end justify-between">
+        <span className="font-display text-4xl tabular-nums leading-none">{value}</span>
+        <ArrowRight
+          className="size-5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground"
+          aria-hidden
+        />
+      </span>
+    </Link>
+  );
+}
+
+function Row({
+  icon,
+  href,
+  name,
+  detail,
+  action,
+}: {
+  icon: ReactNode;
+  href: string;
+  name: string;
+  detail: string;
+  action?: ReactNode;
+}) {
+  return (
+    <li className="flex min-h-12 items-center gap-3 py-2">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        {icon}
+      </span>
+      <Link href={href} className="min-w-0 flex-1 hover:underline">
+        <span className="block truncate font-medium">{name}</span>
+        <span className="block text-sm text-muted-foreground">{detail}</span>
+      </Link>
+      {action}
+    </li>
   );
 }
 

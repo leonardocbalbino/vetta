@@ -30,7 +30,8 @@ export function useAdminMutation<TBody, TRes = unknown>(
       adminClient.request<TRes>(
         method,
         typeof path === 'function' ? path(body) : path,
-        method === 'DELETE' ? undefined : body,
+        // Só objetos viram corpo JSON: quando a mutação recebe só um id (string), ele vai na URL.
+        method === 'DELETE' || body === null || typeof body !== 'object' ? undefined : body,
       ),
     onSuccess: async (r) => {
       for (const p of opts.invalidate ?? []) {

@@ -41,3 +41,16 @@ O Pro Plus inclui um assistente que monta programas de treino, sugere ajuste de 
 - **Trocar de provedor:** basta implementar `AiProvider`. As tarefas (prompts, ferramentas, schemas) ficam fora do provider.
 - **Tabela de preços:** fica no código (`pricing.ts`) e precisa acompanhar a tabela pública. As variáveis `AI_PRICE_*` permitem corrigir sem deploy de código.
 - **Primeira validação com a chave real:** pendência registrada em `docs/pendencias.md`.
+
+## Atualização (nov/2026): Groq como provedor padrão
+
+- A IA passa a usar a Groq (`GroqAiProvider`, API compatível com OpenAI) com `openai/gpt-oss-120b`. Escolha: `AI_PROVIDER`, ou automaticamente a Groq quando há `GROQ_API_KEY`.
+- O contrato não muda: mesmas tarefas, ferramentas de consulta e saída validada por Zod com rodada de correção (`checkAiOutput`, compartilhado entre os provedores).
+- Custo medido: um programa de 3 dias leva cerca de 11 s e custa uns US$ 0,003, contra cerca de US$ 0,10 no Opus.
+- O plano grátis da Groq limita a 8 mil tokens por minuto. O cliente espera o tempo indicado no 429 (até 90 s somados). Para produção, use o plano Dev.
+- A Anthropic continua disponível (`AI_PROVIDER=anthropic`).
+- Modelo padrão: `openai/gpt-oss-20b`, o mais barato da Groq (US$ 0,075 de entrada e US$ 0,30 de saída por milhão de tokens).
+  - Três de três programas de teste saíram válidos, cada um a uns US$ 0,002.
+  - Para mais qualidade, use `AI_MODEL=openai/gpt-oss-120b` (US$ 0,15 / 0,60).
+  - O Qwen 3.8 27B da Groq ficou de fora: custa mais (US$ 0,80 / 4,00) e ainda está em preview.
+- Quando o modelo gera JSON inválido na chamada de ferramenta, a Groq responde 400 (`tool_use_failed`). O provider trata isso como uma rodada de correção.

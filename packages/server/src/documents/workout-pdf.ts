@@ -2,7 +2,7 @@ import type { PrismaClient } from '@vetta/db';
 import { palette } from '@vetta/tokens';
 import { createElement as h, type ReactElement } from 'react';
 import type { StorageProvider } from '../storage/storage';
-import { loadTenantLogo } from './brand';
+import { loadPdfBrand } from './brand';
 
 const METHOD_LABEL: Record<string, string> = {
   STANDARD: '',
@@ -19,7 +19,7 @@ const METHOD_LABEL: Record<string, string> = {
 
 /**
  * PDF do programa de treino. Com assessment.pdf_branding o cabeçalho leva a logo
- * (ou o nome) do personal; sem, a marca Vetta.
+ * (ou o nome) e as cores do personal; sem, a marca Vetta.
  */
 export async function renderWorkoutPdf(
   deps: { db: PrismaClient; storage: StorageProvider },
@@ -48,7 +48,12 @@ export async function renderWorkoutPdf(
       },
     },
   });
-  const logo = input.branded ? await loadTenantLogo(deps.db, deps.storage, input.tenantId) : null;
+  const { logo, theme: t } = await loadPdfBrand(
+    deps.db,
+    deps.storage,
+    input.tenantId,
+    input.branded,
+  );
   const s = StyleSheet.create({
     page: { padding: 32, fontSize: 9.5, color: palette.tinta, fontFamily: 'Helvetica' },
     header: {
@@ -56,15 +61,18 @@ export async function renderWorkoutPdf(
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 14,
+      paddingBottom: 10,
+      borderBottomWidth: 2,
+      borderBottomColor: t.accent,
     },
-    title: { fontSize: 17, fontFamily: 'Helvetica-Bold' },
+    title: { fontSize: 17, fontFamily: 'Helvetica-Bold', color: t.heading },
     muted: { color: palette.grafite },
-    routine: { marginTop: 14, padding: 10, borderRadius: 10, backgroundColor: palette.nevoa },
-    h2: { fontSize: 12, fontFamily: 'Helvetica-Bold', marginBottom: 6 },
+    routine: { marginTop: 14, padding: 10, borderRadius: 10, backgroundColor: t.panel },
+    h2: { fontSize: 12, fontFamily: 'Helvetica-Bold', marginBottom: 6, color: t.heading },
     row: {
       flexDirection: 'row',
       borderBottomWidth: 1,
-      borderBottomColor: palette.linha,
+      borderBottomColor: t.rule,
       paddingVertical: 4,
     },
     name: { width: '42%', fontFamily: 'Helvetica-Bold' },
@@ -118,7 +126,7 @@ export async function renderWorkoutPdf(
                 { width: 20, height: 20, viewBox: '0 0 48 48' },
                 h(Polyline, {
                   points: '7,16 19,36 41,9',
-                  stroke: palette.tinta,
+                  stroke: t.accent,
                   strokeWidth: 7.5,
                   fill: 'none',
                 }),
