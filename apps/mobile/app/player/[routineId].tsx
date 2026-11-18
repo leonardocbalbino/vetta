@@ -18,8 +18,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { client } from '../../src/lib/client';
+import { localMedia } from '../../src/lib/media-cache';
 import { cacheGet, cacheSet, enqueueSession } from '../../src/lib/offline';
 import { useSession } from '../../src/lib/session';
+import * as WebBrowser from 'expo-web-browser';
 import { todayKey, type Today } from '../(aluno)/treino';
 
 const RECORD = { MAX_LOAD: 'Carga máxima', ONE_RM: '1RM estimado', MAX_VOLUME: 'Volume' } as const;
@@ -128,6 +130,8 @@ export default function PlayerScreen() {
   if (!items) return <SafeAreaView style={{ flex: 1, backgroundColor: t.colors.background }} />;
   const item = items[pos.item];
   const set = item?.sets[pos.set];
+  // Arquivo baixado no aparelho (vídeo leve ou imagem): funciona sem internet.
+  const local = item ? localMedia(item.exerciseId) : null;
   const prog = progress(items);
   const mutate = (fn: (d: PlayerItem[]) => void) => {
     const d = structuredClone(items);
@@ -302,11 +306,34 @@ export default function PlayerScreen() {
         {rest !== null ? <Rest seconds={rest} onDone={() => setRest(null)} /> : null}
         {item && set ? (
           <Card>
-            {item.media?.video && !item.media.video.endsWith('.m3u8x') ? (
+            {local?.kind === 'video' ? (
+              <Video uri={local.uri} />
+            ) : item.media?.video ? (
               <Video uri={item.media.video} />
-            ) : item.media?.gif ? (
+            ) : item.media?.youtube ? (
+              <Pressable
+                onPress={() => void WebBrowser.openBrowserAsync(item.media!.youtube!.watchUrl)}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver vídeo de ${item.name} no YouTube`}
+              >
+                <Image
+                  source={{ uri: local?.uri ?? item.media.youtube.thumbnail }}
+                  style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 16 }}
+                />
+                <View
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ color: '#fff', fontSize: 40 }}>▶</Text>
+                </View>
+              </Pressable>
+            ) : item.media?.gif || local ? (
               <Image
-                source={{ uri: item.media.gif }}
+                source={{ uri: local?.uri ?? item.media?.gif ?? undefined }}
                 style={{ width: '100%', height: 220, borderRadius: 16 }}
                 accessibilityLabel={`Demonstração de ${item.name}`}
               />

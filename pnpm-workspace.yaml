@@ -19,3 +19,8 @@ allowBuilds:
   sharp: true
   ssh2: false
   unrs-resolver: true
+# React exato que o React Native 0.88 (Expo SDK 58) espera: o renderer confere a versão e
+# o app fecha se divergir. Uma só versão no monorepo evita duas cópias do React no bundle.
+overrides:
+  react: 19.3.0
+  react-dom: 19.3.0

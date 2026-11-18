@@ -19,9 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -62,9 +62,9 @@ jobs:
       TEST_REDIS_URL: redis://localhost:6379
       # Storage S3 (SeaweedFS) sobe via Testcontainers no próprio job.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -98,15 +98,18 @@ jobs:
       DATABASE_URL: postgresql://vetta:vetta@localhost:5432/vetta
       NEXT_PUBLIC_API_URL: http://localhost:4000
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run build --filter=@vetta/api --filter=@vetta/web
       - run: pnpm --filter @vetta/db migrate:deploy && pnpm --filter @vetta/db seed
+      # A API só fica saudável (/health) com o storage S3: sobe o SeaweedFS do compose e cria o bucket.
+      - name: Storage S3 (SeaweedFS)
+        run: docker compose up -d --wait s3 && docker compose run --rm s3-setup
       - run: pnpm --filter @vetta/web exec playwright install --with-deps chromium
       - run: pnpm --filter @vetta/web test:e2e
       - uses: actions/upload-artifact@v4

@@ -83,9 +83,16 @@ export const SharedEnvSchema = z.object({
   NFEIO_COMPANY_ID: z.string().optional(),
   NFEIO_CITY_SERVICE_CODE: z.string().default('0107'),
 
-  /** IA de treino (Fase 3). Sem chave, as rotas de IA respondem 503. */
+  /**
+   * IA de treino (Fase 3). Sem chave, as rotas de IA respondem 503. AI_PROVIDER escolhe;
+   * sem ele, usa a Groq se houver GROQ_API_KEY, senão a Anthropic.
+   */
+  AI_PROVIDER: z.enum(['groq', 'anthropic']).optional(),
+  GROQ_API_KEY: z.string().optional(),
+  GROQ_BASE_URL: z.url().default('https://api.groq.com/openai/v1'),
   ANTHROPIC_API_KEY: z.string().optional(),
-  AI_MODEL: z.string().default('claude-opus-5-5'),
+  /** Padrão: openai/gpt-oss-20b na Groq, claude-opus-5-5 na Anthropic. */
+  AI_MODEL: z.string().optional(),
   AI_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).default('medium'),
   AI_REFUSAL_FALLBACK: envBool(true),
   AI_PRICE_INPUT_PER_MTOK: z.coerce.number().positive().optional(),
@@ -95,7 +102,11 @@ export const SharedEnvSchema = z.object({
   WHATSAPP_BASE_URL: z.url().default('https://graph.facebook.com/v21.0'),
   WHATSAPP_TOKEN: z.string().optional(),
   WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
-  /** SMS (só segurança). */
+  /** SMS (só segurança): textbee.dev (padrão) ou Twilio. */
+  SMS_PROVIDER: z.enum(['textbee', 'twilio']).default('textbee'),
+  TEXTBEE_API_KEY: z.string().optional(),
+  TEXTBEE_DEVICE_ID: z.string().optional(),
+  TEXTBEE_BASE_URL: z.url().default('https://api.textbee.dev/api/v1'),
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_FROM: z.string().optional(),

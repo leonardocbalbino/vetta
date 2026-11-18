@@ -98,7 +98,7 @@ function Messages() {
 export default function Page() {
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-display text-3xl">Mensagens</h1>
+      <h1 className="font-display text-2xl">Mensagens</h1>
       <Suspense>
         <Messages />
       </Suspense>

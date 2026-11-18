@@ -102,6 +102,7 @@ import {
   PostureService,
 } from './assessments/posture-documents';
 import { AdminFinanceController } from './admin/admin-finance';
+import { AdminIntegrationsController, AdminIntegrationsService } from './admin/admin-integrations';
 import { FinanceController, MyFinanceController } from './finance/finance.controller';
 import { FinanceService } from './finance/finance.service';
 import {
@@ -217,6 +218,7 @@ export class AppModule {
         PostureController,
         DocumentsController,
         AdminFinanceController,
+        AdminIntegrationsController,
         AiController,
         AdminAiController,
         TeamController,
@@ -272,6 +274,7 @@ export class AppModule {
         AcademyService,
         PlatformBroadcastsService,
         SupportService,
+        AdminIntegrationsService,
         // Testes podem substituir o publicador de eventos (ex.: MemoryEventPublisher).
         ...(overrides.events ? [{ provide: EVENTS, useValue: overrides.events }] : []),
         ...(overrides.ai ? [{ provide: AI, useValue: overrides.ai }] : []),

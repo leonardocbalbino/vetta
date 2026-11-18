@@ -14,7 +14,7 @@ export default function AssessmentsPage() {
   }>(`/v1/students?status=ACTIVE${q ? `&q=${encodeURIComponent(q)}` : ''}`);
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-display text-3xl">Avaliações</h1>
+      <h1 className="font-display text-2xl">Avaliações</h1>
       <p className="text-muted-foreground">
         Escolha o aluno para fazer uma avaliação física, comparar resultados ou baixar o PDF.
       </p>

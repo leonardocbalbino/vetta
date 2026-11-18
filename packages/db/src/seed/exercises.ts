@@ -1,4 +1,5 @@
 import { exerciseSearchText } from '@vetta/contracts';
+import { EXERCISE_VIDEOS } from './exercise-videos';
 import type { ExerciseCategory, ExerciseLevel, PrismaClient } from '../../generated/client';
 
 type Row = [
@@ -458,3 +459,35 @@ export async function seedDevExercises(db: PrismaClient): Promise<number> {
 }
 
 export const DEV_EXERCISE_COUNT = ROWS.length;
+
+/** Código e nome dos exercícios da biblioteca de desenvolvimento (curadoria de vídeos). */
+export const DEV_EXERCISE_NAMES = ROWS.map(([code, name, , , primary, , equip]) => ({
+  code,
+  name,
+  primary,
+  equip,
+}));
+
+/**
+ * Preenche o vídeo do YouTube (que também vira a capa) dos exercícios globais sem mídia.
+ * Nunca sobrescreve: exercício com vídeo, imagem, GIF ou link já definidos fica como está.
+ * Roda a cada deploy (seed do catálogo); idempotente.
+ */
+export async function syncExerciseVideos(db: PrismaClient): Promise<number> {
+  let updated = 0;
+  for (const [code, v] of Object.entries(EXERCISE_VIDEOS)) {
+    const r = await db.exercise.updateMany({
+      where: {
+        tenantId: null,
+        code,
+        externalVideoUrl: null,
+        videoMediaId: null,
+        imageMediaId: null,
+        gifMediaId: null,
+      },
+      data: { externalVideoUrl: v.url },
+    });
+    updated += r.count;
+  }
+  return updated;
+}

@@ -7,7 +7,7 @@ export interface ModelPrice {
 }
 
 /**
- * Tabela de preços (API da Anthropic, out/2026). Pode ser sobrescrita por
+ * Tabela de preços (Anthropic e Groq, out/2026). Pode ser sobrescrita por
  * AI_PRICE_INPUT_PER_MTOK e AI_PRICE_OUTPUT_PER_MTOK quando o preço mudar.
  * Escrita em cache: 1,25× o preço de entrada (TTL de 5 min).
  */
@@ -17,6 +17,9 @@ export const MODEL_PRICES: Record<string, ModelPrice> = {
   'claude-opus-5': { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
   'claude-sonnet-5-5': { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
   'claude-haiku-5-5': { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
+  // Groq (preço público; confira em groq.com/pricing e ajuste por AI_PRICE_* se mudar).
+  'openai/gpt-oss-120b': { input: 0.15, output: 0.6, cacheRead: 0.075, cacheWrite: 0 },
+  'openai/gpt-oss-20b': { input: 0.075, output: 0.3, cacheRead: 0.0375, cacheWrite: 0 },
 };
 
 export function priceFor(

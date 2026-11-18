@@ -73,7 +73,7 @@ export default function AnswerAnamnesis() {
         void submit();
       }}
     >
-      <h1 className="font-display text-3xl">{r.data.template.name}</h1>
+      <h1 className="font-display text-2xl">{r.data.template.name}</h1>
       <Card>
         <CardContent className="flex flex-col gap-5 pt-6">
           {visible.map((q) => (

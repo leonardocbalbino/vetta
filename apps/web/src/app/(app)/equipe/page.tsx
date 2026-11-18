@@ -133,7 +133,7 @@ export default function TeamPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-display text-3xl">Equipe</h1>
+        <h1 className="font-display text-2xl">Equipe</h1>
         <p className="text-muted-foreground">
           Assistentes acompanham só os alunos atribuídos e nunca veem financeiro, marca ou
           assinatura.

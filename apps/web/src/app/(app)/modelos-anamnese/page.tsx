@@ -452,7 +452,7 @@ export default function TemplatesPage() {
   if (!templates.data) return <Skeleton className="h-64" />;
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl">Modelos de anamnese</h1>
+      <h1 className="font-display text-2xl">Modelos de anamnese</h1>
       {editing ? (
         <Builder
           initial={editing === 'new' ? undefined : editing}

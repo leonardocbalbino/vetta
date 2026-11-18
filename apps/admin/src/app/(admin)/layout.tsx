@@ -9,6 +9,7 @@ import {
   Layers,
   LifeBuoy,
   Megaphone,
+  Plug,
   ScrollText,
   Sparkles,
   Wallet,
@@ -29,6 +30,7 @@ const NAV = [
   { href: '/comunicados', label: 'Comunicados', icon: Megaphone },
   { href: '/academy', label: 'Academy', icon: GraduationCap },
   { href: '/ia', label: 'IA de treino', icon: Sparkles },
+  { href: '/integracoes', label: 'Integrações', icon: Plug },
   { href: '/auditoria', label: 'Auditoria', icon: ScrollText },
 ];
 

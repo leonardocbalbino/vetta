@@ -81,7 +81,7 @@ export default function ReportsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-display text-3xl">Relatórios</h1>
+        <h1 className="font-display text-2xl">Relatórios</h1>
         <Select value={months} onValueChange={setMonths}>
           <SelectTrigger aria-label="Período" className="w-44">
             <SelectValue />

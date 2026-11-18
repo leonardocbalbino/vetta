@@ -56,6 +56,7 @@ interface Exercise {
   tips: string | null;
   commonMistakes: string | null;
   videoMediaId: string | null;
+  externalVideoUrl?: string | null;
   media?: { video: string | null; thumbnail: string | null } | null;
 }
 
@@ -102,6 +103,7 @@ function ExerciseDialog({ e, onClose }: { e: Exercise | 'new'; onClose: () => vo
     instructions: base?.instructions ?? '',
     tips: base?.tips ?? '',
     commonMistakes: base?.commonMistakes ?? '',
+    externalVideoUrl: base?.externalVideoUrl ?? '',
   });
   const [videoId, setVideoId] = useState<string | null>(base?.videoMediaId ?? null);
   const save = useAdminMutation<ExerciseInput>(
@@ -141,10 +143,12 @@ function ExerciseDialog({ e, onClose }: { e: Exercise | 'new'; onClose: () => vo
               tips: f.tips || null,
               commonMistakes: f.commonMistakes || null,
               videoMediaId: videoId,
+              externalVideoUrl: f.externalVideoUrl.trim() || null,
             });
           }}
         >
           {text('name', 'Nome')}
+          {text('externalVideoUrl', 'Link do YouTube (vídeo e capa, sem upload)')}
           {text('code', 'Código (único)')}
           <Field label="Tipo">
             <Select
@@ -342,7 +346,9 @@ export default function Biblioteca() {
     invalidate: ['/v1/admin/exercises'],
     success: 'Exercício removido (pode ser restaurado reimportando o código).',
   });
-  const items = (list.data?.items ?? []).filter((e) => !withoutVideo || !e.videoMediaId);
+  const items = (list.data?.items ?? []).filter(
+    (e) => !withoutVideo || (!e.videoMediaId && !e.externalVideoUrl),
+  );
   return (
     <>
       <div className="flex items-center justify-between">
@@ -385,7 +391,9 @@ export default function Biblioteca() {
                     <TableCell>{e.code ?? '—'}</TableCell>
                     <TableCell>{CATEGORY_LABEL[e.category]}</TableCell>
                     <TableCell>{e.primaryMuscles.join(', ')}</TableCell>
-                    <TableCell>{e.videoMediaId ? 'sim' : '—'}</TableCell>
+                    <TableCell>
+                      {e.videoMediaId ? 'próprio' : e.externalVideoUrl ? 'YouTube' : '—'}
+                    </TableCell>
                     <TableCell className="flex gap-1">
                       <Button size="sm" variant="ghost" onClick={() => setEditing(e)}>
                         Editar

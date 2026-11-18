@@ -33,7 +33,7 @@ export default function HistoryPage() {
     );
   return (
     <div className="flex flex-col gap-3">
-      <h1 className="font-display text-3xl">Histórico</h1>
+      <h1 className="font-display text-2xl">Histórico</h1>
       {s.data.map((x) => {
         const byExercise = new Map<string, string[]>();
         for (const l of x.setLogs.filter((l) => l.completed)) {

@@ -13,6 +13,31 @@ import { PrismaService } from './infra/prisma.service';
 import { AppModule, type AppOverrides } from './app.module';
 import type { ApiEnv } from './config/env';
 
+type OriginCheck = (origin: string | undefined) => Promise<boolean>;
+
+/**
+ * Origens aceitas pela API e pelo Socket.IO: as fixas (web, admin, site, CORS_ORIGINS) e os
+ * domínios próprios ativos (white label), só em https. Os domínios ficam em cache por 1 min.
+ */
+export function originChecker(
+  origins: string[],
+  customHosts: () => Promise<Set<string>>,
+): OriginCheck {
+  return async (origin) => {
+    if (!origin || origins.includes(origin)) return true;
+    let u: URL;
+    try {
+      u = new URL(origin);
+    } catch {
+      return false;
+    }
+    if (u.protocol !== 'https:') return false;
+    return customHosts()
+      .then((hosts) => hosts.has(u.hostname))
+      .catch(() => false);
+  };
+}
+
 /** Socket.IO com adapter Redis: o worker emite para as salas de qualquer instância. */
 class RedisIoAdapter extends IoAdapter {
   private pub?: Redis;
@@ -21,7 +46,7 @@ class RedisIoAdapter extends IoAdapter {
   constructor(
     app: INestApplication,
     private readonly redisUrl: string,
-    private readonly origins: string[],
+    private readonly allowed: OriginCheck,
   ) {
     super(app);
   }
@@ -29,7 +54,13 @@ class RedisIoAdapter extends IoAdapter {
   override createIOServer(port: number, options?: ServerOptions) {
     const server = super.createIOServer(port, {
       ...options,
-      cors: { origin: this.origins, credentials: true },
+      // Mesma regra do HTTP: inclui o domínio próprio do personal (chat e sino em tempo real).
+      cors: {
+        origin: (origin: string | undefined, cb: (err: Error | null, ok?: boolean) => void) => {
+          void this.allowed(origin).then((ok) => cb(null, ok));
+        },
+        credentials: true,
+      },
     });
     this.pub = new Redis(this.redisUrl);
     this.sub = this.pub.duplicate();
@@ -90,27 +121,17 @@ export async function createApp(
     }
     return custom.hosts;
   };
+  const allowed = originChecker(origins, customHosts);
   app.enableCors({
     origin: (origin, cb) => {
-      if (!origin || origins.includes(origin)) return cb(null, true);
-      let host: string;
-      try {
-        const u = new URL(origin);
-        if (u.protocol !== 'https:') return cb(null, false);
-        host = u.hostname;
-      } catch {
-        return cb(null, false);
-      }
-      customHosts()
-        .then((hosts) => cb(null, hosts.has(host)))
-        .catch(() => cb(null, false));
+      void allowed(origin).then((ok) => cb(null, ok));
     },
     credentials: true,
     allowedHeaders: ['Authorization', 'Content-Type', 'X-Tenant-Id', 'X-Request-Id'],
     exposedHeaders: ['X-Request-Id'],
   });
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
-  app.useWebSocketAdapter(new RedisIoAdapter(app, env.REDIS_URL, origins));
+  app.useWebSocketAdapter(new RedisIoAdapter(app, env.REDIS_URL, allowed));
   app.enableShutdownHooks();
 
   if (env.SWAGGER_ENABLED) {

@@ -25,6 +25,7 @@ import {
   Textarea,
 } from '@vetta/ui';
 import { Pause, Play, Repeat, SkipForward, Timer } from 'lucide-react';
+import { YouTubeEmbed } from './youtube';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface RecordHit {
@@ -81,7 +82,7 @@ function RestTimer({ seconds, onDone }: { seconds: number; onDone: () => void })
     >
       <div className="flex items-center gap-3">
         <Timer className="size-6 text-cume" aria-hidden />
-        <span className="font-display text-3xl tabular-nums">
+        <span className="font-display text-2xl tabular-nums">
           {mm}:{ss}
         </span>
       </div>
@@ -199,7 +200,7 @@ export function Celebration({ records, onClose }: { records: RecordHit[]; onClos
         <div className="animate-bounce">
           <LogoSymbol size={96} color="#C6F432" title="Conquista" />
         </div>
-        <h2 id="pr-title" className="font-display text-3xl text-cume">
+        <h2 id="pr-title" className="font-display text-2xl text-cume">
           Recorde pessoal!
         </h2>
         <ul className="flex flex-col gap-1">
@@ -372,6 +373,8 @@ export function Player({
                   aria-label={`Vídeo: ${item.name}`}
                 />
               )
+            ) : item.media?.youtube ? (
+              <YouTubeEmbed embedUrl={item.media.youtube.embedUrl} title={item.name} />
             ) : null}
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-display text-xl">{item.name}</h3>

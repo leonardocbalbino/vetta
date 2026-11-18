@@ -58,7 +58,7 @@ export default function SettingsPage() {
   if (!t.data) return <Skeleton className="h-64" />;
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl">Configurações</h1>
+      <h1 className="font-display text-2xl">Configurações</h1>
       <Card>
         <CardHeader>
           <CardTitle>Perfil profissional</CardTitle>

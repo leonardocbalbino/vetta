@@ -100,6 +100,28 @@ export class UnconfiguredAiProvider implements AiProvider {
   readonly name = 'unconfigured';
   readonly model = 'none';
   run<T>(): Promise<AiResult<T>> {
-    return Promise.reject(new AiError('NOT_CONFIGURED', 'IA não configurada (ANTHROPIC_API_KEY).'));
+    return Promise.reject(
+      new AiError('NOT_CONFIGURED', 'IA não configurada (GROQ_API_KEY ou ANTHROPIC_API_KEY).'),
+    );
   }
+}
+
+/** Valida a saída entregue pelo modelo: schema Zod e depois as regras de negócio da tarefa. */
+export async function checkAiOutput<T>(
+  task: AiTask<T>,
+  raw: unknown,
+): Promise<{ ok: true; value: T } | { ok: false; messages: string[] }> {
+  const parsed = task.output.schema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      messages: parsed.error.issues
+        .slice(0, 20)
+        .map((i) => `${i.path.join('.') || '(raiz)'}: ${i.message}`),
+    };
+  }
+  const errors = (await task.output.validate?.(parsed.data)) ?? [];
+  return errors.length
+    ? { ok: false, messages: errors.slice(0, 20) }
+    : { ok: true, value: parsed.data };
 }

@@ -26,6 +26,7 @@ export const TENANT_ROLE_REVOKED_MODELS = new Set([
   'UserIdentity',
   'AuditLog',
   'DeliveryLog',
+  'PlatformIntegration',
 ]);
 
 export interface ModelInfo {

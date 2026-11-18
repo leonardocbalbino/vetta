@@ -471,7 +471,7 @@ function StudentDetail() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-3xl">{s.data.displayName}</h1>
+        <h1 className="font-display text-2xl">{s.data.displayName}</h1>
         {s.data.tags.map((t) => (
           <Badge key={t} variant="outline">
             #{t}

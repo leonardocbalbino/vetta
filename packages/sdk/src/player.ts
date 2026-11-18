@@ -30,6 +30,10 @@ export interface ApiItem {
       gif: string | null;
       thumbnail: string | null;
       image: string | null;
+      /** Vídeo do YouTube (quando não há vídeo próprio). */
+      youtube?: { id: string; embedUrl: string; watchUrl: string; thumbnail: string } | null;
+      /** Arquivo para baixar e usar sem internet (MP4 leve, ou GIF/foto). */
+      offline?: { kind: 'video' | 'image'; url: string } | null;
     } | null;
   };
   sets: ApiSet[];

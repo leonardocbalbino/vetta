@@ -40,7 +40,7 @@ export default function Authorizations() {
   });
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl">Autorizações e depoimento</h1>
+      <h1 className="font-display text-2xl">Autorizações e depoimento</h1>
       <Card>
         <CardHeader>
           <CardTitle>Fotos de resultado</CardTitle>

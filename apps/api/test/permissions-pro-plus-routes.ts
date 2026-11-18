@@ -233,6 +233,24 @@ export function proPlusRoutes(ids: () => { studentLinkId: string }): ProRoute[] 
     },
     // badge de mensagens não lidas
     { method: 'get', path: '/v1/chat/unread', tenant: true, allowed: USERS },
+    // SMS da plataforma (só super admin)
+    { method: 'get', path: '/v1/admin/integrations/sms', tenant: false, allowed: ADMIN },
+    {
+      method: 'put',
+      path: '/v1/admin/integrations/sms/{provider}',
+      url: () => '/v1/admin/integrations/sms/twilio',
+      body: () => ({ enabled: false, priority: 2 }),
+      tenant: false,
+      allowed: ADMIN,
+    },
+    {
+      method: 'post',
+      path: '/v1/admin/integrations/sms/{provider}/test',
+      url: () => '/v1/admin/integrations/sms/twilio/test',
+      body: () => ({ to: '+5511999990000' }),
+      tenant: false,
+      allowed: ADMIN,
+    },
     // 3.8 suporte
     { method: 'get', path: '/v1/support/tickets', tenant: true, allowed: STAFF },
     {

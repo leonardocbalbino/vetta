@@ -130,6 +130,16 @@ const TRANSFER_STATUS: Record<string, Transfer['status']> = {
 };
 
 /** Cliente HTTP do Asaas (API v3). Fora de produção, só o sandbox é aceito. */
+/** Mensagem para respostas do Asaas sem descrição (o 403 costuma vir vazio). */
+export function asaasStatusMessage(status: number, path: string): string {
+  if (status === 401) return 'Chave do Asaas inválida (ASAAS_API_KEY).';
+  if (status === 403 && path.startsWith('/accounts'))
+    return 'O Asaas recusou a criação da subconta (403). A conta-mãe precisa ser de pessoa jurídica (CNPJ) e o IP do servidor precisa estar liberado, se houver lista de IPs.';
+  if (status === 403)
+    return 'O Asaas recusou a operação (403). Confira a lista de IPs autorizados e as permissões da conta.';
+  return `Asaas respondeu ${status}`;
+}
+
 export class AsaasPaymentProvider implements PaymentProvider {
   readonly code = 'ASAAS' as const;
 
@@ -162,11 +172,16 @@ export class AsaasPaymentProvider implements PaymentProvider {
       signal: AbortSignal.timeout(this.config.timeoutMs ?? 20_000),
     });
     const text = await res.text();
-    const json = text ? (JSON.parse(text) as unknown) : {};
+    let json: unknown = {};
+    try {
+      json = text ? (JSON.parse(text) as unknown) : {};
+    } catch {
+      if (res.ok) throw new PaymentProviderError('Resposta inválida do Asaas.', res.status);
+    }
     if (!res.ok) {
       const errors = (json as { errors?: { description?: string }[] }).errors;
       throw new PaymentProviderError(
-        errors?.map((e) => e.description).join(' ') || `Asaas respondeu ${res.status}`,
+        errors?.map((e) => e.description).join(' ') || asaasStatusMessage(res.status, path),
         res.status,
         errors,
       );

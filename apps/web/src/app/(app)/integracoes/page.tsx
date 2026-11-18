@@ -211,7 +211,7 @@ export default function IntegrationsPage() {
       <Suspense>
         <Feedback />
       </Suspense>
-      <h1 className="font-display text-3xl">Integrações</h1>
+      <h1 className="font-display text-2xl">Integrações</h1>
       <div className="grid gap-6 lg:grid-cols-2">
         <GoogleCard />
         <WhatsAppCard />

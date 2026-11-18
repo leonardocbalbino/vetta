@@ -69,3 +69,26 @@ describe('equipe e marca', () => {
     expect(plan('PRO_PLUS')['progress.health_integrations']).toBe(true);
   });
 });
+
+describe('vídeo do YouTube no exercício', () => {
+  it('reconhece os formatos de link e gera embed e capa', async () => {
+    const { youtubeId, youtubeMedia, ExerciseInputSchema } = await import('./library.js');
+    expect(youtubeId('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=4')).toBe('dQw4w9WgXcQ');
+    expect(youtubeId('https://youtu.be/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+    expect(youtubeId('https://youtube.com/shorts/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+    expect(youtubeId('https://vimeo.com/123')).toBeNull();
+    expect(youtubeMedia('https://youtu.be/dQw4w9WgXcQ')).toMatchObject({
+      embedUrl: expect.stringContaining('youtube-nocookie.com/embed/dQw4w9WgXcQ'),
+      thumbnail: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+    });
+    const base = { name: 'Agachamento', category: 'STRENGTH' };
+    expect(
+      ExerciseInputSchema.safeParse({ ...base, externalVideoUrl: 'https://youtu.be/dQw4w9WgXcQ' })
+        .success,
+    ).toBe(true);
+    expect(
+      ExerciseInputSchema.safeParse({ ...base, externalVideoUrl: 'https://exemplo.com/v.mp4' })
+        .success,
+    ).toBe(false);
+  });
+});
